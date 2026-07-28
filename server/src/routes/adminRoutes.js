@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const rateLimit = require('express-rate-limit');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
 const { signAdmin } = require('../utils/jwt');
@@ -7,30 +8,75 @@ const { adminAuth } = require('../middleware/adminAuth');
 
 const router = express.Router();
 
+// 登录限流：每分钟 10 次
+const loginLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: '登录尝试过于频繁，请稍后再试' },
+});
+
+// 题目字段校验（仅校验已提供字段），返回错误描述或 null
+function validatePuzzleFields({ title, scenario, truth, tags }) {
+  if (title !== undefined) {
+    if (typeof title !== 'string' || title.length < 1 || title.length > 64) {
+      return '标题长度需为 1-64 个字符';
+    }
+  }
+  if (scenario !== undefined) {
+    if (typeof scenario !== 'string' || scenario.length < 1 || scenario.length > 2000) {
+      return '汤面长度需为 1-2000 个字符';
+    }
+  }
+  if (truth !== undefined) {
+    if (typeof truth !== 'string' || truth.length < 1 || truth.length > 2000) {
+      return '汤底长度需为 1-2000 个字符';
+    }
+  }
+  if (Array.isArray(tags)) {
+    if (tags.length > 10) {
+      return '标签最多 10 个';
+    }
+    for (const t of tags) {
+      if (typeof t !== 'string' || t.length > 16) {
+        return '每个标签需为字符串且长度不超过 16';
+      }
+    }
+  }
+  return null;
+}
+
 // POST /api/admin/login - 登录
-router.post('/admin/login', (req, res) => {
+router.post('/admin/login', loginLimiter, async (req, res) => {
   const { account, password } = req.body || {};
   if (!account || !password) {
     return res.status(400).json({ error: '账号和密码不能为空' });
   }
   const admin = db.prepare(`SELECT * FROM admins WHERE account = ?`).get(account);
   if (!admin) {
+    // 等时处理：执行一次无意义的 bcrypt 比较以抹平时序差异
+    await bcrypt.compare(
+      password,
+      '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy'
+    );
     return res.status(401).json({ error: '账号或密码错误' });
   }
-  const ok = bcrypt.compareSync(password, admin.password_hash);
+  const ok = await bcrypt.compare(password, admin.password_hash);
   if (!ok) {
     return res.status(401).json({ error: '账号或密码错误' });
   }
-  const token = signAdmin({
-    id: admin.id,
-    account: admin.account,
-    name: admin.name,
-    role: admin.role,
-  });
+  const token = signAdmin(admin.id, admin.account, admin.name, admin.role, admin.token_version);
   res.json({
     token,
     admin: { name: admin.name, role: admin.role, email: admin.email },
   });
+});
+
+// POST /api/admin/logout - 退出登录（通过递增 token_version 吊销当前 token）
+router.post('/admin/logout', adminAuth, (req, res) => {
+  db.prepare('UPDATE admins SET token_version = token_version + 1 WHERE id = ?').run(req.admin.id);
+  res.json({ ok: true });
 });
 
 // GET /api/admin/dashboard - 总览 KPI
@@ -206,6 +252,8 @@ router.post('/admin/puzzles', adminAuth, (req, res) => {
   if (!['easy', 'medium', 'hard'].includes(difficulty)) {
     return res.status(400).json({ error: '难度必须为 easy / medium / hard' });
   }
+  const fieldErr = validatePuzzleFields({ title, scenario, truth, tags });
+  if (fieldErr) return res.status(400).json({ error: fieldErr });
   const id = uuidv4();
   const tagsJson = Array.isArray(tags) ? JSON.stringify(tags) : '[]';
   db.prepare(`
@@ -228,6 +276,8 @@ router.put('/admin/puzzles/:id', adminAuth, (req, res) => {
   const { title, scenario, truth, difficulty, tags } = req.body || {};
   const existing = db.prepare(`SELECT * FROM puzzles WHERE id = ?`).get(req.params.id);
   if (!existing) return res.status(404).json({ error: '题目不存在' });
+  const fieldErr = validatePuzzleFields({ title, scenario, truth, tags });
+  if (fieldErr) return res.status(400).json({ error: fieldErr });
   const newData = {
     title: title ?? existing.title,
     scenario: scenario ?? existing.scenario,

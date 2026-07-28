@@ -3,6 +3,10 @@ const { buildJudgePrompt, buildBotQuestionPrompt } = require('../utils/prompts')
 
 const JUDGMENT_LABELS = { yes: '是', no: '不是', irrelevant: '无关' };
 
+// 熔断器：按用户记录连续 close_to_truth=true 次数，防止作弊刷「接近真相」
+const userCloseStreak = new Map();
+const CLOSE_STREAK_THRESHOLD = 3;
+
 function extractJson(text) {
   if (!text) return null;
   // 去除可能的 markdown 代码块
@@ -21,28 +25,56 @@ function extractJson(text) {
 }
 
 /**
+ * 熔断：对成功解析的判定结果按用户施加 close_to_truth 连续计数。
+ * 连续达到阈值则强制降级为 false；出现 false 则重置计数。
+ * @param {string} userId
+ * @param {{judgment:string, judgmentLabel:string, closeToTruth:boolean}} result
+ * @returns {object} 处理后的结果（可能已降级）
+ */
+function applyCloseCircuitBreaker(userId, result) {
+  if (!userId) return result;
+  const streak = userCloseStreak.get(userId) || 0;
+  if (result.closeToTruth) {
+    const newStreak = streak + 1;
+    userCloseStreak.set(userId, newStreak);
+    if (newStreak >= CLOSE_STREAK_THRESHOLD) {
+      console.warn(`[llmService] 用户 ${userId} 连续 close_to_truth 触发熔断降级`);
+      return { ...result, closeToTruth: false };
+    }
+  } else {
+    userCloseStreak.set(userId, 0);
+  }
+  return result;
+}
+
+/**
  * 判定玩家提问（角色：judge）
+ * @param {string} userId - 提问玩家 ID，用于熔断计数
  * @returns {Promise<{judgment: 'yes'|'no'|'irrelevant', judgmentLabel: string, closeToTruth: boolean}>}
  */
-async function judgeQuestion(scenario, truth, history, question) {
-  const prompt = buildJudgePrompt(scenario, truth, history, question);
+async function judgeQuestion(scenario, truth, history, question, userId) {
+  const { systemPrompt, userMessage } = buildJudgePrompt(scenario, truth, history, question);
   try {
     const content = await aiRouter.callRole(
       'judge',
-      [{ role: 'user', content: prompt }],
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage },
+      ],
       { temperature: 0.3, jsonMode: true }
     );
     const parsed = extractJson(content);
     if (parsed && ['yes', 'no', 'irrelevant'].includes(parsed.judgment)) {
-      return {
+      const result = {
         judgment: parsed.judgment,
         judgmentLabel: JUDGMENT_LABELS[parsed.judgment],
         closeToTruth: !!parsed.close_to_truth,
       };
+      return applyCloseCircuitBreaker(userId, result);
     }
-    console.warn('[llmService] 无法解析判定结果，降级:', content?.slice(0, 100));
+    console.warn('[llmService] 无法解析判定结果，已降级处理');
   } catch (err) {
-    console.warn('[llmService] judgeQuestion 失败，降级:', err.message);
+    console.warn('[llmService] LLM 调用失败，已降级');
   }
   // 降级：返回"无关"，不接近真相
   return { judgment: 'irrelevant', judgmentLabel: '无关', closeToTruth: false };
@@ -53,20 +85,23 @@ async function judgeQuestion(scenario, truth, history, question) {
  * @returns {Promise<string|null>}
  */
 async function generateBotQuestion(scenario, history) {
-  const prompt = buildBotQuestionPrompt(scenario, history);
+  const { systemPrompt, userMessage } = buildBotQuestionPrompt(scenario, history);
   try {
     const content = await aiRouter.callRole(
       'bot_question',
-      [{ role: 'user', content: prompt }],
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage },
+      ],
       { temperature: 0.3, jsonMode: true }
     );
     const parsed = extractJson(content);
     if (parsed && typeof parsed.question === 'string' && parsed.question.trim()) {
       return parsed.question.trim();
     }
-    console.warn('[llmService] 无法解析 bot 提问，使用兜底:', content?.slice(0, 100));
+    console.warn('[llmService] 无法解析 bot 提问，已使用兜底');
   } catch (err) {
-    console.warn('[llmService] generateBotQuestion 失败，使用兜底:', err.message);
+    console.warn('[llmService] LLM 调用失败，已使用兜底');
   }
   // 兜底问题池
   const fallbacks = [

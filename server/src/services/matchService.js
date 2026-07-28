@@ -58,6 +58,9 @@ function tick() {
 function enqueue(socketId, userId, nickname, socket) {
   // 已在队列则忽略
   if (queue.find((q) => q.socketId === socketId)) return false;
+  // userId 去重：同一用户不能重复入队
+  if (userId && queue.find((q) => q.userId === userId)) return false;
+  // TODO: check gameService.getGameBySocketId to prevent multi-game — requires dependency injection to avoid circular import
   queue.push({ socketId, userId, nickname, joinedAt: Date.now(), botPrompted: false, socket });
   return true;
 }
@@ -69,16 +72,14 @@ function dequeue(socketId) {
 }
 
 function acceptBots(socketId) {
-  const me = dequeue(socketId);
+  // 必须先经过 bot 补位提示，避免误调用将其他真人拉入 bot 局
+  const me = queue.find((q) => q.socketId === socketId);
   if (!me) return null;
-  // 取队列中其他真人（最多 playersPerGame - 1 个）
-  const others = [];
-  while (queue.length > 0 && others.length < config.game.playersPerGame - 1) {
-    others.push(queue.shift());
-  }
-  // 组队：真人 + bot 补足
-  const players = [me, ...others];
-  const botCount = config.game.playersPerGame - players.length;
+  if (me.botPrompted !== true) return null;
+  // 仅把自己出队，不再 shift 其他真人
+  dequeue(socketId);
+  // 组队：本人 + bot 补足剩余座位
+  const players = [me];
   for (let seat = players.length; seat < config.game.playersPerGame; seat++) {
     const bot = botService.makeBotPlayer(seat);
     players.push({

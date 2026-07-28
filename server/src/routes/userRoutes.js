@@ -1,4 +1,5 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
 const { signUser } = require('../utils/jwt');
@@ -7,23 +8,40 @@ const gameService = require('../services/gameService');
 
 const router = express.Router();
 
+// 注册限流：每分钟 10 次
+const registerLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: '注册请求过于频繁，请稍后再试' },
+});
+
 // POST /api/users/register - 提交昵称获取身份
-router.post('/users/register', (req, res) => {
+router.post('/users/register', registerLimiter, (req, res) => {
   const { nickname } = req.body || {};
   if (!nickname || typeof nickname !== 'string' || nickname.trim().length === 0) {
     return res.status(400).json({ error: '昵称不能为空' });
   }
-  if (nickname.trim().length > 16) {
-    return res.status(400).json({ error: '昵称最多 16 个字符' });
-  }
   const trimmed = nickname.trim();
+  // 昵称白名单：中文、字母、数字、下划线、连字符，长度 1-16
+  if (!/^[\u4e00-\u9fa5a-zA-Z0-9_\-]{1,16}$/.test(trimmed)) {
+    return res.status(400).json({ error: '昵称仅支持中文、字母、数字、下划线与连字符，长度 1-16' });
+  }
   const userId = uuidv4();
   const avatarSeed = userId.slice(0, 8);
   db.prepare(`
     INSERT INTO users (id, nickname, avatar_seed) VALUES (?, ?, ?)
   `).run(userId, trimmed, avatarSeed);
-  const token = signUser({ userId, nickname: trimmed });
+  // 新建用户 token_version 默认为 0
+  const token = signUser(userId, trimmed, 0);
   res.json({ userId, nickname: trimmed, token });
+});
+
+// POST /api/users/logout - 退出登录（通过递增 token_version 吊销当前 token）
+router.post('/users/logout', userAuth, (req, res) => {
+  db.prepare('UPDATE users SET token_version = token_version + 1 WHERE id = ?').run(req.user.userId);
+  res.json({ ok: true });
 });
 
 // GET /api/user/profile - 个人统计
@@ -88,10 +106,10 @@ router.get('/user/recent-games', userAuth, (req, res) => {
   res.json(deduped);
 });
 
-// GET /api/game/:id/reveal - 揭晓数据
+// GET /api/game/:id/reveal - 揭晓数据（仅参与者可读，防止 IDOR）
 router.get('/game/:id/reveal', userAuth, (req, res) => {
-  const data = gameService.getRevealData(req.params.id);
-  if (!data) return res.status(404).json({ error: '对局不存在或尚未揭晓' });
+  const data = gameService.getRevealDataForUser(req.params.id, req.user.userId);
+  if (!data) return res.status(403).json({ error: '对局不存在、未揭晓或您非参与者' });
   res.json(data);
 });
 

@@ -1,6 +1,13 @@
 // Socket.IO 客户端单例
 (function () {
-  const SOCKET_BASE = window.SOCKET_BASE || 'http://localhost:3000';
+  const SOCKET_BASE = window.SOCKET_BASE || '';
+  // 运行时防护：HTTPS 页面下若解析到的 base 仍为 http:，输出告警以避免混合内容
+  function warnIfMixedContent(base) {
+    if (window.location.protocol === 'https:' && /^http:\/\//.test(base)) {
+      console.warn('[socket.js] 检测到混合内容风险：HTTPS 页面使用了 http: 的 Socket base (' + base + ')');
+    }
+  }
+  warnIfMixedContent(SOCKET_BASE);
   let socket = null;
 
   function getSocket() {

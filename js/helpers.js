@@ -5,6 +5,7 @@
     formatTimeAgo(dateStr) {
       if (!dateStr) return '';
       const d = new Date(dateStr.replace(' ', 'T'));
+      if (isNaN(d.getTime())) return '';
       const diff = Date.now() - d.getTime();
       if (diff < 0) return '刚刚';
       const sec = Math.floor(diff / 1000);
@@ -63,7 +64,7 @@
         yes: { label: '是', color: 'text-emerald-600', bg: 'bg-emerald-50', icon: 'check-circle' },
         no: { label: '不是', color: 'text-rose-600', bg: 'bg-rose-50', icon: 'x-circle' },
         irrelevant: { label: '无关', color: 'text-amber-600', bg: 'bg-amber-50', icon: 'minus-circle' },
-      }[j] || { label: j, color: 'text-stone-600', bg: 'bg-stone-50', icon: 'circle' };
+      }[j] || { label: '未知', color: 'text-stone-600', bg: 'bg-stone-50', icon: 'circle' };
     },
 
     // 转义 HTML 防注入

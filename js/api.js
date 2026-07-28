@@ -1,6 +1,13 @@
 // 前端 API 封装
 (function () {
-  const API_BASE = window.API_BASE || 'http://localhost:3000/api';
+  const API_BASE = window.API_BASE || '/api';
+  // 运行时防护：HTTPS 页面下若解析到的 base 仍为 http:，输出告警以避免混合内容
+  function warnIfMixedContent(base) {
+    if (window.location.protocol === 'https:' && /^http:\/\//.test(base)) {
+      console.warn('[api.js] 检测到混合内容风险：HTTPS 页面使用了 http: 的 API base (' + base + ')');
+    }
+  }
+  warnIfMixedContent(API_BASE);
   const TOKEN_KEY = 'ts_user_token';
   const USER_KEY = 'ts_user_info';
   const ADMIN_TOKEN_KEY = 'ts_admin_token';
@@ -102,10 +109,10 @@
       return Api.request('GET', '/user/recent-games');
     },
     getReveal(gameId) {
-      return Api.request('GET', '/game/' + gameId + '/reveal');
+      return Api.request('GET', '/game/' + encodeURIComponent(gameId) + '/reveal');
     },
     getPuzzle(id) {
-      return Api.request('GET', '/puzzles/' + id, null, { user: false });
+      return Api.request('GET', '/puzzles/' + encodeURIComponent(id), null, { user: false });
     },
 
     // ===== 管理端 API =====
@@ -124,10 +131,10 @@
       return Api.request('POST', '/admin/puzzles', data, { admin: true });
     },
     adminUpdatePuzzle(id, data) {
-      return Api.request('PUT', '/admin/puzzles/' + id, data, { admin: true });
+      return Api.request('PUT', '/admin/puzzles/' + encodeURIComponent(id), data, { admin: true });
     },
     adminUpdatePuzzleStatus(id, status) {
-      return Api.request('PATCH', '/admin/puzzles/' + id + '/status', { status }, { admin: true });
+      return Api.request('PATCH', '/admin/puzzles/' + encodeURIComponent(id) + '/status', { status }, { admin: true });
     },
 
     // ===== 管理端 AI 配置 =====
@@ -139,10 +146,10 @@
       return Api.request('POST', '/admin/ai/providers', data, { admin: true });
     },
     adminUpdateProvider(id, data) {
-      return Api.request('PUT', '/admin/ai/providers/' + id, data, { admin: true });
+      return Api.request('PUT', '/admin/ai/providers/' + encodeURIComponent(id), data, { admin: true });
     },
     adminDeleteProvider(id) {
-      return Api.request('DELETE', '/admin/ai/providers/' + id, null, { admin: true });
+      return Api.request('DELETE', '/admin/ai/providers/' + encodeURIComponent(id), null, { admin: true });
     },
     // 模型
     adminListModels(providerId) {
@@ -153,10 +160,10 @@
       return Api.request('POST', '/admin/ai/models', data, { admin: true });
     },
     adminUpdateModel(id, data) {
-      return Api.request('PUT', '/admin/ai/models/' + id, data, { admin: true });
+      return Api.request('PUT', '/admin/ai/models/' + encodeURIComponent(id), data, { admin: true });
     },
     adminDeleteModel(id) {
-      return Api.request('DELETE', '/admin/ai/models/' + id, null, { admin: true });
+      return Api.request('DELETE', '/admin/ai/models/' + encodeURIComponent(id), null, { admin: true });
     },
     // 角色
     adminListRoles() {
@@ -166,20 +173,20 @@
       return Api.request('POST', '/admin/ai/roles', data, { admin: true });
     },
     adminUpdateRole(id, data) {
-      return Api.request('PUT', '/admin/ai/roles/' + id, data, { admin: true });
+      return Api.request('PUT', '/admin/ai/roles/' + encodeURIComponent(id), data, { admin: true });
     },
     adminDeleteRole(id) {
-      return Api.request('DELETE', '/admin/ai/roles/' + id, null, { admin: true });
+      return Api.request('DELETE', '/admin/ai/roles/' + encodeURIComponent(id), null, { admin: true });
     },
     // 角色绑定与策略
     adminGetRoleModels(id) {
-      return Api.request('GET', '/admin/ai/roles/' + id + '/models', null, { admin: true });
+      return Api.request('GET', '/admin/ai/roles/' + encodeURIComponent(id) + '/models', null, { admin: true });
     },
     adminUpdateRoleModels(id, bindings) {
-      return Api.request('PUT', '/admin/ai/roles/' + id + '/models', { bindings }, { admin: true });
+      return Api.request('PUT', '/admin/ai/roles/' + encodeURIComponent(id) + '/models', { bindings }, { admin: true });
     },
     adminUpdateRoleStrategy(id, strategy) {
-      return Api.request('PATCH', '/admin/ai/roles/' + id + '/strategy', { strategy }, { admin: true });
+      return Api.request('PATCH', '/admin/ai/roles/' + encodeURIComponent(id) + '/strategy', { strategy }, { admin: true });
     },
     // 测试
     adminTestAI(modelId, prompt) {

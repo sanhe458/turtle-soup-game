@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require('uuid');
 const config = require('../config');
 const llmService = require('./llmService');
 
@@ -21,7 +22,7 @@ function randomThinkMs() {
 function makeBotPlayer(seat) {
   const name = BOT_NAME_POOL[seat % BOT_NAME_POOL.length];
   return {
-    userId: `bot_${seat}_${Date.now()}`,
+    userId: 'bot_' + uuidv4(),
     nickname: name,
     isBot: true,
     seat,

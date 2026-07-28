@@ -16,6 +16,7 @@ function initSchema() {
       total_games INTEGER DEFAULT 0,
       wins INTEGER DEFAULT 0,
       current_streak INTEGER DEFAULT 0,
+      token_version INTEGER NOT NULL DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now'))
     );
 
@@ -77,6 +78,7 @@ function initSchema() {
       name TEXT NOT NULL,
       role TEXT NOT NULL,
       email TEXT,
+      token_version INTEGER NOT NULL DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now'))
     );
 
@@ -130,6 +132,10 @@ function initSchema() {
       UNIQUE(role_id, model_id)
     );
   `);
+
+  // 幂等迁移：为已存在的数据库补充 token_version 列（新建库已包含于 CREATE TABLE）
+  try { db.exec('ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0'); } catch (e) {}
+  try { db.exec('ALTER TABLE admins ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0'); } catch (e) {}
 
   // 内置角色种子
   const { v4: uuidv4 } = require('uuid');

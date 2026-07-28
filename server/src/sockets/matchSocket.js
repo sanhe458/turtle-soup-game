@@ -5,6 +5,29 @@ const gameService = require('../services/gameService');
 // socketId -> { userId, nickname } 的临时映射（用于断线清理）
 const socketUserMap = new Map();
 
+// 每 IP 并发连接计数
+const ipConnectionCounts = new Map();
+const MAX_CONNECTIONS_PER_IP = 10;
+
+// 每套接字事件速率限制（滑动窗口）
+const socketEventTimestamps = new Map();
+const RATE_LIMIT_WINDOW_MS = 5000;
+const RATE_LIMIT_MAX_EVENTS = 10;
+
+function isRateLimited(socket) {
+  const now = Date.now();
+  const timestamps = socketEventTimestamps.get(socket.id) || [];
+  // 仅保留窗口内的时间戳
+  const recent = timestamps.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+  if (recent.length >= RATE_LIMIT_MAX_EVENTS) {
+    socketEventTimestamps.set(socket.id, recent);
+    return true;
+  }
+  recent.push(now);
+  socketEventTimestamps.set(socket.id, recent);
+  return false;
+}
+
 function setupMatchSockets(io) {
   // 注入匹配服务钩子
   matchService.setHooks({
@@ -58,7 +81,20 @@ function setupMatchSockets(io) {
   matchService.start();
 
   io.on('connection', (socket) => {
+    // 每 IP 并发连接数限制
+    const ip = socket.handshake.address;
+    const ipCount = (ipConnectionCounts.get(ip) || 0) + 1;
+    if (ipCount > MAX_CONNECTIONS_PER_IP) {
+      socket.disconnect(true);
+      return;
+    }
+    ipConnectionCounts.set(ip, ipCount);
+
     socket.on('match:join', ({ token } = {}) => {
+      if (isRateLimited(socket)) {
+        socket.emit('error', { message: '请求过于频繁，请稍后再试' });
+        return;
+      }
       let user;
       try {
         const decoded = verify(token);
@@ -69,18 +105,48 @@ function setupMatchSockets(io) {
         return;
       }
       socketUserMap.set(socket.id, user);
+      // 多开对局互斥：若当前 socket 已处于某局对局中，则拒绝再次匹配
+      const existingGame = gameService.getGameBySocketId(socket.id);
+      if (existingGame) {
+        socket.emit('error', { message: '您已在游戏中' });
+        return;
+      }
       matchService.enqueue(socket.id, user.userId, user.nickname, socket);
     });
 
     socket.on('match:cancel', () => {
+      if (!socketUserMap.has(socket.id)) {
+        socket.emit('error', { message: '未认证' });
+        return;
+      }
+      if (isRateLimited(socket)) {
+        socket.emit('error', { message: '请求过于频繁，请稍后再试' });
+        return;
+      }
       matchService.cancel(socket.id);
     });
 
     socket.on('match:accept_bots', () => {
+      if (!socketUserMap.has(socket.id)) {
+        socket.emit('error', { message: '未认证' });
+        return;
+      }
+      if (isRateLimited(socket)) {
+        socket.emit('error', { message: '请求过于频繁，请稍后再试' });
+        return;
+      }
       matchService.acceptBots(socket.id);
     });
 
     socket.on('match:decline_bots', () => {
+      if (!socketUserMap.has(socket.id)) {
+        socket.emit('error', { message: '未认证' });
+        return;
+      }
+      if (isRateLimited(socket)) {
+        socket.emit('error', { message: '请求过于频繁，请稍后再试' });
+        return;
+      }
       matchService.declineBots(socket.id);
     });
 
@@ -88,6 +154,13 @@ function setupMatchSockets(io) {
     require('./gameSocket').attachGameHandlers(io, socket, socketUserMap);
 
     socket.on('disconnect', () => {
+      // 释放 IP 连接计数
+      const c = ipConnectionCounts.get(ip) || 0;
+      if (c <= 1) ipConnectionCounts.delete(ip);
+      else ipConnectionCounts.set(ip, c - 1);
+      // 清理速率限制记录
+      socketEventTimestamps.delete(socket.id);
+
       matchService.cancel(socket.id);
       // 清理对局中的玩家
       const found = gameService.getGameBySocketId(socket.id);

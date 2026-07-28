@@ -2,6 +2,8 @@
 <html lang="zh" class="light">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta name="referrer" content="no-referrer">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 配置 — 海龟汤管理后台</title>
     <style id="theme-vars">
@@ -55,8 +57,10 @@
   --ts-duration:    320ms;
 }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
-    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <!-- TODO: compute and add integrity="sha384-..." for this resource -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js" crossorigin="anonymous"></script>
+    <!-- TODO: compute and add integrity="sha384-..." for this resource -->
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
     <script src="../js/api.js"></script>
     <script src="../js/helpers.js"></script>
     <style type="text/tailwindcss">
@@ -252,6 +256,16 @@
     <script>
       lucide.createIcons();
 
+      // 鉴权：未登录跳转
+      if (!window.Api || !Api.getAdminToken()) {
+        location.href = 'admin-login.html';
+      }
+
+      // 生产环境静默 console 输出，避免泄露
+      if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        ['log','warn','error','debug'].forEach(function(m){ console[m] = function(){}; });
+      }
+
       // ===== Sidebar toggle =====
       const sidebar = document.querySelector('.ts-sidebar');
       const overlay = document.querySelector('.ts-sidebar-overlay');
@@ -394,7 +408,7 @@
               '<div class="min-w-0 flex-1">' +
                 '<div class="flex items-center gap-2 mb-1">' +
                   '<h3 class="text-base font-bold text-[#3D3835] truncate">'+Helpers.escape(p.name)+'</h3>' +
-                  '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium '+fmtBadge+'">'+(FORMAT_LABELS[p.format]||p.format)+'</span>' +
+                  '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium '+fmtBadge+'">'+(FORMAT_LABELS[p.format]||'未知')+'</span>' +
                 '</div>' +
                 '<p class="text-xs text-[#A09890] font-mono truncate" title="'+Helpers.escape(p.baseUrl)+'">'+Helpers.escape(p.baseUrl)+'</p>' +
               '</div>' +
@@ -404,7 +418,7 @@
               '</div>' +
             '</div>' +
             '<div class="flex items-center justify-between text-xs">' +
-              '<span class="text-[#6B6560]">API Key: <span class="font-mono text-[#A09890]">'+(p.apiKey || '未配置')+'</span></span>' +
+              '<span class="text-[#6B6560]">API Key: <span class="font-mono text-[#A09890]">'+(p.apiKey ? '已配置' : '未配置')+'</span></span>' +
               '<span class="text-[#6B6560]">'+modelCount+' 个模型</span>' +
             '</div>' +
             '<div class="mt-3 pt-3 border-t border-[#E0D8D0]/40 flex items-center justify-between">' +
@@ -425,7 +439,7 @@
           const fmtBadge = FORMAT_BADGE[m.providerFormat] || 'bg-[#E0D8D0]/30 text-[#A09890]';
           const modalityBadges = (m.modalities||['text']).map(function(mod){
             const cls = mod==='image' ? 'bg-[#C4A6B0]/20 text-[#a07585]' : mod==='audio' ? 'bg-[#D4A76A]/20 text-[#b8893a]' : mod==='tool' ? 'bg-[#7BAE98]/20 text-[#5a9a7e]' : 'bg-[#8B7DA8]/15 text-[#8B7DA8]';
-            return '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium '+cls+'">'+(MODALITY_LABELS[mod]||mod)+'</span>';
+            return '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium '+cls+'">'+(MODALITY_LABELS[mod]||'未知')+'</span>';
           }).join(' ');
           return '<div class="ts-grid-card backdrop-blur-xl bg-white/70 border border-white/40 shadow-lg rounded-2xl p-5 hover:shadow-xl transition-all duration-300">' +
             '<div class="flex items-start justify-between mb-3">' +
@@ -440,7 +454,7 @@
               '</div>' +
             '</div>' +
             '<div class="flex items-center gap-2 mb-2">' +
-              '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium '+fmtBadge+'">'+(FORMAT_LABELS[m.providerFormat]||m.providerFormat)+'</span>' +
+              '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium '+fmtBadge+'">'+(FORMAT_LABELS[m.providerFormat]||'未知')+'</span>' +
               '<span class="text-xs text-[#6B6560]">'+Helpers.escape(m.providerName)+'</span>' +
             '</div>' +
             '<div class="flex flex-wrap gap-1 mb-2">'+modalityBadges+'</div>' +
@@ -479,7 +493,7 @@
             '</div>' +
             '<p class="text-xs text-[#6B6560] mb-3 line-clamp-2">'+Helpers.escape(r.description || '无描述')+'</p>' +
             '<div class="flex items-center justify-between text-xs">' +
-              '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium '+stratBadge+'">'+(STRATEGY_LABELS[r.pollingStrategy]||r.pollingStrategy)+'</span>' +
+              '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium '+stratBadge+'">'+(STRATEGY_LABELS[r.pollingStrategy]||'未知')+'</span>' +
               '<span class="text-[#6B6560]">'+r.modelCount+' 个模型</span>' +
             '</div>' +
             '<div class="mt-3 pt-3 border-t border-[#E0D8D0]/40 flex items-center justify-between">' +
@@ -647,7 +661,7 @@
             '</div>'+
           '</div>' +
           '<div>'+fieldLabel('Base URL（自定义端点）')+inputHTML('f-baseurl','留空使用默认端点')+'</div>' +
-          '<div>'+fieldLabel('API Key')+'<input id="f-apikey" type="password" placeholder="'+(p && p.apiKey ? p.apiKey : '输入 API Key')+'" class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] placeholder-[#A09890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200"><p class="text-[11px] text-[#A09890] mt-1.5">'+(p && p.apiKey ? '当前：'+p.apiKey+'，留空表示不修改' : '保存后将掩码显示')+'</p></div>' +
+          '<div>'+fieldLabel('API Key')+'<input id="f-apikey" type="password" placeholder="留空表示不修改" class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] placeholder-[#A09890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200"><p class="text-[11px] text-[#A09890] mt-1.5">'+(p && p.apiKey ? '当前已配置（出于安全考虑不显示原文）' : '尚未配置，请输入 API Key')+'</p></div>' +
           '<div>'+fieldLabel('排序（数字越小越靠前')+'<input id="f-sortorder" type="number" value="0" class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200"></div>';
         if (p) {
           document.getElementById('f-name').value = p.name;
@@ -679,7 +693,7 @@
         editTitle.textContent = m ? '编辑模型' : '添加模型';
         currentModalities = m ? (m.modalities || ['text']).slice() : ['text'];
         const providerOpts = state.providers.map(function(p){
-          return '<option value="'+Helpers.escape(p.id)+'"'+(m && m.providerId===p.id?' selected':'')+'>'+Helpers.escape(p.name)+' · '+(FORMAT_LABELS[p.format]||p.format)+'</option>';
+          return '<option value="'+Helpers.escape(p.id)+'"'+(m && m.providerId===p.id?' selected':'')+'>'+Helpers.escape(p.name)+' · '+(FORMAT_LABELS[p.format]||'未知')+'</option>';
         }).join('');
         editBody.innerHTML =
           '<div>'+fieldLabel('所属供应商')+'<select id="m-provider" class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200 appearance-none">'+(state.providers.length?'<option value="">请选择供应商</option>'+providerOpts:'<option value="">请先创建供应商</option>')+'</select></div>' +

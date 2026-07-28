@@ -15,6 +15,7 @@ const activeGames = new Map();
  * @returns {string} gameId
  */
 function createGame(puzzle, players) {
+  if (activeGames.size >= 200) return null;
   const gameId = uuidv4();
   const now = Date.now();
 
@@ -36,6 +37,10 @@ function createGame(puzzle, players) {
   // 题目玩过次数 +1
   db.prepare(`UPDATE puzzles SET play_count = play_count + 1 WHERE id = ?`).run(puzzle.id);
 
+  // 安全解析 tags（防止损坏的 JSON 导致对局创建失败）
+  let puzzleTags = [];
+  try { puzzleTags = puzzle.tags ? JSON.parse(puzzle.tags) : []; } catch (e) { puzzleTags = []; }
+
   // 内存状态
   const state = {
     id: gameId,
@@ -46,7 +51,7 @@ function createGame(puzzle, players) {
       scenario: puzzle.scenario,
       truth: puzzle.truth,
       difficulty: puzzle.difficulty,
-      tags: puzzle.tags ? JSON.parse(puzzle.tags) : [],
+      tags: puzzleTags,
       playCount: (puzzle.play_count || 0) + 1,
     },
     players: players.map((p, idx) => ({
@@ -67,12 +72,14 @@ function createGame(puzzle, players) {
     stats: { yes: 0, no: 0, irrelevant: 0, total: 0 },
     progress: 0,
     closeStreak: 0,
+    closeStreakRounds: new Set(),
     lastCloseSeat: null,
     timerInterval: null,
     turnTimer: null,
     timerRemaining: config.game.turnTimerSec,
     createdAt: now,
     botScheduleTimeout: null,
+    currentTurnSubmitted: false,
   };
 
   activeGames.set(gameId, state);
@@ -140,6 +147,7 @@ function beginTurn(gameId, io) {
   if (!state || state.status !== 'playing') return;
   const room = `game:${gameId}`;
   const currentPlayer = state.players[state.currentSeat];
+  state.currentTurnSubmitted = false;
 
   io.to(room).emit('game:turn', {
     round: state.currentRound,
@@ -199,6 +207,8 @@ async function receiveQuestion(gameId, seat, question, io, isBot = false) {
   if (!state || state.status !== 'playing') return { ok: false, error: '对局不存在或已结束' };
   if (seat !== state.currentSeat) return { ok: false, error: '当前不是你的回合' };
   if (state.timerInterval === null && !isBot) return { ok: false, error: '回合已结束' };
+  if (state.currentTurnSubmitted) return { ok: false, error: '本回合已提交' };
+  state.currentTurnSubmitted = true;
 
   const player = state.players[seat];
   // 清除倒计时与 bot 调度
@@ -229,7 +239,8 @@ async function receiveQuestion(gameId, seat, question, io, isBot = false) {
     state.puzzle.scenario,
     state.puzzle.truth,
     history,
-    question
+    question,
+    player.userId
   );
 
   // 3) 更新状态
@@ -242,6 +253,7 @@ async function receiveQuestion(gameId, seat, question, io, isBot = false) {
     judgmentLabel: judgment.judgmentLabel,
     closeHint: judgment.closeToTruth,
   };
+  if (state.chat.length > 500) state.chat.shift();
   state.chat.push(chatEntry);
   player.questionsAsked += 1;
   state.stats.total += 1;
@@ -252,9 +264,11 @@ async function receiveQuestion(gameId, seat, question, io, isBot = false) {
     player.closeCount += 1;
     player.score += 10;
     state.closeStreak += 1;
+    state.closeStreakRounds.add(state.currentRound);
     state.lastCloseSeat = seat;
   } else {
     state.closeStreak = 0;
+    state.closeStreakRounds.clear();
   }
 
   // 4) 计算进度
@@ -290,7 +304,11 @@ async function receiveQuestion(gameId, seat, question, io, isBot = false) {
   }
 
   // 8) 检查揭晓条件
-  const shouldReveal = state.closeStreak >= 2 || state.currentRound >= state.maxRounds;
+  // 安全约束：连续 close 需跨越至少 2 个不同轮次（closeStreakRounds），
+  // 防止同一轮内多次 close 被重复计数而误触发提前揭晓；closeStreak 机制本身保留
+  const shouldReveal =
+    (state.closeStreak >= 2 && state.closeStreakRounds.size >= 2) ||
+    state.currentRound >= state.maxRounds;
   if (shouldReveal) {
     revealGame(gameId, io);
     return { ok: true, revealed: true };
@@ -435,6 +453,7 @@ function leaveGame(gameId, socketId, io) {
 function getRevealData(gameId) {
   const game = db.prepare(`SELECT * FROM games WHERE id = ?`).get(gameId);
   if (!game) return null;
+  if (game.status !== 'revealed') return null;
   const puzzle = db.prepare(`SELECT * FROM puzzles WHERE id = ?`).get(game.puzzle_id);
   if (!puzzle) return null;
   const players = db.prepare(`
@@ -473,6 +492,24 @@ function getRevealData(gameId) {
   };
 }
 
+/**
+ * 获取揭晓数据（带参与者鉴权，供 REST API）
+ * 防止 IDOR：仅当对局已揭晓且调用者为该对局参与者时才返回真相数据。
+ * @param {string} gameId
+ * @param {string} userId
+ * @returns {object|null}
+ */
+function getRevealDataForUser(gameId, userId) {
+  const data = getRevealData(gameId);
+  if (!data) return null;
+  if (!userId) return null;
+  const participant = db
+    .prepare(`SELECT 1 FROM game_players WHERE game_id = ? AND user_id = ?`)
+    .get(gameId, userId);
+  if (!participant) return null;
+  return data;
+}
+
 module.exports = {
   createGame,
   getGame,
@@ -484,4 +521,5 @@ module.exports = {
   leaveGame,
   revealGame,
   getRevealData,
+  getRevealDataForUser,
 };
