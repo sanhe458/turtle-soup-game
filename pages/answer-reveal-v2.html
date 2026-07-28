@@ -69,6 +69,8 @@
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
     <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/helpers.js"></script>
     <style type="text/tailwindcss">
   @theme inline {
     --color-background: var(--ts-background);
@@ -234,13 +236,13 @@
               <div class="inline-flex items-center justify-center w-20 h-20 md:w-24 md:h-24 rounded-full mb-6" style="background: linear-gradient(135deg, rgba(212,167,106,0.15) 0%, rgba(212,167,106,0.05) 100%); box-shadow: 0 0 48px rgba(212,167,106,0.2), 0 0 24px rgba(139,125,168,0.12);">
                 <i data-lucide="trophy" class="w-10 h-10 md:w-12 md:h-12" style="color: #D4A76A;"></i>
               </div>
-              <h1 class="text-3xl md:text-4xl font-bold tracking-tight" style="color: #3D3835;">汤底揭晓！</h1>
-              <p class="mt-3 text-sm md:text-base" style="color: #A09890;">AI 判断有人接近真相，答案已公布</p>
+              <h1 id="reveal-title" class="text-3xl md:text-4xl font-bold tracking-tight" style="color: #3D3835;">汤底揭晓！</h1>
+              <p id="reveal-subtitle" class="mt-3 text-sm md:text-base" style="color: #A09890;">AI 判断有人接近真相，答案已公布</p>
             </div>
           </section>
 
           <!-- ===== Winner Announcement Card ===== -->
-          <section class="relative">
+          <section id="winner-section" class="relative" style="display:none;">
             <div class="backdrop-blur-xl rounded-2xl p-6 md:p-8 text-center relative overflow-hidden" style="background: linear-gradient(135deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.65) 100%); border: 2px solid rgba(212,167,106,0.3); box-shadow: 0 8px 40px rgba(212,167,106,0.12), 0 4px 16px rgba(139,125,168,0.08);">
               <!-- Sparkle decorations -->
               <div class="absolute top-4 right-6 opacity-30" aria-hidden="true"><i data-lucide="sparkles" class="w-5 h-5" style="color: #D4A76A;"></i></div>
@@ -251,16 +253,25 @@
 
               <!-- Winner avatar -->
               <div class="inline-block relative mb-4">
-                <div class="w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center text-2xl font-bold" style="background: linear-gradient(135deg, #8B7DA8, #C4A6B0); color: white; box-shadow: 0 0 0 3px rgba(212,167,106,0.5), 0 0 24px rgba(212,167,106,0.2);">
-                  你
+                <div id="winner-avatar" class="w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center text-2xl font-bold" style="background: linear-gradient(135deg, #8B7DA8, #C4A6B0); color: white; box-shadow: 0 0 0 3px rgba(212,167,106,0.5), 0 0 24px rgba(212,167,106,0.2);">
+                  —
                 </div>
                 <!-- Crown badge -->
                 <div class="absolute -top-2 left-1/2 -translate-x-1/2">
                   <i data-lucide="crown" class="w-6 h-6" style="color: #D4A76A; filter: drop-shadow(0 2px 4px rgba(212,167,106,0.4));"></i>
                 </div>
               </div>
-              <h2 class="text-xl md:text-2xl font-bold" style="color: #3D3835;">你</h2>
-              <p class="mt-2 text-sm" style="color: #6B6560;">你是最接近真相的玩家！</p>
+              <h2 id="winner-name" class="text-xl md:text-2xl font-bold" style="color: #3D3835;">—</h2>
+              <p id="winner-desc" class="mt-2 text-sm" style="color: #6B6560;">本局最接近真相的玩家</p>
+            </div>
+          </section>
+
+          <!-- ===== No Winner Notice ===== -->
+          <section id="no-winner-section" class="relative" style="display:none;">
+            <div class="backdrop-blur-xl rounded-2xl p-6 md:p-8 text-center" style="background: rgba(255,255,255,0.7); border: 1px solid rgba(224,216,208,0.6); box-shadow: 0 8px 32px rgba(61,56,53,0.08);">
+              <i data-lucide="search-x" class="w-10 h-10 mx-auto mb-3" style="color: #A09890;"></i>
+              <h2 class="text-xl font-bold" style="color: #3D3835;">本局无人胜出</h2>
+              <p class="mt-2 text-sm" style="color: #6B6560;">没有人接近真相，下次加油～</p>
             </div>
           </section>
 
@@ -279,8 +290,8 @@
                 <div class="flex-1 h-px" style="background: linear-gradient(to left, #8B7DA8, transparent);"></div>
               </div>
               <!-- Answer text -->
-              <div class="rounded-xl p-5 md:p-6 leading-relaxed text-[15px] md:text-base" style="background: rgba(139,125,168,0.06); color: #3D3835; line-height: 1.85;">
-                这个男人是一名海洋生物学家。他每天都会来海边观察海龟上岸产卵。沙滩上那一串脚印，是他一直在研究的那只海龟的。看到海龟又回来了，他非常高兴，所以笑了。
+              <div id="truth-text" class="rounded-xl p-5 md:p-6 leading-relaxed text-[15px] md:text-base" style="background: rgba(139,125,168,0.06); color: #3D3835; line-height: 1.85;">
+                加载中…
               </div>
 
               <!-- Collapsible-looking original question comparison -->
@@ -293,7 +304,7 @@
                   <i data-lucide="chevron-down" class="w-4 h-4" style="color: #A09890;"></i>
                 </div>
                 <div class="px-4 py-3">
-                  <p class="text-sm italic leading-relaxed" style="color: #6B6560;">"一个男人来到海边，看到沙滩上有一串脚印，他笑了。请问这是怎么回事？"</p>
+                  <p id="original-scenario" class="text-sm italic leading-relaxed" style="color: #6B6560;">"加载中…"</p>
                 </div>
               </div>
             </div>
@@ -305,42 +316,10 @@
               <i data-lucide="users" class="w-4 h-4 inline-block mr-1.5 align-text-bottom" style="color: #8B7DA8;"></i>
               玩家表现
             </h3>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <!-- Player 1: Winner -->
-              <div class="backdrop-blur-xl rounded-2xl p-5 text-center relative overflow-hidden transition-all duration-300 ease-out hover:scale-[1.02]" style="background: rgba(255,255,255,0.7); border: 1px solid rgba(212,167,106,0.3); box-shadow: 0 4px 16px rgba(212,167,106,0.1);">
-                <div class="absolute top-2 right-2">
-                  <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full" style="background: rgba(212,167,106,0.15); color: #D4A76A;">推理之星</span>
-                </div>
-                <div class="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center text-sm font-bold" style="background: linear-gradient(135deg, #8B7DA8, #C4A6B0); color: white;">你</div>
-                <p class="text-sm font-semibold" style="color: #3D3835;">你</p>
-                <p class="text-xs mt-1" style="color: #A09890;">提问 8 次</p>
-                <div class="flex items-center justify-center gap-0.5 mt-2.5">
-                  <i data-lucide="star" class="w-3.5 h-3.5 fill-[#D4A76A]" style="color: #D4A76A;"></i>
-                  <i data-lucide="star" class="w-3.5 h-3.5 fill-[#D4A76A]" style="color: #D4A76A;"></i>
-                  <i data-lucide="star" class="w-3.5 h-3.5 fill-[#D4A76A]" style="color: #D4A76A;"></i>
-                  <i data-lucide="star" class="w-3.5 h-3.5 fill-[#D4A76A]" style="color: #D4A76A;"></i>
-                </div>
-              </div>
-              <!-- Player 2 -->
-              <div class="backdrop-blur-xl rounded-2xl p-5 text-center transition-all duration-300 ease-out hover:scale-[1.02]" style="background: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.4); box-shadow: 0 4px 16px rgba(61,56,53,0.06);">
-                <div class="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center text-sm font-bold" style="background: linear-gradient(135deg, #C4A6B0, #E8D5DD); color: white;">明</div>
-                <p class="text-sm font-semibold" style="color: #3D3835;">小明</p>
-                <p class="text-xs mt-1" style="color: #A09890;">提问 6 次</p>
-                <div class="flex items-center justify-center gap-0.5 mt-2.5">
-                  <i data-lucide="star" class="w-3.5 h-3.5 fill-[#D4A76A]" style="color: #D4A76A;"></i>
-                  <i data-lucide="star" class="w-3.5 h-3.5 fill-[#D4A76A]" style="color: #D4A76A;"></i>
-                  <i data-lucide="star" class="w-3.5 h-3.5 fill-[#D4A76A]" style="color: #D4A76A;"></i>
-                </div>
-              </div>
-              <!-- Player 3 -->
-              <div class="backdrop-blur-xl rounded-2xl p-5 text-center transition-all duration-300 ease-out hover:scale-[1.02]" style="background: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.4); box-shadow: 0 4px 16px rgba(61,56,53,0.06);">
-                <div class="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center text-sm font-bold" style="background: linear-gradient(135deg, #7BAE98, #B8AFCA); color: white;">推</div>
-                <p class="text-sm font-semibold" style="color: #3D3835;">推理达人</p>
-                <p class="text-xs mt-1" style="color: #A09890;">提问 10 次</p>
-                <div class="flex items-center justify-center gap-0.5 mt-2.5">
-                  <i data-lucide="star" class="w-3.5 h-3.5 fill-[#D4A76A]" style="color: #D4A76A;"></i>
-                  <i data-lucide="star" class="w-3.5 h-3.5 fill-[#D4A76A]" style="color: #D4A76A;"></i>
-                </div>
+            <div id="players-stats" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <!-- 玩家卡片由 JS 渲染 -->
+              <div class="backdrop-blur-xl rounded-2xl p-5 text-center" style="background: rgba(255,255,255,0.5); border: 1px dashed rgba(224,216,208,0.8);">
+                <p class="text-sm" style="color: #A09890;">加载中…</p>
               </div>
             </div>
           </section>
@@ -354,16 +333,16 @@
               </div>
               <div class="grid grid-cols-3 gap-4">
                 <div class="text-center">
-                  <p class="text-2xl font-bold" style="color: #8B7DA8;">8</p>
+                  <p id="summary-rounds" class="text-2xl font-bold" style="color: #8B7DA8;">—</p>
                   <p class="text-xs mt-1" style="color: #A09890;">总轮数</p>
                 </div>
                 <div class="text-center">
-                  <p class="text-2xl font-bold" style="color: #8B7DA8;">12:34</p>
+                  <p id="summary-duration" class="text-2xl font-bold" style="color: #8B7DA8;">—</p>
                   <p class="text-xs mt-1" style="color: #A09890;">游戏时长</p>
                 </div>
                 <div class="text-center">
-                  <p class="text-lg font-bold" style="color: #3D3835;">海边的神秘脚印</p>
-                  <span class="inline-block text-[10px] font-medium px-2 py-0.5 rounded-full mt-1.5" style="background: rgba(139,125,168,0.12); color: #8B7DA8;">中等难度</span>
+                  <p id="summary-puzzle" class="text-lg font-bold" style="color: #3D3835;">—</p>
+                  <span id="summary-difficulty" class="inline-block text-[10px] font-medium px-2 py-0.5 rounded-full mt-1.5" style="background: rgba(139,125,168,0.12); color: #8B7DA8;">—</span>
                 </div>
               </div>
             </div>
@@ -371,15 +350,12 @@
 
           <!-- ===== Action Buttons ===== -->
           <section class="flex flex-col sm:flex-row items-center justify-center gap-3 pb-8">
-            <button class="w-full sm:w-auto px-8 py-3 rounded-xl text-sm font-semibold text-white transition-all duration-300 ease-out hover:scale-105 hover:shadow-lg" style="background: linear-gradient(135deg, #8B7DA8, #C4A6B0); box-shadow: 0 4px 16px rgba(139,125,168,0.25);">
+            <button id="btn-replay" class="w-full sm:w-auto px-8 py-3 rounded-xl text-sm font-semibold text-white transition-all duration-300 ease-out hover:scale-105 hover:shadow-lg" style="background: linear-gradient(135deg, #8B7DA8, #C4A6B0); box-shadow: 0 4px 16px rgba(139,125,168,0.25);">
               再来一局
             </button>
-            <button class="w-full sm:w-auto px-8 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ease-out hover:scale-105" style="color: #6B6560; border: 1.5px solid rgba(224,216,208,0.8); background: rgba(255,255,255,0.5);">
+            <button id="btn-back-hall" class="w-full sm:w-auto px-8 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ease-out hover:scale-105" style="color: #6B6560; border: 1.5px solid rgba(224,216,208,0.8); background: rgba(255,255,255,0.5);">
               返回大厅
             </button>
-            <a href="#" class="text-sm font-medium transition-all duration-300 ease-out hover:opacity-70" style="color: #8B7DA8;">
-              分享战绩
-            </a>
           </section>
 
         </div>
@@ -407,7 +383,6 @@
           sidebar.classList.remove('open');
           overlay.style.opacity = '0';
           overlay.style.pointerEvents = 'none';
-          // Delay display:none to allow fade-out transition
           setTimeout(function() { overlay.style.display = ''; }, 320);
           document.body.style.overflow = '';
         }
@@ -418,6 +393,153 @@
         window.addEventListener('resize', function() {
           if (window.innerWidth >= 768) closeDrawer();
         });
+      })();
+
+      // ===== 揭晓数据加载 =====
+      (function() {
+        const params = new URLSearchParams(location.search);
+        const gameId = params.get('gameId') || '';
+        const userInfo = (window.Api && Api.getUserInfo()) || {};
+
+        function avatarText(nickname) {
+          if (!nickname) return '?';
+          // 取首字符（兼容中英文）
+          return nickname.charAt(0);
+        }
+
+        function avatarGradient(seed) {
+          const palettes = [
+            'linear-gradient(135deg, #8B7DA8, #C4A6B0)',
+            'linear-gradient(135deg, #C4A6B0, #E8D5DD)',
+            'linear-gradient(135deg, #7BAE98, #B8AFCA)',
+            'linear-gradient(135deg, #D4A76A, #C4A6B0)',
+            'linear-gradient(135deg, #8B7DA8, #7BAE98)',
+          ];
+          let h = 0;
+          for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+          return palettes[h % palettes.length];
+        }
+
+        function renderStars(count) {
+          const n = Math.max(0, Math.min(5, count || 0));
+          let html = '';
+          for (let i = 0; i < n; i++) {
+            html += '<i data-lucide="star" class="w-3.5 h-3.5 fill-[#D4A76A]" style="color:#D4A76A;"></i>';
+          }
+          for (let i = n; i < 5; i++) {
+            html += '<i data-lucide="star" class="w-3.5 h-3.5" style="color:#E0D8D0;"></i>';
+          }
+          return html;
+        }
+
+        function renderPlayers(playersStats, winnerNickname) {
+          const container = document.getElementById('players-stats');
+          if (!container) return;
+          if (!playersStats || playersStats.length === 0) {
+            container.innerHTML = '<p class="text-sm" style="color:#A09890;">暂无玩家数据</p>';
+            return;
+          }
+          container.innerHTML = playersStats.map(function(p) {
+            const isWinner = p.isWinner || (winnerNickname && p.nickname === winnerNickname);
+            const cardStyle = isWinner
+              ? 'background: rgba(255,255,255,0.7); border: 1px solid rgba(212,167,106,0.3); box-shadow: 0 4px 16px rgba(212,167,106,0.1);'
+              : 'background: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.4); box-shadow: 0 4px 16px rgba(61,56,53,0.06);';
+            const winnerBadge = isWinner
+              ? '<div class="absolute top-2 right-2"><span class="text-[10px] font-semibold px-2 py-0.5 rounded-full" style="background: rgba(212,167,106,0.15); color: #D4A76A;">推理之星</span></div>'
+              : '';
+            const botBadge = p.isBot
+              ? '<span class="inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full ml-1" style="background: rgba(139,125,168,0.12); color: #8B7DA8;">AI</span>'
+              : '';
+            const relative = isWinner ? ' relative overflow-hidden' : '';
+            return '<div class="backdrop-blur-xl rounded-2xl p-5 text-center transition-all duration-300 ease-out hover:scale-[1.02]' + relative + '" style="' + cardStyle + '">' +
+              winnerBadge +
+              '<div class="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center text-sm font-bold" style="background: ' + avatarGradient(p.nickname) + '; color: white;">' + Helpers.escape(avatarText(p.nickname)) + '</div>' +
+              '<p class="text-sm font-semibold" style="color: #3D3835;">' + Helpers.escape(p.nickname) + botBadge + '</p>' +
+              '<p class="text-xs mt-1" style="color: #A09890;">提问 ' + (p.questionsCount || 0) + ' 次</p>' +
+              '<div class="flex items-center justify-center gap-0.5 mt-2.5">' + renderStars(p.stars) + '</div>' +
+              '</div>';
+          }).join('');
+          Helpers.refreshIcons();
+        }
+
+        function renderWinner(data) {
+          const winnerSection = document.getElementById('winner-section');
+          const noWinnerSection = document.getElementById('no-winner-section');
+          if (data.winner && data.winner.nickname) {
+            if (winnerSection) winnerSection.style.display = '';
+            if (noWinnerSection) noWinnerSection.style.display = 'none';
+            const avatar = document.getElementById('winner-avatar');
+            const name = document.getElementById('winner-name');
+            const desc = document.getElementById('winner-desc');
+            if (avatar) {
+              avatar.textContent = avatarText(data.winner.nickname);
+              avatar.style.background = avatarGradient(data.winner.nickname);
+            }
+            if (name) name.textContent = data.winner.nickname;
+            if (desc) {
+              const isMe = userInfo && userInfo.nickname === data.winner.nickname;
+              desc.textContent = isMe ? '你是最接近真相的玩家！' : '本局最接近真相的玩家';
+            }
+          } else {
+            if (winnerSection) winnerSection.style.display = 'none';
+            if (noWinnerSection) noWinnerSection.style.display = '';
+            const title = document.getElementById('reveal-title');
+            const subtitle = document.getElementById('reveal-subtitle');
+            if (title) title.textContent = '对局结束';
+            if (subtitle) subtitle.textContent = '本轮无人接近真相';
+          }
+        }
+
+        function renderSummary(data) {
+          const rounds = document.getElementById('summary-rounds');
+          const duration = document.getElementById('summary-duration');
+          const puzzle = document.getElementById('summary-puzzle');
+          const diff = document.getElementById('summary-difficulty');
+          if (rounds) rounds.textContent = data.totalRounds || 0;
+          if (duration) duration.textContent = Helpers.formatDuration(data.duration);
+          if (puzzle) puzzle.textContent = data.puzzleTitle || '—';
+          if (diff) {
+            diff.textContent = Helpers.difficultyLabel(data.difficulty);
+          }
+        }
+
+        function renderTruth(data) {
+          const truth = document.getElementById('truth-text');
+          const scenario = document.getElementById('original-scenario');
+          if (truth) truth.textContent = data.truth || '（无）';
+          if (scenario) scenario.textContent = '"' + (data.originalScenario || '') + '"';
+        }
+
+        async function loadReveal() {
+          if (!gameId) {
+            Helpers.toast('缺少对局 ID', 'error');
+            return;
+          }
+          try {
+            const data = await Api.getReveal(gameId);
+            renderWinner(data);
+            renderTruth(data);
+            renderPlayers(data.playersStats, data.winner && data.winner.nickname);
+            renderSummary(data);
+          } catch (err) {
+            console.error('[reveal] 加载失败:', err);
+            Helpers.toast(err.message || '加载揭晓数据失败', 'error');
+            const truth = document.getElementById('truth-text');
+            if (truth) truth.textContent = '加载失败：' + (err.message || '未知错误');
+          }
+        }
+
+        // 按钮事件
+        const btnReplay = document.getElementById('btn-replay');
+        const btnBack = document.getElementById('btn-back-hall');
+        if (btnReplay) btnReplay.addEventListener('click', function() {
+          location.href = 'match-hall.html';
+        });
+        if (btnBack) btnBack.addEventListener('click', function() {
+          location.href = 'match-hall.html';
+        });
+
+        loadReveal();
       })();
     </script>
 </body>

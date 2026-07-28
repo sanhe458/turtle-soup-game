@@ -343,10 +343,10 @@
                style="background: linear-gradient(135deg, var(--ts-purple-soft), var(--ts-pink-soft));">
             <i data-lucide="user" class="w-4 h-4 text-white/80"></i>
           </div>
-          <input type="text" placeholder="输入你的昵称"
+          <input id="nicknameInput" type="text" placeholder="输入你的昵称" maxlength="16"
                  class="flex-1 bg-transparent text-sm tracking-tight outline-none placeholder-opacity-50"
                  style="color: var(--ts-charcoal);">
-          <button class="px-4 py-1.5 rounded-xl text-xs font-medium text-white tracking-tight
+          <button id="nicknameBtn" class="px-4 py-1.5 rounded-xl text-xs font-medium text-white tracking-tight
                          transition-all duration-300 ease-out hover:scale-105 active:scale-95 shrink-0"
                   style="background: linear-gradient(135deg, var(--ts-purple), #A090BF);">
             确认
@@ -374,10 +374,10 @@
         </p>
 
         <!-- CTA Button -->
-        <button class="relative mt-8 cta-pulse px-10 py-3.5 rounded-2xl text-white font-semibold text-base tracking-tight
+        <button id="startMatchBtn" class="relative mt-8 cta-pulse px-10 py-3.5 rounded-2xl text-white font-semibold text-base tracking-tight
                        transition-all duration-300 ease-out hover:scale-[1.03] hover:brightness-105 active:scale-[0.98]"
                 style="background: linear-gradient(135deg, var(--ts-purple), #A090BF); border: none; cursor: pointer;">
-          <span class="flex items-center gap-2">
+          <span id="startMatchText" class="flex items-center gap-2">
             <i data-lucide="play" class="w-5 h-5"></i>
             开始匹配
           </span>
@@ -389,17 +389,17 @@
         <!-- Stat: 今日场次 -->
         <div class="glass-card p-4 flex flex-col items-center text-center">
           <p class="text-xs tracking-wide mb-1" style="color: var(--ts-muted);">今日场次</p>
-          <p class="text-2xl font-bold tracking-tight" style="color: var(--ts-charcoal);">5</p>
+          <p id="statToday" class="text-2xl font-bold tracking-tight" style="color: var(--ts-charcoal);">—</p>
         </div>
         <!-- Stat: 胜率 -->
         <div class="glass-card p-4 flex flex-col items-center text-center">
           <p class="text-xs tracking-wide mb-1" style="color: var(--ts-muted);">胜率</p>
-          <p class="text-2xl font-bold tracking-tight" style="color: var(--ts-green);">72%</p>
+          <p id="statWinrate" class="text-2xl font-bold tracking-tight" style="color: var(--ts-green);">—</p>
         </div>
         <!-- Stat: 连胜 -->
         <div class="glass-card p-4 flex flex-col items-center text-center">
           <p class="text-xs tracking-wide mb-1" style="color: var(--ts-muted);">连胜</p>
-          <p class="text-2xl font-bold tracking-tight" style="color: var(--ts-amber);">3</p>
+          <p id="statStreak" class="text-2xl font-bold tracking-tight" style="color: var(--ts-amber);">—</p>
         </div>
       </section>
 
@@ -413,53 +413,10 @@
             </a>
           </div>
 
-          <div class="flex flex-col gap-0.5">
-            <!-- Game 1 — Win -->
-            <div class="game-row flex items-center gap-3 px-3 py-3 rounded-xl">
-              <div class="flex -space-x-2 shrink-0">
-                <div class="w-7 h-7 rounded-full ring-2 ring-white/80" style="background: linear-gradient(135deg, #A0C4B8, #7BAE98);"></div>
-                <div class="w-7 h-7 rounded-full ring-2 ring-white/80" style="background: linear-gradient(135deg, #C4A6B0, #B8909A);"></div>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium truncate" style="color: var(--ts-charcoal);">与 小明、小红 对局</p>
-                <p class="text-xs" style="color: var(--ts-muted);">3 分钟前</p>
-              </div>
-              <span class="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full"
-                    style="background: rgba(123,174,152,0.15); color: var(--ts-green);">
-                胜利
-              </span>
-            </div>
-
-            <!-- Game 2 — Loss -->
-            <div class="game-row flex items-center gap-3 px-3 py-3 rounded-xl">
-              <div class="flex -space-x-2 shrink-0">
-                <div class="w-7 h-7 rounded-full ring-2 ring-white/80" style="background: linear-gradient(135deg, #D4A76A, #C49560);"></div>
-                <div class="w-7 h-7 rounded-full ring-2 ring-white/80" style="background: linear-gradient(135deg, #B8AFCA, #8B7DA8);"></div>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium truncate" style="color: var(--ts-charcoal);">与 阿杰、路飞 对局</p>
-                <p class="text-xs" style="color: var(--ts-muted);">28 分钟前</p>
-              </div>
-              <span class="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full"
-                    style="background: rgba(212,144,138,0.15); color: var(--ts-red-soft);">
-                失败
-              </span>
-            </div>
-
-            <!-- Game 3 — Win -->
-            <div class="game-row flex items-center gap-3 px-3 py-3 rounded-xl">
-              <div class="flex -space-x-2 shrink-0">
-                <div class="w-7 h-7 rounded-full ring-2 ring-white/80" style="background: linear-gradient(135deg, #E8D5DD, #C4A6B0);"></div>
-                <div class="w-7 h-7 rounded-full ring-2 ring-white/80" style="background: linear-gradient(135deg, #B8AFCA, #A090BF);"></div>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium truncate" style="color: var(--ts-charcoal);">与 慕容、一休 对局</p>
-                <p class="text-xs" style="color: var(--ts-muted);">1 小时前</p>
-              </div>
-              <span class="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full"
-                    style="background: rgba(123,174,152,0.15); color: var(--ts-green);">
-                胜利
-              </span>
+          <div id="recentGamesList" class="flex flex-col gap-0.5">
+            <!-- 由 JS 动态渲染 -->
+            <div class="px-3 py-6 text-center text-sm" style="color: var(--ts-muted);">
+              暂无最近对局记录
             </div>
           </div>
         </div>
@@ -469,28 +426,275 @@
 
   </div><!-- end main content wrapper -->
 
+  <!-- ========== MATCHING OVERLAY ========== -->
+  <div id="matchingOverlay" class="fixed inset-0 z-[60] hidden items-center justify-center" style="background: rgba(245,240,235,0.85); backdrop-filter: blur(12px);">
+    <div class="glass-card p-8 max-w-sm w-full mx-4 text-center">
+      <div class="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4"
+           style="background: linear-gradient(135deg, var(--ts-purple), var(--ts-pink));">
+        <i data-lucide="search" class="w-8 h-8 text-white animate-pulse"></i>
+      </div>
+      <h3 id="matchingTitle" class="text-lg font-semibold tracking-tight mb-2" style="color: var(--ts-charcoal);">匹配中…</h3>
+      <p id="matchingDesc" class="text-sm tracking-wide mb-4" style="color: var(--ts-charcoal-soft);">正在为你寻找对手</p>
+      <div class="w-full h-1.5 rounded-full overflow-hidden mb-4" style="background: var(--ts-surface-alt);">
+        <div id="matchingProgress" class="h-full rounded-full transition-all duration-1000 ease-out" style="width: 10%; background: linear-gradient(90deg, var(--ts-purple), var(--ts-pink));"></div>
+      </div>
+      <button id="cancelMatchBtn" class="text-xs tracking-wide px-4 py-2 rounded-xl transition-all hover:scale-105"
+              style="color: var(--ts-muted); border: 1px solid var(--ts-border);">
+        取消匹配
+      </button>
+    </div>
+  </div>
+
+  <!-- ========== BOT PROMPT MODAL ========== -->
+  <div id="botPromptModal" class="fixed inset-0 z-[70] hidden items-center justify-center" style="background: rgba(61,56,53,0.4); backdrop-filter: blur(8px);">
+    <div class="glass-card p-8 max-w-sm w-full mx-4 text-center">
+      <div class="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4"
+           style="background: linear-gradient(135deg, var(--ts-amber), var(--ts-pink));">
+        <i data-lucide="bot" class="w-8 h-8 text-white"></i>
+      </div>
+      <h3 class="text-lg font-semibold tracking-tight mb-2" style="color: var(--ts-charcoal);">是否接受 AI 机器人补位？</h3>
+      <p class="text-sm tracking-wide mb-6" style="color: var(--ts-charcoal-soft);">
+        30 秒内未匹配到足够真人玩家，可以立即用 AI 机器人补位开始游戏
+      </p>
+      <div class="flex gap-3">
+        <button id="declineBotsBtn" class="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium tracking-tight transition-all hover:scale-105"
+                style="background: var(--ts-surface-alt); color: var(--ts-charcoal);">
+          继续等待
+        </button>
+        <button id="acceptBotsBtn" class="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-white tracking-tight transition-all hover:scale-105"
+                style="background: linear-gradient(135deg, var(--ts-purple), #A090BF);">
+          接受 AI
+        </button>
+      </div>
+    </div>
+  </div>
+
 </main>
 
+<script src="https://cdn.socket.io/4.8.0/socket.io.min.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/socket.js"></script>
+<script src="../js/helpers.js"></script>
 <script>
   // Initialize Lucide icons
   lucide.createIcons();
 
-  // Mobile sidebar toggle (CSS-only visual design, minimal JS for drawer state)
+  // Mobile sidebar toggle
   (function() {
     const menuBtn  = document.getElementById('menuBtn');
     const drawer   = document.getElementById('sidebarDrawer');
     const overlay  = document.getElementById('sidebarOverlay');
-
     function openDrawer()  { drawer.classList.add('open');  overlay.classList.add('open');  document.body.style.overflow = 'hidden'; }
     function closeDrawer() { drawer.classList.remove('open'); overlay.classList.remove('open'); document.body.style.overflow = ''; }
-
-    if (menuBtn) {
-      menuBtn.addEventListener('click', openDrawer);
-    }
-    if (overlay) {
-      overlay.addEventListener('click', closeDrawer);
-    }
+    if (menuBtn) menuBtn.addEventListener('click', openDrawer);
+    if (overlay) overlay.addEventListener('click', closeDrawer);
   })();
+
+  // ===== 主逻辑 =====
+  const nicknameInput = document.getElementById('nicknameInput');
+  const nicknameBtn   = document.getElementById('nicknameBtn');
+  const startMatchBtn = document.getElementById('startMatchBtn');
+  const startMatchText = document.getElementById('startMatchText');
+  const matchingOverlay = document.getElementById('matchingOverlay');
+  const matchingTitle = document.getElementById('matchingTitle');
+  const matchingDesc = document.getElementById('matchingDesc');
+  const matchingProgress = document.getElementById('matchingProgress');
+  const cancelMatchBtn = document.getElementById('cancelMatchBtn');
+  const botPromptModal = document.getElementById('botPromptModal');
+  const acceptBotsBtn = document.getElementById('acceptBotsBtn');
+  const declineBotsBtn = document.getElementById('declineBotsBtn');
+
+  let isMatching = false;
+  let matchingTimer = null;
+  let progressValue = 10;
+
+  // 回填已存昵称
+  const savedInfo = Api.getUserInfo();
+  if (savedInfo && savedInfo.nickname) {
+    nicknameInput.value = savedInfo.nickname;
+  }
+
+  // 加载个人统计
+  async function loadProfile() {
+    if (!Api.getUserToken()) return;
+    try {
+      const profile = await Api.getProfile();
+      document.getElementById('statToday').textContent = profile.todayGames || 0;
+      document.getElementById('statWinrate').textContent = profile.totalGames > 0
+        ? Math.round(profile.winRate * 100) + '%' : '—';
+      document.getElementById('statStreak').textContent = profile.streak || 0;
+    } catch (err) {
+      console.warn('加载统计失败:', err.message);
+    }
+  }
+
+  // 加载最近对局
+  async function loadRecentGames() {
+    if (!Api.getUserToken()) return;
+    const list = document.getElementById('recentGamesList');
+    try {
+      const games = await Api.getRecentGames();
+      if (!games || games.length === 0) {
+        list.innerHTML = '<div class="px-3 py-6 text-center text-sm" style="color: var(--ts-muted);">暂无最近对局记录</div>';
+        return;
+      }
+      list.innerHTML = games.slice(0, 5).map(g => {
+        const isWin = g.result === '胜利';
+        const opponents = (g.opponents || []).join('、') || 'AI 玩家';
+        const colors = [
+          'linear-gradient(135deg, #A0C4B8, #7BAE98)',
+          'linear-gradient(135deg, #C4A6B0, #B8909A)',
+          'linear-gradient(135deg, #D4A76A, #C49560)',
+          'linear-gradient(135deg, #B8AFCA, #8B7DA8)',
+        ];
+        return `
+          <div class="game-row flex items-center gap-3 px-3 py-3 rounded-xl">
+            <div class="flex -space-x-2 shrink-0">
+              <div class="w-7 h-7 rounded-full ring-2 ring-white/80" style="background: ${colors[0]};"></div>
+              <div class="w-7 h-7 rounded-full ring-2 ring-white/80" style="background: ${colors[1]};"></div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium truncate" style="color: var(--ts-charcoal);">与 ${Helpers.escape(opponents)} 对局</p>
+              <p class="text-xs" style="color: var(--ts-muted);">${Helpers.formatTimeAgo(g.timeAgo)}</p>
+            </div>
+            <span class="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full"
+                  style="background: ${isWin ? 'rgba(123,174,152,0.15)' : 'rgba(212,144,138,0.15)'}; color: ${isWin ? 'var(--ts-green)' : 'var(--ts-red-soft)'};">
+              ${g.result}
+            </span>
+          </div>
+        `;
+      }).join('');
+    } catch (err) {
+      console.warn('加载最近对局失败:', err.message);
+    }
+  }
+
+  // 确认昵称
+  async function confirmNickname() {
+    const nickname = nicknameInput.value.trim();
+    if (!nickname) {
+      Helpers.toast('请输入昵称', 'warn');
+      nicknameInput.focus();
+      return;
+    }
+    nicknameBtn.disabled = true;
+    nicknameBtn.textContent = '保存中…';
+    try {
+      const res = await Api.register(nickname);
+      Api.setUserToken(res.token, { userId: res.userId, nickname: res.nickname });
+      Helpers.toast('昵称已保存', 'success');
+      loadProfile();
+      loadRecentGames();
+    } catch (err) {
+      Helpers.toast('保存失败：' + err.message, 'error');
+    } finally {
+      nicknameBtn.disabled = false;
+      nicknameBtn.textContent = '确认';
+    }
+  }
+
+  // 开始匹配
+  function startMatch() {
+    if (!Api.getUserToken()) {
+      Helpers.toast('请先输入昵称并确认', 'warn');
+      nicknameInput.focus();
+      return;
+    }
+    if (isMatching) return;
+    isMatching = true;
+    progressValue = 10;
+    startMatchBtn.disabled = true;
+    startMatchText.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> 匹配中…';
+    Helpers.refreshIcons();
+
+    matchingOverlay.classList.remove('hidden');
+    matchingOverlay.classList.add('flex');
+    matchingTitle.textContent = '匹配中…';
+    matchingDesc.textContent = '正在为你寻找对手';
+    matchingProgress.style.width = '10%';
+
+    // 进度条动画
+    matchingTimer = setInterval(() => {
+      progressValue = Math.min(90, progressValue + Math.random() * 8);
+      matchingProgress.style.width = progressValue + '%';
+    }, 800);
+
+    const socket = SocketClient.reconnect();
+    socket.off('match:status');
+    socket.off('match:bot_prompt');
+    socket.off('match:success');
+    socket.off('match:cancelled');
+    socket.off('error');
+
+    socket.on('match:status', (data) => {
+      matchingDesc.textContent = `队列位置 #${data.position} · 已等待 ${data.waitedSec}s`;
+    });
+    socket.on('match:bot_prompt', () => {
+      botPromptModal.classList.remove('hidden');
+      botPromptModal.classList.add('flex');
+    });
+    socket.on('match:success', (data) => {
+      cleanupMatch();
+      Helpers.toast('匹配成功，进入对局', 'success');
+      setTimeout(() => {
+        location.href = 'game-play-v2.html?gameId=' + data.gameId;
+      }, 500);
+    });
+    socket.on('match:cancelled', (data) => {
+      cleanupMatch();
+      Helpers.toast('匹配已取消' + (data.reason ? '：' + data.reason : ''), 'info');
+    });
+    socket.on('error', (data) => {
+      Helpers.toast(data.message || '发生错误', 'error');
+    });
+
+    socket.emit('match:join', { token: Api.getUserToken() });
+  }
+
+  function cleanupMatch() {
+    isMatching = false;
+    if (matchingTimer) {
+      clearInterval(matchingTimer);
+      matchingTimer = null;
+    }
+    matchingOverlay.classList.add('hidden');
+    matchingOverlay.classList.remove('flex');
+    botPromptModal.classList.add('hidden');
+    botPromptModal.classList.remove('flex');
+    startMatchBtn.disabled = false;
+    startMatchText.innerHTML = '<i data-lucide="play" class="w-5 h-5"></i> 开始匹配';
+    Helpers.refreshIcons();
+  }
+
+  function cancelMatch() {
+    const socket = SocketClient.getSocket();
+    if (socket) socket.emit('match:cancel');
+    cleanupMatch();
+  }
+
+  // 事件绑定
+  nicknameBtn.addEventListener('click', confirmNickname);
+  nicknameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') confirmNickname();
+  });
+  startMatchBtn.addEventListener('click', startMatch);
+  cancelMatchBtn.addEventListener('click', cancelMatch);
+  acceptBotsBtn.addEventListener('click', () => {
+    botPromptModal.classList.add('hidden');
+    botPromptModal.classList.remove('flex');
+    const socket = SocketClient.getSocket();
+    if (socket) socket.emit('match:accept_bots');
+  });
+  declineBotsBtn.addEventListener('click', () => {
+    botPromptModal.classList.add('hidden');
+    botPromptModal.classList.remove('flex');
+    const socket = SocketClient.getSocket();
+    if (socket) socket.emit('match:decline_bots');
+  });
+
+  // 初始加载
+  loadProfile();
+  loadRecentGames();
 </script>
 </body>
 </html>

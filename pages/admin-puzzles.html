@@ -69,6 +69,8 @@
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
     <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/helpers.js"></script>
     <style type="text/tailwindcss">
   @theme inline {
     --color-background: var(--ts-background);
@@ -185,11 +187,11 @@
 
             <!-- Nav -->
             <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-                <a href="#" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
+                <a href="admin-dashboard.html" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
                     <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
                     <span>总览</span>
                 </a>
-                <a href="#" class="ts-nav-item active flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium bg-white/15 text-white transition-all duration-200">
+                <a href="admin-puzzles.html" class="ts-nav-item active flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium bg-white/15 text-white transition-all duration-200">
                     <i data-lucide="book-open" class="w-[18px] h-[18px] text-[#B8AFCA]"></i>
                     <span>题库管理</span>
                 </a>
@@ -205,11 +207,6 @@
                     <i data-lucide="brain" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
                     <span>AI 配置</span>
                 </a>
-                <a href="#" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group relative">
-                    <i data-lucide="flag" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
-                    <span>举报审核</span>
-                    <span class="absolute top-1.5 right-2 w-5 h-5 bg-[#D4908A] text-white text-[10px] font-bold rounded-full flex items-center justify-center">5</span>
-                </a>
                 <a href="#" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
                     <i data-lucide="settings" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
                     <span>系统设置</span>
@@ -222,13 +219,14 @@
 
             <!-- Admin user -->
             <div class="px-4 py-4 border-t border-white/10 flex items-center gap-3">
-                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#8B7DA8] to-[#C4A6B0] flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="shield" class="w-4 h-4 text-white"></i>
+                <div id="admin-avatar" class="w-9 h-9 rounded-full bg-gradient-to-br from-[#8B7DA8] to-[#C4A6B0] flex items-center justify-center flex-shrink-0 text-white text-xs font-bold">SA</div>
+                <div class="min-w-0 flex-1">
+                    <p id="admin-name" class="text-xs font-medium text-white truncate">管理员</p>
+                    <p id="admin-role" class="text-[10px] text-white/40 truncate">—</p>
                 </div>
-                <div class="min-w-0">
-                    <p class="text-xs font-medium text-white truncate">超级管理员</p>
-                    <p class="text-[10px] text-white/40 truncate">admin@turtlesoup.com</p>
-                </div>
+                <button id="btn-logout" title="退出登录" class="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all duration-200">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                </button>
             </div>
         </aside>
 
@@ -253,7 +251,7 @@
                         <h1 class="text-2xl font-bold text-[#3D3835] tracking-tight">题库管理</h1>
                         <p class="text-sm text-[#A09890] mt-1">管理海龟汤题目库，审核与编辑题目内容</p>
                     </div>
-                    <button class="ts-btn-add flex items-center gap-2 px-5 py-2.5 bg-[#8B7DA8] hover:bg-[#7B6D98] text-white text-sm font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] w-fit">
+                    <button id="btn-add" class="flex items-center gap-2 px-5 py-2.5 bg-[#8B7DA8] hover:bg-[#7B6D98] text-white text-sm font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] w-fit">
                         <i data-lucide="plus" class="w-4 h-4"></i>
                         添加新题
                     </button>
@@ -261,21 +259,21 @@
 
                 <!-- Filter row -->
                 <div class="flex flex-col sm:flex-row gap-3">
-                    <select class="ts-filter-select px-4 py-2 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200 appearance-none min-w-[140px]">
-                        <option>全部难度</option>
-                        <option>简单</option>
-                        <option>中等</option>
-                        <option>困难</option>
+                    <select id="filter-difficulty" class="ts-filter-select px-4 py-2 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200 appearance-none min-w-[140px]">
+                        <option value="all">全部难度</option>
+                        <option value="easy">简单</option>
+                        <option value="medium">中等</option>
+                        <option value="hard">困难</option>
                     </select>
-                    <select class="ts-filter-select px-4 py-2 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200 appearance-none min-w-[140px]">
-                        <option>全部状态</option>
-                        <option>已上线</option>
-                        <option>待审核</option>
-                        <option>已下架</option>
+                    <select id="filter-status" class="ts-filter-select px-4 py-2 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200 appearance-none min-w-[140px]">
+                        <option value="all">全部状态</option>
+                        <option value="online">已上线</option>
+                        <option value="pending">待审核</option>
+                        <option value="offline">已下架</option>
                     </select>
                     <div class="relative flex-1 max-w-md">
                         <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A09890]"></i>
-                        <input type="text" placeholder="搜索题目 ID 或关键词..." class="w-full pl-10 pr-4 py-2 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] placeholder-[#A09890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200">
+                        <input id="search-input" type="text" placeholder="搜索题目标题或汤面..." class="w-full pl-10 pr-4 py-2 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] placeholder-[#A09890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200">
                     </div>
                 </div>
             </div>
@@ -291,7 +289,7 @@
                             </div>
                             <span class="text-xs text-[#A09890] font-medium">总题目数</span>
                         </div>
-                        <p class="text-2xl font-bold text-[#3D3835]">356</p>
+                        <p id="stat-total" class="text-2xl font-bold text-[#3D3835]">—</p>
                     </div>
                     <!-- Online -->
                     <div class="backdrop-blur-xl bg-white/70 border border-white/40 shadow-lg rounded-2xl p-4 sm:p-5 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
@@ -301,7 +299,7 @@
                             </div>
                             <span class="text-xs text-[#A09890] font-medium">已上线</span>
                         </div>
-                        <p class="text-2xl font-bold text-[#7BAE98]">312</p>
+                        <p id="stat-online" class="text-2xl font-bold text-[#7BAE98]">—</p>
                     </div>
                     <!-- Pending -->
                     <div class="backdrop-blur-xl bg-white/70 border border-white/40 shadow-lg rounded-2xl p-4 sm:p-5 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
@@ -311,7 +309,7 @@
                             </div>
                             <span class="text-xs text-[#A09890] font-medium">待审核</span>
                         </div>
-                        <p class="text-2xl font-bold text-[#D4A76A]">23</p>
+                        <p id="stat-pending" class="text-2xl font-bold text-[#D4A76A]">—</p>
                     </div>
                     <!-- Offline -->
                     <div class="backdrop-blur-xl bg-white/70 border border-white/40 shadow-lg rounded-2xl p-4 sm:p-5 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
@@ -321,7 +319,7 @@
                             </div>
                             <span class="text-xs text-[#A09890] font-medium">已下架</span>
                         </div>
-                        <p class="text-2xl font-bold text-[#A09890]">21</p>
+                        <p id="stat-offline" class="text-2xl font-bold text-[#A09890]">—</p>
                     </div>
                 </div>
             </div>
@@ -344,158 +342,27 @@
                                     <th class="px-5 py-3.5 text-right text-xs font-semibold text-[#A09890] uppercase tracking-wider">操作</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-[#E0D8D0]/40">
-                                <!-- Row 1 -->
-                                <tr class="hover:bg-[#8B7DA8]/5 transition-colors duration-200">
-                                    <td class="px-5 py-3.5 text-xs font-mono text-[#8B7DA8] font-semibold">#001</td>
-                                    <td class="px-5 py-3.5 text-sm text-[#3D3835] max-w-[200px] truncate">一个男人在海边散步时...</td>
-                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#7BAE98]/15 text-[#5a9a7e]">简单</span></td>
-                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#7BAE98]/15 text-[#5a9a7e]">已上线</span></td>
-                                    <td class="px-5 py-3.5 text-sm text-[#6B6560] font-medium">2,847</td>
-                                    <td class="px-5 py-3.5 text-sm text-[#6B6560] font-medium">94%</td>
-                                    <td class="px-5 py-3.5 text-xs text-[#A09890]">2025-01-15</td>
-                                    <td class="px-5 py-3.5 text-right">
-                                        <div class="flex items-center justify-end gap-1.5">
-                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#8B7DA8]/10 text-[#8B7DA8] transition-all duration-200 hover:scale-110" title="编辑">
-                                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                                            </button>
-                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#D4908A]/10 text-[#D4908A] transition-all duration-200 hover:scale-110" title="下架">
-                                                <i data-lucide="eye-off" class="w-3.5 h-3.5"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <!-- Row 2 -->
-                                <tr class="hover:bg-[#8B7DA8]/5 transition-colors duration-200">
-                                    <td class="px-5 py-3.5 text-xs font-mono text-[#8B7DA8] font-semibold">#002</td>
-                                    <td class="px-5 py-3.5 text-sm text-[#3D3835] max-w-[200px] truncate">深夜，一个女人接到一个电话...</td>
-                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#D4A76A]/15 text-[#b8893a]">中等</span></td>
-                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#7BAE98]/15 text-[#5a9a7e]">已上线</span></td>
-                                    <td class="px-5 py-3.5 text-sm text-[#6B6560] font-medium">1,923</td>
-                                    <td class="px-5 py-3.5 text-sm text-[#6B6560] font-medium">91%</td>
-                                    <td class="px-5 py-3.5 text-xs text-[#A09890]">2025-02-03</td>
-                                    <td class="px-5 py-3.5 text-right">
-                                        <div class="flex items-center justify-end gap-1.5">
-                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#8B7DA8]/10 text-[#8B7DA8] transition-all duration-200 hover:scale-110" title="编辑">
-                                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                                            </button>
-                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#D4908A]/10 text-[#D4908A] transition-all duration-200 hover:scale-110" title="下架">
-                                                <i data-lucide="eye-off" class="w-3.5 h-3.5"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <!-- Row 3 -->
-                                <tr class="hover:bg-[#8B7DA8]/5 transition-colors duration-200">
-                                    <td class="px-5 py-3.5 text-xs font-mono text-[#8B7DA8] font-semibold">#003</td>
-                                    <td class="px-5 py-3.5 text-sm text-[#3D3835] max-w-[200px] truncate">一个富翁死在密室里...</td>
-                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#D4908A]/15 text-[#c07068]">困难</span></td>
-                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#7BAE98]/15 text-[#5a9a7e]">已上线</span></td>
-                                    <td class="px-5 py-3.5 text-sm text-[#6B6560] font-medium">3,456</td>
-                                    <td class="px-5 py-3.5 text-sm text-[#6B6560] font-medium">96%</td>
-                                    <td class="px-5 py-3.5 text-xs text-[#A09890]">2025-01-28</td>
-                                    <td class="px-5 py-3.5 text-right">
-                                        <div class="flex items-center justify-end gap-1.5">
-                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#8B7DA8]/10 text-[#8B7DA8] transition-all duration-200 hover:scale-110" title="编辑">
-                                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                                            </button>
-                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#D4908A]/10 text-[#D4908A] transition-all duration-200 hover:scale-110" title="下架">
-                                                <i data-lucide="eye-off" class="w-3.5 h-3.5"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <!-- Row 4 -->
-                                <tr class="hover:bg-[#8B7DA8]/5 transition-colors duration-200 bg-[#D4A76A]/[0.03]">
-                                    <td class="px-5 py-3.5 text-xs font-mono text-[#8B7DA8] font-semibold">#004</td>
-                                    <td class="px-5 py-3.5 text-sm text-[#3D3835] max-w-[200px] truncate">小明的日记本上只有...</td>
-                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#7BAE98]/15 text-[#5a9a7e]">简单</span></td>
-                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#D4A76A]/15 text-[#b8893a]">待审核</span></td>
-                                    <td class="px-5 py-3.5 text-sm text-[#A09890]">0</td>
-                                    <td class="px-5 py-3.5 text-sm text-[#A09890]">—</td>
-                                    <td class="px-5 py-3.5 text-xs text-[#A09890]">2025-03-10</td>
-                                    <td class="px-5 py-3.5 text-right">
-                                        <div class="flex items-center justify-end gap-1.5">
-                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#7BAE98]/10 text-[#7BAE98] transition-all duration-200 hover:scale-110" title="审核">
-                                                <i data-lucide="check" class="w-3.5 h-3.5"></i>
-                                            </button>
-                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#8B7DA8]/10 text-[#8B7DA8] transition-all duration-200 hover:scale-110" title="编辑">
-                                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <!-- Row 5 -->
-                                <tr class="hover:bg-[#8B7DA8]/5 transition-colors duration-200">
-                                    <td class="px-5 py-3.5 text-xs font-mono text-[#8B7DA8] font-semibold">#005</td>
-                                    <td class="px-5 py-3.5 text-sm text-[#3D3835] max-w-[200px] truncate">雨夜，出租车司机...</td>
-                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#D4A76A]/15 text-[#b8893a]">中等</span></td>
-                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#7BAE98]/15 text-[#5a9a7e]">已上线</span></td>
-                                    <td class="px-5 py-3.5 text-sm text-[#6B6560] font-medium">1,102</td>
-                                    <td class="px-5 py-3.5 text-sm text-[#6B6560] font-medium">88%</td>
-                                    <td class="px-5 py-3.5 text-xs text-[#A09890]">2025-02-20</td>
-                                    <td class="px-5 py-3.5 text-right">
-                                        <div class="flex items-center justify-end gap-1.5">
-                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#8B7DA8]/10 text-[#8B7DA8] transition-all duration-200 hover:scale-110" title="编辑">
-                                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                                            </button>
-                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#D4908A]/10 text-[#D4908A] transition-all duration-200 hover:scale-110" title="下架">
-                                                <i data-lucide="eye-off" class="w-3.5 h-3.5"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <!-- Row 6 -->
-                                <tr class="hover:bg-[#8B7DA8]/5 transition-colors duration-200 opacity-70">
-                                    <td class="px-5 py-3.5 text-xs font-mono text-[#8B7DA8] font-semibold">#006</td>
-                                    <td class="px-5 py-3.5 text-sm text-[#3D3835] max-w-[200px] truncate">一个人在沙漠中发现了...</td>
-                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#D4908A]/15 text-[#c07068]">困难</span></td>
-                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#E0D8D0]/30 text-[#A09890]">已下架</span></td>
-                                    <td class="px-5 py-3.5 text-sm text-[#A09890]">456</td>
-                                    <td class="px-5 py-3.5 text-sm text-[#A09890]">72%</td>
-                                    <td class="px-5 py-3.5 text-xs text-[#A09890]">2024-12-05</td>
-                                    <td class="px-5 py-3.5 text-right">
-                                        <div class="flex items-center justify-end gap-1.5">
-                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#7BAE98]/10 text-[#7BAE98] transition-all duration-200 hover:scale-110" title="重新上线">
-                                                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
-                                            </button>
-                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#8B7DA8]/10 text-[#8B7DA8] transition-all duration-200 hover:scale-110" title="编辑">
-                                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
+                            <tbody id="puzzle-table-body" class="divide-y divide-[#E0D8D0]/40">
+                                <tr><td colspan="8" class="px-5 py-8 text-center text-[#A09890] text-sm">加载中…</td></tr>
                             </tbody>
                         </table>
                     </div>
 
                     <!-- Pagination -->
                     <div class="px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-[#E0D8D0]/40">
-                        <span class="text-xs text-[#A09890]">显示 1-6 / 共 356 条</span>
-                        <div class="flex items-center gap-1.5">
-                            <button class="w-8 h-8 rounded-lg flex items-center justify-center bg-white/50 border border-[#E0D8D0]/60 text-[#A09890] hover:bg-white/70 transition-all duration-200">
-                                <i data-lucide="chevron-left" class="w-4 h-4"></i>
-                            </button>
-                            <button class="w-8 h-8 rounded-lg flex items-center justify-center bg-[#8B7DA8] text-white text-xs font-semibold shadow-sm">1</button>
-                            <button class="w-8 h-8 rounded-lg flex items-center justify-center bg-white/50 border border-[#E0D8D0]/60 text-[#6B6560] text-xs font-medium hover:bg-white/70 transition-all duration-200">2</button>
-                            <button class="w-8 h-8 rounded-lg flex items-center justify-center bg-white/50 border border-[#E0D8D0]/60 text-[#6B6560] text-xs font-medium hover:bg-white/70 transition-all duration-200">3</button>
-                            <span class="w-8 h-8 flex items-center justify-center text-[#A09890] text-xs">...</span>
-                            <button class="w-8 h-8 rounded-lg flex items-center justify-center bg-white/50 border border-[#E0D8D0]/60 text-[#6B6560] text-xs font-medium hover:bg-white/70 transition-all duration-200">60</button>
-                            <button class="w-8 h-8 rounded-lg flex items-center justify-center bg-white/50 border border-[#E0D8D0]/60 text-[#A09890] hover:bg-white/70 transition-all duration-200">
-                                <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                            </button>
-                        </div>
+                        <span id="pagination-info" class="text-xs text-[#A09890]">加载中…</span>
+                        <div id="pagination-controls" class="flex items-center gap-1.5"></div>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- ========== EDIT PANEL (Right-side sliding panel) ========== -->
-        <div class="ts-edit-panel fixed top-0 right-0 z-50 h-screen w-full sm:w-[420px] lg:w-[40%] max-w-[560px] bg-[#F5F0EB]/90 backdrop-blur-2xl border-l border-[#E0D8D0]/60 shadow-2xl transform translate-x-full transition-transform duration-500 ease-out flex flex-col hidden lg:block">
+        <div id="edit-panel" class="ts-edit-panel fixed top-0 right-0 z-50 h-screen w-full sm:w-[420px] lg:w-[40%] max-w-[560px] bg-[#F5F0EB]/90 backdrop-blur-2xl border-l border-[#E0D8D0]/60 shadow-2xl transform translate-x-full transition-transform duration-500 ease-out flex flex-col">
             <!-- Panel header -->
             <div class="px-6 py-5 flex items-center justify-between border-b border-[#E0D8D0]/40">
-                <h2 class="text-lg font-bold text-[#3D3835]">添加新题目</h2>
-                <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#E0D8D0]/40 text-[#A09890] transition-all duration-200 hover:scale-110">
+                <h2 id="edit-panel-title" class="text-lg font-bold text-[#3D3835]">添加新题目</h2>
+                <button id="btn-close-panel" class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#E0D8D0]/40 text-[#A09890] transition-all duration-200 hover:scale-110">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
@@ -505,32 +372,32 @@
                 <!-- 汤面标题 -->
                 <div>
                     <label class="block text-xs font-semibold text-[#6B6560] mb-2 tracking-wide uppercase">汤面标题</label>
-                    <input type="text" placeholder="输入题目标题..." class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] placeholder-[#A09890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200">
+                    <input id="input-title" type="text" placeholder="输入题目标题..." class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] placeholder-[#A09890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200">
                 </div>
 
                 <!-- 汤面内容 -->
                 <div>
                     <label class="block text-xs font-semibold text-[#6B6560] mb-2 tracking-wide uppercase">汤面内容</label>
-                    <textarea rows="3" placeholder="描述海龟汤的汤面（谜面）..." class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] placeholder-[#A09890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200 resize-none"></textarea>
+                    <textarea id="input-scenario" rows="3" placeholder="描述海龟汤的汤面（谜面）..." class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] placeholder-[#A09890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200 resize-none"></textarea>
                 </div>
 
                 <!-- 汤底/答案 -->
                 <div>
                     <label class="block text-xs font-semibold text-[#6B6560] mb-2 tracking-wide uppercase">汤底 / 答案</label>
-                    <textarea rows="3" placeholder="输入完整的汤底真相..." class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] placeholder-[#A09890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200 resize-none"></textarea>
+                    <textarea id="input-truth" rows="3" placeholder="输入完整的汤底真相..." class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] placeholder-[#A09890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200 resize-none"></textarea>
                 </div>
 
                 <!-- 难度选择 -->
                 <div>
                     <label class="block text-xs font-semibold text-[#6B6560] mb-2 tracking-wide uppercase">难度选择</label>
-                    <div class="flex gap-2">
-                        <button class="flex-1 px-4 py-2 text-sm font-medium rounded-xl border-2 border-[#7BAE98]/40 bg-[#7BAE98]/10 text-[#5a9a7e] hover:border-[#7BAE98] hover:bg-[#7BAE98]/20 transition-all duration-200">
+                    <div id="difficulty-group" class="flex gap-2">
+                        <button data-difficulty="easy" class="difficulty-btn flex-1 px-4 py-2 text-sm font-medium rounded-xl border-2 border-[#7BAE98]/40 bg-[#7BAE98]/10 text-[#5a9a7e] hover:border-[#7BAE98] hover:bg-[#7BAE98]/20 transition-all duration-200">
                             简单
                         </button>
-                        <button class="flex-1 px-4 py-2 text-sm font-medium rounded-xl border-2 border-[#D4A76A]/40 bg-[#D4A76A]/10 text-[#b8893a] hover:border-[#D4A76A] hover:bg-[#D4A76A]/20 transition-all duration-200">
+                        <button data-difficulty="medium" class="difficulty-btn flex-1 px-4 py-2 text-sm font-medium rounded-xl border-2 border-[#D4A76A]/40 bg-[#D4A76A]/10 text-[#b8893a] hover:border-[#D4A76A] hover:bg-[#D4A76A]/20 transition-all duration-200">
                             中等
                         </button>
-                        <button class="flex-1 px-4 py-2 text-sm font-medium rounded-xl border-2 border-[#D4908A]/40 bg-[#D4908A]/10 text-[#c07068] hover:border-[#D4908A] hover:bg-[#D4908A]/20 transition-all duration-200">
+                        <button data-difficulty="hard" class="difficulty-btn flex-1 px-4 py-2 text-sm font-medium rounded-xl border-2 border-[#D4908A]/40 bg-[#D4908A]/10 text-[#c07068] hover:border-[#D4908A] hover:bg-[#D4908A]/20 transition-all duration-200">
                             困难
                         </button>
                     </div>
@@ -539,37 +406,25 @@
                 <!-- 分类标签 -->
                 <div>
                     <label class="block text-xs font-semibold text-[#6B6560] mb-2 tracking-wide uppercase">分类标签</label>
-                    <div class="px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl min-h-[42px] flex flex-wrap gap-2 items-center">
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-[#8B7DA8]/10 text-[#8B7DA8] text-xs font-medium rounded-lg">
-                            推理 <i data-lucide="x" class="w-3 h-3"></i>
-                        </span>
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-[#C4A6B0]/10 text-[#C4A6B0] text-xs font-medium rounded-lg">
-                            悬疑 <i data-lucide="x" class="w-3 h-3"></i>
-                        </span>
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-[#D4A76A]/10 text-[#D4A76A] text-xs font-medium rounded-lg">
-                            恐怖 <i data-lucide="x" class="w-3 h-3"></i>
-                        </span>
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-[#7BAE98]/10 text-[#7BAE98] text-xs font-medium rounded-lg">
-                            情感 <i data-lucide="x" class="w-3 h-3"></i>
-                        </span>
-                        <input type="text" placeholder="添加标签..." class="bg-transparent border-none outline-none text-sm text-[#3D3835] placeholder-[#A09890] flex-1 min-w-[80px] py-1">
+                    <div id="tags-container" class="px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl min-h-[42px] flex flex-wrap gap-2 items-center">
+                        <input id="input-tag" type="text" placeholder="输入标签后回车..." class="bg-transparent border-none outline-none text-sm text-[#3D3835] placeholder-[#A09890] flex-1 min-w-[80px] py-1">
                     </div>
                 </div>
             </div>
 
             <!-- Panel footer -->
             <div class="px-6 py-4 border-t border-[#E0D8D0]/40 flex gap-3">
-                <button class="flex-1 px-5 py-2.5 bg-[#8B7DA8] hover:bg-[#7B6D98] text-white text-sm font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
+                <button id="btn-save" class="flex-1 px-5 py-2.5 bg-[#8B7DA8] hover:bg-[#7B6D98] text-white text-sm font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
                     保存
                 </button>
-                <button class="flex-1 px-5 py-2.5 bg-white/60 hover:bg-white/80 text-[#6B6560] text-sm font-medium rounded-xl border border-[#E0D8D0]/60 shadow-sm hover:shadow-md transition-all duration-300">
+                <button id="btn-cancel" class="flex-1 px-5 py-2.5 bg-white/60 hover:bg-white/80 text-[#6B6560] text-sm font-medium rounded-xl border border-[#E0D8D0]/60 shadow-sm hover:shadow-md transition-all duration-300">
                     取消
                 </button>
             </div>
         </div>
 
         <!-- Edit panel overlay (mobile) -->
-        <div class="ts-edit-overlay fixed inset-0 z-45 bg-black/40 backdrop-blur-sm hidden"></div>
+        <div id="edit-overlay" class="ts-edit-overlay fixed inset-0 z-45 bg-black/40 backdrop-blur-sm" style="opacity:0;pointer-events:none;"></div>
     </main>
 
     <!-- ========== CUSTOM ADMIN STYLES ========== -->
@@ -608,11 +463,13 @@
             padding-right: 36px;
         }
 
-        /* Edit panel shown state (visual preview, no JS) */
+        /* Edit panel: 默认隐藏（translate-x-full），通过 .is-open-panel 控制 */
         .ts-edit-panel {
-            /* Panel is visually hidden by default via translate-x-full.
-               In production, a click handler would toggle a class to show it.
-               We show it via CSS for preview purposes: */
+            transform: translateX(100%);
+        }
+        .ts-edit-panel.is-open-panel {
+            transform: translateX(0);
+            box-shadow: -16px 0 48px rgba(61, 56, 53, 0.18);
         }
 
         /* Glassmorphism layering */
@@ -644,12 +501,6 @@
             box-shadow: 0 8px 32px rgba(139, 125, 168, 0.08), 0 2px 8px rgba(61, 56, 53, 0.06);
         }
 
-        /* Pagination active */
-        .flex.items-center.gap-1\\.5 button:first-child:active,
-        .flex.items-center.gap-1\\.5 button:last-child:active {
-            transform: scale(0.92);
-        }
-
         /* Smooth scrollbar for table */
         .overflow-x-auto::-webkit-scrollbar {
             height: 6px;
@@ -661,12 +512,21 @@
             background: #E0D8D0;
             border-radius: 3px;
         }
+
+        /* 难度按钮选中态增强 */
+        .difficulty-btn {
+            cursor: pointer;
+        }
+        /* 标签 chip */
+        .ts-tag-chip i {
+            cursor: pointer;
+        }
     </style>
 
     <script>
       lucide.createIcons();
 
-      // Mobile sidebar toggle
+      // ===== Mobile sidebar toggle =====
       const sidebar = document.querySelector('.ts-sidebar');
       const overlay = document.querySelector('.ts-sidebar-overlay');
       const toggleBtn = document.querySelector('.ts-sidebar-toggle');
@@ -677,21 +537,393 @@
         overlay.style.opacity = '1';
         overlay.style.pointerEvents = 'auto';
       }
-
       function closeSidebar() {
         sidebar.classList.remove('is-open');
         overlay.style.opacity = '0';
         overlay.style.pointerEvents = 'none';
       }
-
-      toggleBtn.addEventListener('click', openSidebar);
+      if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
       if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
-      overlay.addEventListener('click', closeSidebar);
-
-      // Close sidebar when resizing to desktop
+      if (overlay) overlay.addEventListener('click', closeSidebar);
       window.addEventListener('resize', function() {
         if (window.innerWidth >= 1024) closeSidebar();
       });
+
+      // ===== Admin info & logout =====
+      (function renderAdminInfo() {
+        const info = Api.getAdminInfo();
+        if (!info) return;
+        const nameEl = document.getElementById('admin-name');
+        const roleEl = document.getElementById('admin-role');
+        const avatarEl = document.getElementById('admin-avatar');
+        if (nameEl) nameEl.textContent = info.name || '管理员';
+        if (roleEl) roleEl.textContent = info.role || '—';
+        if (avatarEl && info.name) avatarEl.textContent = info.name.charAt(0).toUpperCase();
+      })();
+      const btnLogout = document.getElementById('btn-logout');
+      if (btnLogout) {
+        btnLogout.addEventListener('click', function() {
+          Api.clearAdmin();
+          location.href = 'admin-login.html';
+        });
+      }
+
+      // ===== Puzzle list state =====
+      const state = {
+        page: 1,
+        limit: 10,
+        total: 0,
+        items: [],
+        filters: { difficulty: 'all', status: 'all', search: '' },
+      };
+
+      // 难度/状态展示映射（沿用品牌色系，与原静态行一致）
+      const DIFF_BADGE = {
+        easy:   'bg-[#7BAE98]/15 text-[#5a9a7e]',
+        medium: 'bg-[#D4A76A]/15 text-[#b8893a]',
+        hard:   'bg-[#D4908A]/15 text-[#c07068]',
+      };
+      const STATUS_BADGE = {
+        online:  'bg-[#7BAE98]/15 text-[#5a9a7e]',
+        pending: 'bg-[#D4A76A]/15 text-[#b8893a]',
+        offline: 'bg-[#E0D8D0]/30 text-[#A09890]',
+      };
+      const DIFF_LABEL = { easy: '简单', medium: '中等', hard: '困难' };
+      const STATUS_LABEL = { online: '已上线', pending: '待审核', offline: '已下架' };
+
+      function fmtNum(n) {
+        if (n == null) return '—';
+        return Number(n).toLocaleString('zh-CN');
+      }
+      function fmtDate(s) {
+        if (!s) return '—';
+        // 兼容 "YYYY-MM-DD HH:MM:SS" 与 ISO
+        const d = new Date(s.replace(' ', 'T'));
+        if (isNaN(d.getTime())) return s.slice(0, 10);
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      }
+      function shortId(id) {
+        if (!id) return '#—';
+        return '#' + String(id).slice(-6);
+      }
+
+      function renderStats(items, total) {
+        const online = items.filter(function(p) { return p.status === 'online'; }).length;
+        const pending = items.filter(function(p) { return p.status === 'pending'; }).length;
+        const offline = items.filter(function(p) { return p.status === 'offline'; }).length;
+        document.getElementById('stat-total').textContent = fmtNum(total);
+        document.getElementById('stat-online').textContent = fmtNum(online);
+        document.getElementById('stat-pending').textContent = fmtNum(pending);
+        document.getElementById('stat-offline').textContent = fmtNum(offline);
+      }
+
+      function renderTable(items) {
+        const tbody = document.getElementById('puzzle-table-body');
+        if (!tbody) return;
+        if (!items || items.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="px-5 py-8 text-center text-[#A09890] text-sm">暂无题目，点击右上角「添加新题」开始创建</td></tr>';
+          return;
+        }
+        tbody.innerHTML = items.map(function(p) {
+          const diffCls = DIFF_BADGE[p.difficulty] || 'bg-[#E0D8D0]/30 text-[#A09890]';
+          const stCls = STATUS_BADGE[p.status] || 'bg-[#E0D8D0]/30 text-[#A09890]';
+          const isOffline = p.status === 'offline';
+          const rowOpacity = isOffline ? 'opacity-70' : '';
+          const rowBg = p.status === 'pending' ? 'bg-[#D4A76A]/[0.03]' : '';
+
+          // 操作按钮：根据状态切换「上线/下架」
+          let actionBtn = '';
+          if (p.status === 'pending') {
+            actionBtn = '<button data-action="online" data-id="' + Helpers.escape(p.id) + '" class="act-btn w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#7BAE98]/10 text-[#7BAE98] transition-all duration-200 hover:scale-110" title="审核通过并上线">' +
+              '<i data-lucide="check" class="w-3.5 h-3.5"></i></button>';
+          } else if (p.status === 'online') {
+            actionBtn = '<button data-action="offline" data-id="' + Helpers.escape(p.id) + '" class="act-btn w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#D4908A]/10 text-[#D4908A] transition-all duration-200 hover:scale-110" title="下架">' +
+              '<i data-lucide="eye-off" class="w-3.5 h-3.5"></i></button>';
+          } else {
+            actionBtn = '<button data-action="online" data-id="' + Helpers.escape(p.id) + '" class="act-btn w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#7BAE98]/10 text-[#7BAE98] transition-all duration-200 hover:scale-110" title="重新上线">' +
+              '<i data-lucide="eye" class="w-3.5 h-3.5"></i></button>';
+          }
+          const editBtn = '<button data-action="edit" data-id="' + Helpers.escape(p.id) + '" class="act-btn w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#8B7DA8]/10 text-[#8B7DA8] transition-all duration-200 hover:scale-110" title="编辑">' +
+            '<i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>';
+
+          return '<tr class="hover:bg-[#8B7DA8]/5 transition-colors duration-200 ' + rowBg + ' ' + rowOpacity + '">' +
+            '<td class="px-5 py-3.5 text-xs font-mono text-[#8B7DA8] font-semibold">' + Helpers.escape(shortId(p.id)) + '</td>' +
+            '<td class="px-5 py-3.5 text-sm text-[#3D3835] max-w-[200px] truncate" title="' + Helpers.escape(p.title) + '">' + Helpers.escape(p.title) + '</td>' +
+            '<td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium ' + diffCls + '">' + (DIFF_LABEL[p.difficulty] || p.difficulty) + '</span></td>' +
+            '<td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium ' + stCls + '">' + (STATUS_LABEL[p.status] || p.status) + '</span></td>' +
+            '<td class="px-5 py-3.5 text-sm text-[#6B6560] font-medium">' + fmtNum(p.playCount) + '</td>' +
+            '<td class="px-5 py-3.5 text-sm text-[#6B6560] font-medium">' + (p.rating != null ? p.rating + '%' : '—') + '</td>' +
+            '<td class="px-5 py-3.5 text-xs text-[#A09890]">' + fmtDate(p.createdAt) + '</td>' +
+            '<td class="px-5 py-3.5 text-right"><div class="flex items-center justify-end gap-1.5">' + actionBtn + editBtn + '</div></td>' +
+          '</tr>';
+        }).join('');
+        Helpers.refreshIcons();
+      }
+
+      function renderPagination() {
+        const infoEl = document.getElementById('pagination-info');
+        const ctrlEl = document.getElementById('pagination-controls');
+        if (!infoEl || !ctrlEl) return;
+        const totalPages = Math.max(1, Math.ceil(state.total / state.limit));
+        const start = state.total === 0 ? 0 : (state.page - 1) * state.limit + 1;
+        const end = Math.min(state.page * state.limit, state.total);
+        infoEl.textContent = '显示 ' + start + '-' + end + ' / 共 ' + state.total + ' 条';
+
+        // 简洁分页：上一页、当前页/总页数、下一页
+        const prevDisabled = state.page <= 1;
+        const nextDisabled = state.page >= totalPages;
+        const prevCls = prevDisabled
+          ? 'bg-white/40 border border-[#E0D8D0]/40 text-[#E0D8D0] cursor-not-allowed'
+          : 'bg-white/50 border border-[#E0D8D0]/60 text-[#A09890] hover:bg-white/70';
+        const nextCls = nextDisabled
+          ? 'bg-white/40 border border-[#E0D8D0]/40 text-[#E0D8D0] cursor-not-allowed'
+          : 'bg-white/50 border border-[#E0D8D0]/60 text-[#A09890] hover:bg-white/70';
+        ctrlEl.innerHTML =
+          '<button data-page="' + (state.page - 1) + '" class="page-btn w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 ' + prevCls + '" ' + (prevDisabled ? 'disabled' : '') + '><i data-lucide="chevron-left" class="w-4 h-4"></i></button>' +
+          '<span class="w-auto px-3 h-8 flex items-center justify-center bg-[#8B7DA8] text-white text-xs font-semibold shadow-sm rounded-lg">' + state.page + ' / ' + totalPages + '</span>' +
+          '<button data-page="' + (state.page + 1) + '" class="page-btn w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 ' + nextCls + '" ' + (nextDisabled ? 'disabled' : '') + '><i data-lucide="chevron-right" class="w-4 h-4"></i></button>';
+        Helpers.refreshIcons();
+      }
+
+      async function loadPuzzles() {
+        const tbody = document.getElementById('puzzle-table-body');
+        if (tbody && state.items.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="px-5 py-8 text-center text-[#A09890] text-sm">加载中…</td></tr>';
+        }
+        try {
+          const params = {
+            page: state.page,
+            limit: state.limit,
+            difficulty: state.filters.difficulty,
+            status: state.filters.status,
+          };
+          if (state.filters.search) params.search = state.filters.search;
+          const data = await Api.adminListPuzzles(params);
+          state.items = data.items || [];
+          state.total = data.total || 0;
+          renderTable(state.items);
+          renderPagination();
+          // 统计：当前过滤结果（更直观，与列表一致）
+          renderStats(state.items, state.total);
+        } catch (err) {
+          console.error('[puzzles] 加载失败:', err);
+          Helpers.toast(err.message || '加载题库失败', 'error');
+          if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="8" class="px-5 py-8 text-center text-[#D4908A] text-sm">加载失败：' + Helpers.escape(err.message || '未知错误') + '</td></tr>';
+          }
+        }
+      }
+
+      // ===== Filter handlers =====
+      document.getElementById('filter-difficulty').addEventListener('change', function(e) {
+        state.filters.difficulty = e.target.value;
+        state.page = 1;
+        loadPuzzles();
+      });
+      document.getElementById('filter-status').addEventListener('change', function(e) {
+        state.filters.status = e.target.value;
+        state.page = 1;
+        loadPuzzles();
+      });
+      // 搜索防抖
+      let searchTimer = null;
+      document.getElementById('search-input').addEventListener('input', function(e) {
+        clearTimeout(searchTimer);
+        const val = e.target.value.trim();
+        searchTimer = setTimeout(function() {
+          state.filters.search = val;
+          state.page = 1;
+          loadPuzzles();
+        }, 350);
+      });
+
+      // ===== Table action delegation (edit / online / offline) =====
+      document.getElementById('puzzle-table-body').addEventListener('click', async function(e) {
+        const btn = e.target.closest('.act-btn');
+        if (!btn) return;
+        const id = btn.getAttribute('data-id');
+        const action = btn.getAttribute('data-action');
+        if (!id || !action) return;
+        if (action === 'edit') {
+          openEditPanel(id);
+        } else if (action === 'online') {
+          await changeStatus(id, 'online');
+        } else if (action === 'offline') {
+          await changeStatus(id, 'offline');
+        }
+      });
+
+      // ===== Pagination delegation =====
+      document.getElementById('pagination-controls').addEventListener('click', function(e) {
+        const btn = e.target.closest('.page-btn');
+        if (!btn || btn.disabled) return;
+        const page = parseInt(btn.getAttribute('data-page'), 10);
+        if (isNaN(page) || page < 1) return;
+        state.page = page;
+        loadPuzzles();
+      });
+
+      async function changeStatus(id, status) {
+        try {
+          await Api.adminUpdatePuzzleStatus(id, status);
+          Helpers.toast(status === 'online' ? '已上线' : '已下架', 'success');
+          loadPuzzles();
+        } catch (err) {
+          console.error('[puzzles] 状态更新失败:', err);
+          Helpers.toast(err.message || '状态更新失败', 'error');
+        }
+      }
+
+      // ===== Edit panel =====
+      const editPanel = document.getElementById('edit-panel');
+      const editOverlay = document.getElementById('edit-overlay');
+      const editTitleEl = document.getElementById('edit-panel-title');
+      const inputTitle = document.getElementById('input-title');
+      const inputScenario = document.getElementById('input-scenario');
+      const inputTruth = document.getElementById('input-truth');
+      const difficultyGroup = document.getElementById('difficulty-group');
+      const tagsContainer = document.getElementById('tags-container');
+      const inputTag = document.getElementById('input-tag');
+
+      let editingId = null;     // null 表示新建
+      let currentDifficulty = 'easy';
+      let currentTags = [];
+
+      function setDifficulty(d) {
+        currentDifficulty = d;
+        Array.prototype.forEach.call(difficultyGroup.querySelectorAll('.difficulty-btn'), function(btn) {
+          const isActive = btn.getAttribute('data-difficulty') === d;
+          btn.style.transform = isActive ? 'scale(1.04)' : '';
+          btn.style.boxShadow = isActive ? '0 4px 12px rgba(0,0,0,0.08)' : '';
+          btn.style.borderWidth = isActive ? '2px' : '2px';
+          btn.style.opacity = isActive ? '1' : '0.65';
+        });
+      }
+      difficultyGroup.addEventListener('click', function(e) {
+        const btn = e.target.closest('.difficulty-btn');
+        if (!btn) return;
+        setDifficulty(btn.getAttribute('data-difficulty'));
+      });
+
+      function renderTags() {
+        // 清除已有 tag 节点（保留 input）
+        Array.prototype.forEach.call(tagsContainer.querySelectorAll('.ts-tag-chip'), function(n) { n.remove(); });
+        const frag = document.createDocumentFragment();
+        currentTags.forEach(function(tag) {
+          const chip = document.createElement('span');
+          chip.className = 'ts-tag-chip inline-flex items-center gap-1 px-2.5 py-1 bg-[#8B7DA8]/10 text-[#8B7DA8] text-xs font-medium rounded-lg';
+          chip.innerHTML = Helpers.escape(tag) + ' <i data-lucide="x" class="w-3 h-3 cursor-pointer"></i>';
+          chip.setAttribute('data-tag', tag);
+          frag.appendChild(chip);
+        });
+        tagsContainer.insertBefore(frag, inputTag);
+        Helpers.refreshIcons();
+      }
+
+      inputTag.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ',') {
+          e.preventDefault();
+          const v = inputTag.value.trim().replace(/,$/, '');
+          if (v && currentTags.indexOf(v) === -1) {
+            currentTags.push(v);
+            renderTags();
+          }
+          inputTag.value = '';
+        } else if (e.key === 'Backspace' && inputTag.value === '' && currentTags.length > 0) {
+          currentTags.pop();
+          renderTags();
+        }
+      });
+      tagsContainer.addEventListener('click', function(e) {
+        const chip = e.target.closest('.ts-tag-chip');
+        if (!chip) return;
+        if (e.target.closest('[data-lucide="x"]') || e.target.tagName === 'svg' || e.target.tagName === 'path') {
+          const tag = chip.getAttribute('data-tag');
+          currentTags = currentTags.filter(function(t) { return t !== tag; });
+          renderTags();
+        }
+      });
+
+      function openEditPanel(id) {
+        editingId = id || null;
+        if (id) {
+          const puzzle = state.items.find(function(p) { return p.id === id; });
+          if (!puzzle) {
+            Helpers.toast('未找到该题目', 'error');
+            return;
+          }
+          editTitleEl.textContent = '编辑题目';
+          inputTitle.value = puzzle.title || '';
+          inputScenario.value = puzzle.scenario || '';
+          inputTruth.value = puzzle.truth || '';
+          setDifficulty(puzzle.difficulty || 'easy');
+          currentTags = Array.isArray(puzzle.tags) ? puzzle.tags.slice() : [];
+        } else {
+          editTitleEl.textContent = '添加新题目';
+          inputTitle.value = '';
+          inputScenario.value = '';
+          inputTruth.value = '';
+          setDifficulty('easy');
+          currentTags = [];
+        }
+        renderTags();
+        editPanel.classList.add('is-open-panel');
+        editOverlay.style.opacity = '1';
+        editOverlay.style.pointerEvents = 'auto';
+        setTimeout(function() { inputTitle.focus(); }, 320);
+      }
+
+      function closeEditPanel() {
+        editPanel.classList.remove('is-open-panel');
+        editOverlay.style.opacity = '0';
+        editOverlay.style.pointerEvents = 'none';
+        editingId = null;
+      }
+
+      document.getElementById('btn-add').addEventListener('click', function() { openEditPanel(null); });
+      document.getElementById('btn-close-panel').addEventListener('click', closeEditPanel);
+      document.getElementById('btn-cancel').addEventListener('click', closeEditPanel);
+      editOverlay.addEventListener('click', closeEditPanel);
+
+      document.getElementById('btn-save').addEventListener('click', async function() {
+        const title = inputTitle.value.trim();
+        const scenario = inputScenario.value.trim();
+        const truth = inputTruth.value.trim();
+        if (!title) { Helpers.toast('请输入汤面标题', 'warn'); inputTitle.focus(); return; }
+        if (!scenario) { Helpers.toast('请输入汤面内容', 'warn'); inputScenario.focus(); return; }
+        if (!truth) { Helpers.toast('请输入汤底真相', 'warn'); inputTruth.focus(); return; }
+        const payload = {
+          title: title,
+          scenario: scenario,
+          truth: truth,
+          difficulty: currentDifficulty,
+          tags: currentTags,
+        };
+        const saveBtn = document.getElementById('btn-save');
+        const originalText = saveBtn.textContent;
+        saveBtn.disabled = true;
+        saveBtn.textContent = '保存中…';
+        try {
+          if (editingId) {
+            await Api.adminUpdatePuzzle(editingId, payload);
+            Helpers.toast('题目已更新', 'success');
+          } else {
+            await Api.adminCreatePuzzle(payload);
+            Helpers.toast('新题目已创建（状态：待审核）', 'success');
+          }
+          closeEditPanel();
+          loadPuzzles();
+        } catch (err) {
+          console.error('[puzzles] 保存失败:', err);
+          Helpers.toast(err.message || '保存失败', 'error');
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.textContent = originalText;
+        }
+      });
+
+      // ===== Initial load =====
+      loadPuzzles();
     </script>
 </body>
 </html>

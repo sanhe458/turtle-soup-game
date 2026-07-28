@@ -329,35 +329,35 @@
 
         <!-- Puzzle title -->
         <div class="flex items-center gap-2 flex-1 min-w-0">
-          <h1 class="text-sm sm:text-base font-semibold truncate" style="color: #3D3835;">
-            海边的神秘脚印
+          <h1 id="puzzleTitle" class="text-sm sm:text-base font-semibold truncate" style="color: #3D3835;">
+            加载中…
           </h1>
-          <span class="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium flex-shrink-0"
+          <span id="puzzleDifficulty" class="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium flex-shrink-0"
             style="background: rgba(212, 167, 106, 0.18); color: #D4A76A;">
-            中等
+            —
           </span>
         </div>
 
         <!-- Turn indicator + Timer -->
         <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-          <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
-            style="background: rgba(139, 125, 168, 0.14); color: #8B7DA8;">
+          <div id="turnIndicator" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
+            style="background: rgba(160, 152, 144, 0.14); color: #6B6560;">
             <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
-            <span class="hidden sm:inline">轮到你提问</span>
-            <span class="sm:hidden">提问中</span>
+            <span id="turnLabel" class="hidden sm:inline">等待开始</span>
+            <span class="sm:hidden">等待中</span>
           </div>
 
-          <div class="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-mono font-semibold"
+          <div id="timerBadge" class="hidden items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-mono font-semibold"
             style="background: rgba(139, 125, 168, 0.1); color: #8B7DA8;">
             <i data-lucide="clock" class="w-3 h-3"></i>
-            00:15
+            <span id="timerText">00:00</span>
           </div>
 
           <!-- Player count badge -->
           <div class="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium"
             style="background: rgba(123, 174, 152, 0.14); color: #7BAE98;">
             <i data-lucide="users" class="w-3 h-3"></i>
-            3/3
+            <span id="playerCount">—</span>
           </div>
         </div>
       </header>
@@ -372,8 +372,8 @@
           <section class="glass-card p-5 sm:p-6 relative overflow-hidden">
             <div class="flex gap-4 sm:gap-5">
               <!-- Decorative art accent -->
-              <div class="hidden sm:block flex-shrink-0 w-24 h-24 rounded-2xl overflow-hidden" style="box-shadow: var(--ts-shadow-md);">
-                <img src="../assets/game-question-art.jpg" alt="puzzle art" class="w-full h-full object-cover"
+              <div class="hidden sm:block flex-shrink-0 w-24 h-24 rounded-2xl overflow-hidden relative" style="box-shadow: var(--ts-shadow-md);">
+                <img src="../assets/game-question-art.jpg" alt="puzzle art" class="w-full h-full object-cover relative z-10"
                   onerror="this.style.display='none'">
                 <!-- Fallback gradient if image missing -->
                 <div class="w-full h-full absolute top-0 left-0" style="background: linear-gradient(135deg, #B8AFCA, #E8D5DD);"></div>
@@ -383,22 +383,22 @@
                 <div class="flex items-center gap-2 mb-3">
                   <i data-lucide="scroll-text" class="w-4 h-4 flex-shrink-0" style="color: #8B7DA8;"></i>
                   <h2 class="text-sm font-semibold" style="color: #6B6560;">汤面</h2>
-                  <span class="sm:hidden inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
-                    style="background: rgba(212, 167, 106, 0.18); color: #D4A76A;">中等</span>
+                  <span id="puzzleDifficultyMobile" class="sm:hidden inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
+                    style="background: rgba(212, 167, 106, 0.18); color: #D4A76A;">—</span>
                 </div>
 
-                <p class="text-[15px] sm:text-base leading-relaxed" style="color: #3D3835;">
-                  一个男人在海边散步时，发现沙滩上有一串从大海方向延伸而来的脚印，但他并不感到害怕，反而笑了。为什么？
+                <p id="puzzleScenario" class="text-[15px] sm:text-base leading-relaxed" style="color: #3D3835;">
+                  正在加载汤面…
                 </p>
 
                 <div class="flex items-center gap-3 mt-4">
-                  <div class="flex items-center gap-1.5 text-[11px] font-medium" style="color: #A09890;">
+                  <div id="puzzleTags" class="flex items-center gap-1.5 text-[11px] font-medium" style="color: #A09890;">
                     <i data-lucide="tag" class="w-3 h-3"></i>
-                    海洋 / 情感
+                    <span>—</span>
                   </div>
-                  <div class="flex items-center gap-1.5 text-[11px] font-medium" style="color: #A09890;">
+                  <div id="puzzlePlayCount" class="flex items-center gap-1.5 text-[11px] font-medium" style="color: #A09890;">
                     <i data-lucide="eye" class="w-3 h-3"></i>
-                    2,847 人玩过
+                    <span>— 人玩过</span>
                   </div>
                 </div>
               </div>
@@ -412,13 +412,13 @@
             <div class="px-5 py-3 flex items-center gap-2" style="border-bottom: 1px solid rgba(224, 216, 208, 0.5);">
               <i data-lucide="messages-square" class="w-4 h-4" style="color: #8B7DA8;"></i>
               <span class="text-xs font-semibold" style="color: #6B6560;">问答区</span>
-              <span class="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full" style="background: rgba(139, 125, 168, 0.1); color: #8B7DA8;">
-                你的回合 — 还剩 15 秒
+              <span id="chatHeaderHint" class="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full" style="background: rgba(160, 152, 144, 0.12); color: #A09890;">
+                等待开始
               </span>
             </div>
 
             <!-- Chat messages -->
-            <div class="flex-1 px-4 sm:px-5 py-4 flex flex-col gap-3 overflow-y-auto no-scrollbar" style="max-height: 420px;">
+            <div id="chatMessages" class="flex-1 px-4 sm:px-5 py-4 flex flex-col gap-3 overflow-y-auto no-scrollbar" style="max-height: 420px;">
 
               <!-- System message -->
               <div class="chat-msg animate-slide-in flex justify-center">
@@ -429,78 +429,6 @@
                 </div>
               </div>
 
-              <!-- Player 1 (你) — right-aligned -->
-              <div class="chat-msg animate-slide-in flex flex-col items-end gap-1">
-                <div class="flex items-center gap-2 mb-0.5">
-                  <span class="text-[10px] font-medium" style="color: #A09890;">你 · 第1轮</span>
-                </div>
-                <div class="max-w-[80%] sm:max-w-[70%] px-4 py-2.5 rounded-2xl rounded-br-md text-sm"
-                  style="background: rgba(139, 125, 168, 0.15); color: #3D3835;">
-                  这个男人是本地人吗？
-                </div>
-                <!-- AI answer inline -->
-                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                  style="background: rgba(123, 174, 152, 0.18); color: #7BAE98;">
-                  <i data-lucide="check-circle" class="w-3 h-3"></i>
-                  AI 判定：是
-                </div>
-              </div>
-
-              <!-- Player 2 (小明) — left-aligned -->
-              <div class="chat-msg animate-slide-in flex flex-col items-start gap-1">
-                <div class="flex items-center gap-2 mb-0.5">
-                <span class="text-[10px] font-medium" style="color: #A09890;">小明 · 第1轮</span>
-                </div>
-                <div class="max-w-[80%] sm:max-w-[70%] px-4 py-2.5 rounded-2xl rounded-bl-md text-sm"
-                  style="background: rgba(255, 255, 255, 0.8); color: #3D3835; border: 1px solid rgba(224, 216, 208, 0.5);">
-                  脚印是人类的吗？
-                </div>
-                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                  style="background: rgba(212, 144, 138, 0.18); color: #D4908A;">
-                  <i data-lucide="x-circle" class="w-3 h-3"></i>
-                  AI 判定：不是
-                </div>
-              </div>
-
-              <!-- Player 3 (推理达人) — left-aligned -->
-              <div class="chat-msg animate-slide-in flex flex-col items-start gap-1">
-                <div class="flex items-center gap-2 mb-0.5">
-                  <span class="text-[10px] font-medium" style="color: #A09890;">推理达人 · 第1轮</span>
-                </div>
-                <div class="max-w-[80%] sm:max-w-[70%] px-4 py-2.5 rounded-2xl rounded-bl-md text-sm"
-                  style="background: rgba(255, 255, 255, 0.8); color: #3D3835; border: 1px solid rgba(224, 216, 208, 0.5);">
-                  天气是否晴朗？
-                </div>
-                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                  style="background: rgba(212, 167, 106, 0.18); color: #D4A76A;">
-                  <i data-lucide="minus-circle" class="w-3 h-3"></i>
-                  AI 判定：无关
-                </div>
-              </div>
-
-              <!-- Player 1 (你) — right-aligned, with sparkle -->
-              <div class="chat-msg animate-slide-in flex flex-col items-end gap-1">
-                <div class="flex items-center gap-2 mb-0.5">
-                  <span class="text-[10px] font-medium" style="color: #A09890;">你 · 第2轮</span>
-                </div>
-                <div class="max-w-[80%] sm:max-w-[70%] px-4 py-2.5 rounded-2xl rounded-br-md text-sm"
-                  style="background: rgba(139, 125, 168, 0.15); color: #3D3835;">
-                  这个男人的职业与大海有关吗？
-                </div>
-                <div class="flex items-center gap-2">
-                  <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                    style="background: rgba(123, 174, 152, 0.18); color: #7BAE98;">
-                    <i data-lucide="check-circle" class="w-3 h-3"></i>
-                    AI 判定：是
-                  </div>
-                  <div class="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold animate-shimmer"
-                    style="background: rgba(139, 125, 168, 0.2); color: #8B7DA8;">
-                    <i data-lucide="sparkles" class="w-3 h-3"></i>
-                    接近了!
-                  </div>
-                </div>
-              </div>
-
             </div>
 
             <!-- Input area -->
@@ -508,11 +436,11 @@
               <div class="flex items-center gap-2">
                 <div class="flex-1 flex items-center px-4 py-2.5 rounded-2xl transition-all duration-300"
                   style="background: rgba(237, 232, 227, 0.6); border: 1px solid rgba(224, 216, 208, 0.6);">
-                  <input type="text" placeholder="输入你的问题..."
-                    class="flex-1 bg-transparent outline-none text-sm placeholder:font-normal"
+                  <input id="questionInput" type="text" placeholder="等待你的回合…" maxlength="200" disabled
+                    class="flex-1 bg-transparent outline-none text-sm placeholder:font-normal disabled:opacity-60"
                     style="color: #3D3835; font-family: 'Inter', 'Noto Sans SC', system-ui, sans-serif;">
                 </div>
-                <button class="flex items-center justify-center w-10 h-10 rounded-2xl text-white transition-all duration-300 hover:scale-105 hover:shadow-lg flex-shrink-0"
+                <button id="sendBtn" disabled class="flex items-center justify-center w-10 h-10 rounded-2xl text-white transition-all duration-300 hover:scale-105 hover:shadow-lg flex-shrink-0 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
                   style="background: linear-gradient(135deg, #8B7DA8, #C4A6B0); box-shadow: 0 4px 16px rgba(139, 125, 168, 0.3);">
                   <i data-lucide="send" class="w-4 h-4"></i>
                 </button>
@@ -524,41 +452,11 @@
           </section>
 
           <!-- ===== PLAYER PANELS ===== -->
-          <section class="grid grid-cols-3 gap-2 sm:gap-3">
-
-            <!-- Player 1 — YOU (current turn) -->
-            <div class="glass-card p-3 sm:p-4 flex flex-col items-center text-center gap-1.5 relative">
-              <div class="absolute top-1.5 right-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold"
-                style="background: rgba(139, 125, 168, 0.2); color: #8B7DA8;">
-                <i data-lucide="zap" class="w-2 h-2 sm:w-2.5 sm:h-2.5"></i>
-                提问中
-              </div>
-              <span class="text-xs sm:text-sm font-semibold" style="color: #3D3835;">你</span>
-              <span class="text-[10px] sm:text-[11px] font-medium" style="color: #8B7DA8;">已问 4 题</span>
-              <div class="absolute inset-0 rounded-[16px] sm:rounded-[20px] pointer-events-none" style="border: 2px solid rgba(139, 125, 168, 0.4);"></div>
+          <section id="playerPanels" class="grid grid-cols-3 gap-2 sm:gap-3">
+            <!-- 由 JS 动态渲染 -->
+            <div class="glass-card p-3 sm:p-4 flex flex-col items-center text-center gap-1.5 relative opacity-60">
+              <span class="text-[10px] sm:text-[11px] font-medium" style="color: #A09890;">等待玩家加入…</span>
             </div>
-
-            <!-- Player 2 — Waiting -->
-            <div class="glass-card p-3 sm:p-4 flex flex-col items-center text-center gap-1.5 relative" style="opacity: 0.7;">
-              <div class="absolute top-1.5 right-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-medium"
-                style="background: rgba(160, 152, 144, 0.15); color: #A09890;">
-                等待中
-              </div>
-              <span class="text-xs sm:text-sm font-semibold" style="color: #3D3835;">小明</span>
-              <span class="text-[10px] sm:text-[11px] font-medium" style="color: #A09890;">已问 3 题</span>
-            </div>
-
-            <!-- Player 3 — Done -->
-            <div class="glass-card p-3 sm:p-4 flex flex-col items-center text-center gap-1.5 relative" style="opacity: 0.85;">
-              <div class="absolute top-1.5 right-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-medium"
-                style="background: rgba(123, 174, 152, 0.18); color: #7BAE98;">
-                <i data-lucide="check" class="w-2 h-2 sm:w-2.5 sm:h-2.5"></i>
-                已提问
-              </div>
-              <span class="text-xs sm:text-sm font-semibold" style="color: #3D3835;">推理达人</span>
-              <span class="text-[10px] sm:text-[11px] font-medium" style="color: #A09890;">已问 5 题</span>
-            </div>
-
           </section>
 
         </div>
@@ -578,11 +476,11 @@
             <div class="mb-2">
               <div class="flex justify-between items-center mb-2">
                 <span class="text-xs font-medium" style="color: #6B6560;">当前进度</span>
-                <span class="text-xs font-bold" style="color: #8B7DA8;">67%</span>
+                <span id="progressPercent" class="text-xs font-bold" style="color: #8B7DA8;">0%</span>
               </div>
               <div class="h-2.5 rounded-full overflow-hidden" style="background: rgba(224, 216, 208, 0.6);">
-                <div class="h-full rounded-full animate-progress"
-                  style="background: linear-gradient(90deg, #8B7DA8, #C4A6B0);"></div>
+                <div id="progressBar" class="h-full rounded-full transition-all duration-500"
+                  style="width: 0%; background: linear-gradient(90deg, #8B7DA8, #C4A6B0);"></div>
               </div>
             </div>
 
@@ -592,7 +490,7 @@
                 <i data-lucide="repeat" class="w-3.5 h-3.5" style="color: #A09890;"></i>
                 当前轮次
               </div>
-              <span class="text-sm font-bold" style="color: #3D3835;">第 4 / 10 轮</span>
+              <span id="roundCounter" class="text-sm font-bold" style="color: #3D3835;">第 0 / 0 轮</span>
             </div>
           </div>
 
@@ -602,29 +500,29 @@
               <i data-lucide="brain" class="w-4 h-4" style="color: #C4A6B0;"></i>
               <h3 class="text-sm font-semibold" style="color: #3D3835;">AI 洞察</h3>
             </div>
-            <div class="flex items-center gap-2 px-3 py-2.5 rounded-xl" style="background: rgba(139, 125, 168, 0.08);">
-              <div class="w-2 h-2 rounded-full animate-shimmer" style="background: #8B7DA8;"></div>
-              <p class="text-xs font-medium animate-shimmer" style="color: #8B7DA8;">
-                有人在接近真相...
+            <div id="aiInsight" class="flex items-center gap-2 px-3 py-2.5 rounded-xl" style="background: rgba(237, 232, 227, 0.4);">
+              <div class="w-2 h-2 rounded-full" style="background: #A09890;"></div>
+              <p class="text-xs font-medium" style="color: #A09890;">
+                等待第一个问题…
               </p>
             </div>
 
             <!-- Stats -->
             <div class="grid grid-cols-2 gap-2 mt-4">
               <div class="text-center px-3 py-2.5 rounded-xl" style="background: rgba(237, 232, 227, 0.5);">
-                <div class="text-lg font-bold" style="color: #7BAE98;">5</div>
+                <div id="statYes" class="text-lg font-bold" style="color: #7BAE98;">0</div>
                 <div class="text-[10px] font-medium mt-0.5" style="color: #A09890;">是</div>
               </div>
               <div class="text-center px-3 py-2.5 rounded-xl" style="background: rgba(237, 232, 227, 0.5);">
-                <div class="text-lg font-bold" style="color: #D4908A;">3</div>
+                <div id="statNo" class="text-lg font-bold" style="color: #D4908A;">0</div>
                 <div class="text-[10px] font-medium mt-0.5" style="color: #A09890;">不是</div>
               </div>
               <div class="text-center px-3 py-2.5 rounded-xl" style="background: rgba(237, 232, 227, 0.5);">
-                <div class="text-lg font-bold" style="color: #D4A76A;">2</div>
+                <div id="statIrrelevant" class="text-lg font-bold" style="color: #D4A76A;">0</div>
                 <div class="text-[10px] font-medium mt-0.5" style="color: #A09890;">无关</div>
               </div>
               <div class="text-center px-3 py-2.5 rounded-xl" style="background: rgba(237, 232, 227, 0.5);">
-                <div class="text-lg font-bold" style="color: #8B7DA8;">12</div>
+                <div id="statTotal" class="text-lg font-bold" style="color: #8B7DA8;">0</div>
                 <div class="text-[10px] font-medium mt-0.5" style="color: #A09890;">总提问</div>
               </div>
             </div>
@@ -636,31 +534,8 @@
               <i data-lucide="bar-chart-3" class="w-4 h-4" style="color: #D4A76A;"></i>
               <h3 class="text-sm font-semibold" style="color: #3D3835;">贡献排名</h3>
             </div>
-            <div class="flex flex-col gap-2">
-              <!-- Rank 1 -->
-              <div class="flex items-center gap-2.5 px-3 py-2 rounded-xl" style="background: rgba(139, 125, 168, 0.08);">
-                <span class="text-xs font-bold w-4 text-center" style="color: #8B7DA8;">1</span>
-                <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold"
-                  style="background: linear-gradient(135deg, #8B7DA8, #C4A6B0);">推</div>
-                <span class="text-xs font-medium flex-1" style="color: #3D3835;">推理达人</span>
-                <span class="text-[10px] font-bold" style="color: #8B7DA8;">+32</span>
-              </div>
-              <!-- Rank 2 -->
-              <div class="flex items-center gap-2.5 px-3 py-2 rounded-xl" style="background: rgba(237, 232, 227, 0.4);">
-                <span class="text-xs font-bold w-4 text-center" style="color: #A09890;">2</span>
-                <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold"
-                  style="background: linear-gradient(135deg, #8B7DA8, #C4A6B0);">你</div>
-                <span class="text-xs font-medium flex-1" style="color: #3D3835;">你</span>
-                <span class="text-[10px] font-bold" style="color: #6B6560;">+28</span>
-              </div>
-              <!-- Rank 3 -->
-              <div class="flex items-center gap-2.5 px-3 py-2 rounded-xl" style="background: rgba(237, 232, 227, 0.4);">
-                <span class="text-xs font-bold w-4 text-center" style="color: #A09890;">3</span>
-                <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold"
-                  style="background: linear-gradient(135deg, #7BAE98, #A8D4C0);">明</div>
-                <span class="text-xs font-medium flex-1" style="color: #3D3835;">小明</span>
-                <span class="text-[10px] font-bold" style="color: #6B6560;">+18</span>
-              </div>
+            <div id="rankingList" class="flex flex-col gap-2">
+              <div class="px-3 py-2 text-center text-[11px]" style="color: #A09890;">尚无排名</div>
             </div>
           </div>
 
@@ -677,24 +552,28 @@
               <span class="text-xs font-semibold" style="color: #3D3835;">推理进度</span>
             </div>
             <div class="flex items-center gap-3">
-              <span class="text-xs font-bold" style="color: #8B7DA8;">67%</span>
-              <span class="text-[10px] font-medium px-2 py-0.5 rounded-full" style="background: rgba(139, 125, 168, 0.1); color: #8B7DA8;">
-                第 4 / 10 轮
+              <span id="progressPercentMobile" class="text-xs font-bold" style="color: #8B7DA8;">0%</span>
+              <span id="roundCounterMobile" class="text-[10px] font-medium px-2 py-0.5 rounded-full" style="background: rgba(139, 125, 168, 0.1); color: #8B7DA8;">
+                第 0 / 0 轮
               </span>
             </div>
           </div>
           <div class="h-2 rounded-full overflow-hidden" style="background: rgba(224, 216, 208, 0.6);">
-            <div class="h-full rounded-full animate-progress" style="background: linear-gradient(90deg, #8B7DA8, #C4A6B0);"></div>
+            <div id="progressBarMobile" class="h-full rounded-full transition-all duration-500" style="width: 0%; background: linear-gradient(90deg, #8B7DA8, #C4A6B0);"></div>
           </div>
-          <div class="flex items-center gap-2 mt-3">
-            <div class="w-1.5 h-1.5 rounded-full animate-shimmer" style="background: #8B7DA8;"></div>
-            <span class="text-[11px] font-medium animate-shimmer" style="color: #8B7DA8;">有人在接近真相...</span>
+          <div id="aiInsightMobile" class="flex items-center gap-2 mt-3">
+            <div class="w-1.5 h-1.5 rounded-full" style="background: #A09890;"></div>
+            <span class="text-[11px] font-medium" style="color: #A09890;">等待第一个问题…</span>
           </div>
         </div>
       </div>
 
     </main>
 
+    <script src="https://cdn.socket.io/4.8.0/socket.io.min.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/socket.js"></script>
+    <script src="../js/helpers.js"></script>
     <script>
       lucide.createIcons();
 
@@ -720,11 +599,417 @@
         menuBtn.addEventListener('click', openDrawer);
         overlay.addEventListener('click', closeDrawer);
 
-        // Auto close on resize to desktop
         window.addEventListener('resize', function() {
           if (window.innerWidth >= 1024) closeDrawer();
         });
       })();
+
+      // ===== 主逻辑：实时对局 =====
+      const params = new URLSearchParams(location.search);
+      const expectedGameId = params.get('gameId') || '';
+      const userInfo = Api.getUserInfo() || {};
+
+      // 游戏状态缓存
+      const game = {
+        gameId: expectedGameId,
+        puzzle: null,
+        players: [],          // [{ nickname, seat, isBot, questionsAsked }]
+        yourSeat: null,
+        currentSeat: null,
+        currentRound: 0,
+        maxRounds: 0,
+        isYourTurn: false,
+        revealed: false,
+      };
+
+      const difficultyMap = { easy: { label: '简单', color: '#7BAE98', bg: 'rgba(123,174,152,0.18)' },
+                              medium: { label: '中等', color: '#D4A76A', bg: 'rgba(212,167,106,0.18)' },
+                              hard: { label: '困难', color: '#D4908A', bg: 'rgba(212,144,138,0.18)' } };
+
+      function applyDifficulty(d) {
+        const conf = difficultyMap[d] || difficultyMap.medium;
+        const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+        const setStyle = (id, style, val) => { const el = document.getElementById(id); if (el) el.style[style] = val; };
+        setText('puzzleDifficulty', conf.label);
+        setText('puzzleDifficultyMobile', conf.label);
+        setStyle('puzzleDifficulty', 'background', conf.bg);
+        setStyle('puzzleDifficulty', 'color', conf.color);
+        setStyle('puzzleDifficultyMobile', 'background', conf.bg);
+        setStyle('puzzleDifficultyMobile', 'color', conf.color);
+      }
+
+      // 渲染汤面
+      function renderPuzzle(puzzle) {
+        game.puzzle = puzzle;
+        document.getElementById('puzzleTitle').textContent = puzzle.title || '海龟汤';
+        document.getElementById('puzzleScenario').textContent = puzzle.scenario || '';
+        applyDifficulty(puzzle.difficulty);
+        const tags = puzzle.tags && puzzle.tags.length ? puzzle.tags : [];
+        const tagsEl = document.getElementById('puzzleTags');
+        tagsEl.innerHTML = '<i data-lucide="tag" class="w-3 h-3"></i><span>' + (tags.length ? Helpers.escape(tags.join(' / ')) : '—') + '</span>';
+        const pcEl = document.getElementById('puzzlePlayCount');
+        pcEl.innerHTML = '<i data-lucide="eye" class="w-3 h-3"></i><span>' + (puzzle.playCount || 0) + ' 人玩过</span>';
+        Helpers.refreshIcons();
+      }
+
+      // 渲染玩家面板
+      function renderPlayerPanels() {
+        const container = document.getElementById('playerPanels');
+        if (!game.players.length) {
+          container.innerHTML = '<div class="glass-card p-3 sm:p-4 flex flex-col items-center text-center gap-1.5 relative opacity-60"><span class="text-[10px] sm:text-[11px] font-medium" style="color: #A09890;">等待玩家加入…</span></div>';
+          return;
+        }
+        const colors = [
+          'linear-gradient(135deg, #8B7DA8, #C4A6B0)',
+          'linear-gradient(135deg, #7BAE98, #B8AFCA)',
+          'linear-gradient(135deg, #D4A76A, #C4A6B0)',
+        ];
+        container.innerHTML = game.players.map((p) => {
+          const isYou = p.seat === game.yourSeat;
+          const isCurrent = p.seat === game.currentSeat;
+          const displayName = isYou ? '你' : Helpers.escape(p.nickname || '玩家');
+          const initial = (p.nickname || '?').slice(0, 1);
+          const avatarBg = colors[p.seat % colors.length];
+          let badge = '';
+          if (isCurrent && !game.revealed) {
+            badge = '<div class="absolute top-1.5 right-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold" style="background: rgba(139, 125, 168, 0.2); color: #8B7DA8;"><i data-lucide="zap" class="w-2 h-2 sm:w-2.5 sm:h-2.5"></i>提问中</div>';
+          } else if (p.isBot) {
+            badge = '<div class="absolute top-1.5 right-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-medium" style="background: rgba(196, 166, 176, 0.18); color: #C4A6B0;">AI</div>';
+          } else {
+            badge = '<div class="absolute top-1.5 right-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-medium" style="background: rgba(160, 152, 144, 0.15); color: #A09890;">等待中</div>';
+          }
+          const activeBorder = isCurrent && !game.revealed
+            ? '<div class="absolute inset-0 rounded-[16px] sm:rounded-[20px] pointer-events-none" style="border: 2px solid rgba(139, 125, 168, 0.4);"></div>'
+            : '';
+          const opacity = isCurrent || isYou ? '' : 'style="opacity: 0.85;"';
+          return `
+            <div class="glass-card p-3 sm:p-4 flex flex-col items-center text-center gap-1.5 relative" ${opacity}>
+              ${badge}
+              <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white text-[10px] sm:text-xs font-bold" style="background: ${avatarBg};">${Helpers.escape(initial)}</div>
+              <span class="text-xs sm:text-sm font-semibold truncate max-w-full" style="color: #3D3835;">${displayName}</span>
+              <span class="text-[10px] sm:text-[11px] font-medium" style="color: ${isCurrent ? '#8B7DA8' : '#A09890'};">已问 ${p.questionsAsked || 0} 题</span>
+              ${activeBorder}
+            </div>
+          `;
+        }).join('');
+        Helpers.refreshIcons();
+      }
+
+      // 渲染聊天消息
+      function appendChatMessage(data) {
+        const container = document.getElementById('chatMessages');
+        const isYou = data.seat === game.yourSeat;
+        const conf = Helpers.judgmentConfig(data.judgment);
+        const side = isYou ? 'items-end' : 'items-start';
+        const bubbleRadius = isYou ? 'rounded-br-md' : 'rounded-bl-md';
+        const bubbleStyle = isYou
+          ? 'background: rgba(139, 125, 168, 0.15); color: #3D3835;'
+          : 'background: rgba(255, 255, 255, 0.8); color: #3D3835; border: 1px solid rgba(224, 216, 208, 0.5);';
+        const displayName = isYou ? '你' : Helpers.escape(data.nickname || '玩家');
+        const closeHint = data.closeHint
+          ? '<div class="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold animate-shimmer" style="background: rgba(139, 125, 168, 0.2); color: #8B7DA8;"><i data-lucide="sparkles" class="w-3 h-3"></i>接近了!</div>'
+          : '';
+        const node = Helpers.el(`
+          <div class="chat-msg animate-slide-in flex flex-col ${side} gap-1">
+            <div class="flex items-center gap-2 mb-0.5">
+              <span class="text-[10px] font-medium" style="color: #A09890;">${displayName} · 第${data.round}轮</span>
+            </div>
+            <div class="max-w-[80%] sm:max-w-[70%] px-4 py-2.5 rounded-2xl ${bubbleRadius} text-sm" style="${bubbleStyle}">
+              ${Helpers.escape(data.question)}
+            </div>
+            <div class="flex items-center gap-2 ${isYou ? '' : ''}">
+              <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold" style="background: ${conf.bg}; color: ${conf.color};">
+                <i data-lucide="${conf.icon}" class="w-3 h-3"></i>
+                AI 判定：${conf.label}
+              </div>
+              ${closeHint}
+            </div>
+          </div>
+        `);
+        container.appendChild(node);
+        Helpers.refreshIcons();
+        // 滚动到底部
+        container.scrollTop = container.scrollHeight;
+      }
+
+      // 系统提示消息
+      function appendSystemMessage(text) {
+        const container = document.getElementById('chatMessages');
+        const node = Helpers.el(`
+          <div class="chat-msg animate-slide-in flex justify-center">
+            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium" style="background: rgba(160, 152, 144, 0.12); color: #A09890;">
+              <i data-lucide="info" class="w-3 h-3"></i>
+              ${Helpers.escape(text)}
+            </div>
+          </div>
+        `);
+        container.appendChild(node);
+        Helpers.refreshIcons();
+        container.scrollTop = container.scrollHeight;
+      }
+
+      // 渲染进度/统计/排名
+      function renderProgress(data) {
+        const pct = data.progress || 0;
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        const setWidth = (id, w) => { const el = document.getElementById(id); if (el) el.style.width = w + '%'; };
+        set('progressPercent', pct + '%');
+        set('progressPercentMobile', pct + '%');
+        setWidth('progressBar', pct);
+        setWidth('progressBarMobile', pct);
+        const roundText = '第 ' + (game.currentRound || 0) + ' / ' + (game.maxRounds || 0) + ' 轮';
+        set('roundCounter', roundText);
+        set('roundCounterMobile', roundText);
+        if (data.stats) {
+          set('statYes', data.stats.yes || 0);
+          set('statNo', data.stats.no || 0);
+          set('statIrrelevant', data.stats.irrelevant || 0);
+          set('statTotal', data.stats.total || 0);
+        }
+        if (data.ranking) {
+          renderRanking(data.ranking);
+        }
+      }
+
+      function renderRanking(ranking) {
+        const list = document.getElementById('rankingList');
+        if (!ranking || !ranking.length) {
+          list.innerHTML = '<div class="px-3 py-2 text-center text-[11px]" style="color: #A09890;">尚无排名</div>';
+          return;
+        }
+        const colors = ['#8B7DA8', '#A09890', '#A09890'];
+        const bgTints = ['rgba(139, 125, 168, 0.08)', 'rgba(237, 232, 227, 0.4)', 'rgba(237, 232, 227, 0.4)'];
+        list.innerHTML = ranking.map((p, idx) => {
+          const isYou = p.seat === game.yourSeat;
+          const displayName = isYou ? '你' : Helpers.escape(p.nickname || '玩家');
+          const initial = (p.nickname || '?').slice(0, 1);
+          const avatarBg = idx === 0 ? 'linear-gradient(135deg, #8B7DA8, #C4A6B0)' : 'linear-gradient(135deg, #B8AFCA, #E8D5DD)';
+          return `
+            <div class="flex items-center gap-2.5 px-3 py-2 rounded-xl" style="background: ${bgTints[idx]};">
+              <span class="text-xs font-bold w-4 text-center" style="color: ${colors[idx]};">${idx + 1}</span>
+              <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold" style="background: ${avatarBg};">${Helpers.escape(initial)}</div>
+              <span class="text-xs font-medium flex-1 truncate" style="color: #3D3835;">${displayName}${p.isBot ? ' · AI' : ''}</span>
+              <span class="text-[10px] font-bold" style="color: ${idx === 0 ? '#8B7DA8' : '#6B6560'};">+${p.score || 0}</span>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 更新回合指示器
+      function setTurnIndicator(isYourTurn, nickname) {
+        const ind = document.getElementById('turnIndicator');
+        const label = document.getElementById('turnLabel');
+        const badge = document.getElementById('timerBadge');
+        const input = document.getElementById('questionInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const hint = document.getElementById('chatHeaderHint');
+        if (game.revealed) {
+          ind.style.background = 'rgba(212, 167, 106, 0.18)';
+          ind.style.color = '#D4A76A';
+          label.textContent = '已揭晓';
+          hint.textContent = '对局已结束';
+          hint.style.background = 'rgba(212, 167, 106, 0.18)';
+          hint.style.color = '#D4A76A';
+          badge.classList.add('hidden');
+          input.disabled = true;
+          input.placeholder = '对局已结束';
+          sendBtn.disabled = true;
+          return;
+        }
+        if (isYourTurn) {
+          ind.style.background = 'rgba(139, 125, 168, 0.14)';
+          ind.style.color = '#8B7DA8';
+          label.textContent = '轮到你提问';
+          hint.textContent = '你的回合';
+          hint.style.background = 'rgba(139, 125, 168, 0.14)';
+          hint.style.color = '#8B7DA8';
+          badge.classList.remove('hidden');
+          input.disabled = false;
+          input.placeholder = '输入你的问题…';
+          sendBtn.disabled = false;
+          input.focus();
+        } else {
+          ind.style.background = 'rgba(160, 152, 144, 0.14)';
+          ind.style.color = '#6B6560';
+          label.textContent = (nickname || '对方') + ' 思考中';
+          hint.textContent = (nickname || '对方') + ' 的回合';
+          hint.style.background = 'rgba(160, 152, 144, 0.12)';
+          hint.style.color = '#A09890';
+          badge.classList.add('hidden');
+          input.disabled = true;
+          input.placeholder = '等待你的回合…';
+          sendBtn.disabled = true;
+        }
+      }
+
+      function setTimer(remaining) {
+        const el = document.getElementById('timerText');
+        if (el) el.textContent = Helpers.formatDuration(Math.max(0, remaining));
+      }
+
+      function setInsight(message) {
+        const desktop = document.getElementById('aiInsight');
+        const mobile = document.getElementById('aiInsightMobile');
+        const html1 = `<div class="w-2 h-2 rounded-full animate-shimmer" style="background: #8B7DA8;"></div><p class="text-xs font-medium animate-shimmer" style="color: #8B7DA8;">${Helpers.escape(message)}</p>`;
+        const html2 = `<div class="w-1.5 h-1.5 rounded-full animate-shimmer" style="background: #8B7DA8;"></div><span class="text-[11px] font-medium animate-shimmer" style="color: #8B7DA8;">${Helpers.escape(message)}</span>`;
+        if (desktop) desktop.innerHTML = html1;
+        if (mobile) mobile.innerHTML = html2;
+      }
+
+      // ===== Socket 事件 =====
+      function bindSocket(socket) {
+        socket.off('game:start');
+        socket.off('game:turn');
+        socket.off('game:question_posted');
+        socket.off('game:judgment');
+        socket.off('game:timer');
+        socket.off('game:insight');
+        socket.off('game:reveal');
+        socket.off('error');
+
+        socket.on('game:start', (data) => {
+          // 校验 gameId
+          if (expectedGameId && data.gameId !== expectedGameId) {
+            return;
+          }
+          game.gameId = data.gameId;
+          game.yourSeat = data.yourSeat;
+          game.maxRounds = data.maxRounds;
+          game.players = data.players || [];
+          renderPuzzle(data.puzzle);
+          renderPlayerPanels();
+          document.getElementById('playerCount').textContent = game.players.length + '/' + game.players.length;
+        });
+
+        socket.on('game:turn', (data) => {
+          game.currentSeat = data.seat;
+          game.currentRound = data.round;
+          if (data.seat === game.yourSeat) {
+            game.isYourTurn = true;
+            setTurnIndicator(true);
+          } else {
+            game.isYourTurn = false;
+            setTurnIndicator(false, data.nickname);
+          }
+          renderPlayerPanels();
+          // 更新轮次显示
+          const roundText = '第 ' + data.round + ' / ' + (game.maxRounds || 0) + ' 轮';
+          document.getElementById('roundCounter').textContent = roundText;
+          document.getElementById('roundCounterMobile').textContent = roundText;
+          if (data.isBot) {
+            setInsight((data.nickname || 'AI') + ' 正在思考…');
+          }
+        });
+
+        socket.on('game:question_posted', (data) => {
+          // 仅显示提问气泡，判定会在 game:judgment 中追加
+          // 这里可以临时显示一个"判定中…"的状态，但为简化，直接等待 judgment
+        });
+
+        socket.on('game:judgment', (data) => {
+          appendChatMessage(data);
+          renderProgress(data);
+          // 接近真相提示
+          if (data.closeHint) {
+            setInsight((data.nickname || '有玩家') + ' 接近真相了…');
+          }
+        });
+
+        socket.on('game:timer', (data) => {
+          setTimer(data.remaining);
+        });
+
+        socket.on('game:insight', (data) => {
+          if (data.message) {
+            appendSystemMessage(data.message);
+            setInsight(data.message);
+          }
+        });
+
+        socket.on('game:reveal', (data) => {
+          game.revealed = true;
+          setTurnIndicator(false);
+          appendSystemMessage('真相揭晓中…');
+          Helpers.toast('对局结束，正在跳转揭晓页', 'success');
+          setTimeout(() => {
+            location.href = 'answer-reveal-v2.html?gameId=' + (data.gameId || game.gameId);
+          }, 1200);
+        });
+
+        socket.on('error', (data) => {
+          Helpers.toast(data.message || '发生错误', 'error');
+        });
+      }
+
+      // 提交问题
+      function submitQuestion() {
+        const input = document.getElementById('questionInput');
+        const q = (input.value || '').trim();
+        if (!q) return;
+        if (!game.isYourTurn) {
+          Helpers.toast('当前不是你的回合', 'warn');
+          return;
+        }
+        const socket = SocketClient.getSocket();
+        if (!socket) {
+          Helpers.toast('连接已断开，请刷新重试', 'error');
+          return;
+        }
+        socket.emit('game:question', { question: q });
+        input.value = '';
+        // 立即禁用，等待下一回合
+        const sendBtn = document.getElementById('sendBtn');
+        input.disabled = true;
+        sendBtn.disabled = true;
+        input.placeholder = '等待 AI 判定…';
+      }
+
+      // 初始化
+      function init() {
+        const input = document.getElementById('questionInput');
+        const sendBtn = document.getElementById('sendBtn');
+        sendBtn.addEventListener('click', submitQuestion);
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            submitQuestion();
+          }
+        });
+
+        if (!Api.getUserToken()) {
+          Helpers.toast('请先在匹配大厅输入昵称', 'warn');
+          setTimeout(() => { location.href = 'match-hall.html'; }, 1200);
+          return;
+        }
+        if (!expectedGameId) {
+          Helpers.toast('缺少对局 ID，返回大厅', 'warn');
+          setTimeout(() => { location.href = 'match-hall.html'; }, 1200);
+          return;
+        }
+
+        const socket = SocketClient.reconnect();
+        bindSocket(socket);
+
+        // 若连接已建立，绑定后立即就绪；若未建立，等待 connect
+        if (socket.connected) {
+          // 已经连上，事件已绑定即可
+        } else {
+          socket.on('connect', () => {
+            // 重连后重绑，避免遗漏
+            bindSocket(socket);
+          });
+        }
+      }
+
+      // 离开页面时通知后端
+      window.addEventListener('beforeunload', () => {
+        const socket = SocketClient.getSocket();
+        if (socket && socket.connected) {
+          socket.emit('game:leave');
+        }
+      });
+
+      init();
     </script>
 </body>
 </html>

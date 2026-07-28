@@ -69,6 +69,8 @@
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
     <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/helpers.js"></script>
     <style type="text/tailwindcss">
   @theme inline {
     --color-background: var(--ts-background);
@@ -185,13 +187,13 @@
           <p class="px-2 py-1.5 text-[10px] uppercase tracking-widest text-white/30 font-semibold">主菜单</p>
 
           <!-- Active item -->
-          <a href="#" class="flex items-center gap-3 rounded-xl px-3 py-2.5 bg-[#8B7DA8]/20 text-white font-medium text-sm transition-all duration-300 hover:scale-[1.02]">
+          <a href="admin-dashboard.html" class="flex items-center gap-3 rounded-xl px-3 py-2.5 bg-[#8B7DA8]/20 text-white font-medium text-sm transition-all duration-300 hover:scale-[1.02]">
             <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] text-[#B8AFCA]"></i>
             <span>总览</span>
             <span class="ml-auto w-1 h-5 rounded-full bg-[#8B7DA8]"></span>
           </a>
 
-          <a href="#" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-white/60 hover:bg-white/5 hover:text-white/90 text-sm transition-all duration-300 hover:scale-[1.02]">
+          <a href="admin-puzzles.html" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-white/60 hover:bg-white/5 hover:text-white/90 text-sm transition-all duration-300 hover:scale-[1.02]">
             <i data-lucide="book-open" class="w-[18px] h-[18px]"></i>
             <span>题库管理</span>
           </a>
@@ -214,7 +216,6 @@
           <a href="#" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-white/60 hover:bg-white/5 hover:text-white/90 text-sm transition-all duration-300 hover:scale-[1.02]">
             <i data-lucide="flag" class="w-[18px] h-[18px]"></i>
             <span>举报审核</span>
-            <span class="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white leading-none">5</span>
           </a>
 
           <div class="!my-3 border-t border-white/10"></div>
@@ -235,11 +236,14 @@
         <!-- Admin footer -->
         <div class="border-t border-white/10 px-4 py-3.5">
           <div class="flex items-center gap-2.5">
-            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-[#8B7DA8] text-xs font-bold text-white">SA</div>
-            <div class="min-w-0">
-              <p class="text-xs font-medium text-white truncate">SuperAdmin</p>
-              <p class="text-[10px] text-white/40">超级管理员</p>
+            <div id="admin-avatar" class="flex h-8 w-8 items-center justify-center rounded-full bg-[#8B7DA8] text-xs font-bold text-white">SA</div>
+            <div class="min-w-0 flex-1">
+              <p id="admin-name" class="text-xs font-medium text-white truncate">管理员</p>
+              <p id="admin-role" class="text-[10px] text-white/40">—</p>
             </div>
+            <button id="btn-logout" title="退出登录" class="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-all duration-200">
+              <i data-lucide="log-out" class="w-4 h-4"></i>
+            </button>
           </div>
         </div>
       </aside>
@@ -263,10 +267,10 @@
               <h1 class="text-lg font-bold text-[#3D3835] tracking-tight">数据总览</h1>
 
               <!-- Date range tabs -->
-              <div class="hidden sm:flex items-center gap-1 rounded-xl bg-[#3D3835]/5 p-0.5">
-                <button class="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#8B7DA8] text-white shadow-sm transition-all duration-300">今日</button>
-                <button class="px-3 py-1.5 text-xs font-medium rounded-lg text-[#6B6560] hover:text-[#3D3835] transition-all duration-300">本周</button>
-                <button class="px-3 py-1.5 text-xs font-medium rounded-lg text-[#6B6560] hover:text-[#3D3835] transition-all duration-300">本月</button>
+              <div id="range-tabs" class="hidden sm:flex items-center gap-1 rounded-xl bg-[#3D3835]/5 p-0.5" data-range="today">
+                <button data-range="today" class="range-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-[#8B7DA8] text-white shadow-sm transition-all duration-300">今日</button>
+                <button data-range="week" class="range-btn px-3 py-1.5 text-xs font-medium rounded-lg text-[#6B6560] hover:text-[#3D3835] transition-all duration-300">本周</button>
+                <button data-range="month" class="range-btn px-3 py-1.5 text-xs font-medium rounded-lg text-[#6B6560] hover:text-[#3D3835] transition-all duration-300">本月</button>
               </div>
             </div>
 
@@ -288,17 +292,18 @@
         <div class="p-4 lg:p-8 space-y-6">
 
           <!-- ========== KPI CARDS ========== -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-5">
+          <div id="kpi-loading" class="text-center py-4 text-sm text-[#A09890]">加载中…</div>
+          <div id="kpi-grid" class="hidden grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-5">
 
             <!-- KPI 1: Total Users -->
             <div class="glass-card group relative overflow-hidden rounded-2xl border-t-[3px] border-t-[#8B7DA8] backdrop-blur-xl bg-white/70 border border-white/40 shadow-lg p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
               <div class="flex items-start justify-between">
                 <div>
                   <p class="text-xs font-medium text-[#6B6560] tracking-wide uppercase">总用户数</p>
-                  <p class="mt-2 text-2xl font-bold text-[#3D3835] tracking-tight">12,847</p>
+                  <p id="kpi-total-users" class="mt-2 text-2xl font-bold text-[#3D3835] tracking-tight">—</p>
                   <div class="mt-1.5 flex items-center gap-1 text-xs font-medium text-[#7BAE98]">
                     <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
-                    <span>+12.3% <span class="text-[#A09890] font-normal">较上周</span></span>
+                    <span>累计用户</span>
                   </div>
                 </div>
                 <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#8B7DA8]/10 text-[#8B7DA8] transition-transform duration-300 group-hover:scale-110">
@@ -312,10 +317,10 @@
               <div class="flex items-start justify-between">
                 <div>
                   <p class="text-xs font-medium text-[#6B6560] tracking-wide uppercase">今日对局</p>
-                  <p class="mt-2 text-2xl font-bold text-[#3D3835] tracking-tight">1,234</p>
+                  <p id="kpi-today-games" class="mt-2 text-2xl font-bold text-[#3D3835] tracking-tight">—</p>
                   <div class="mt-1.5 flex items-center gap-1 text-xs font-medium text-[#7BAE98]">
-                    <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
-                    <span>+8.7% <span class="text-[#A09890] font-normal">较昨日</span></span>
+                    <i data-lucide="activity" class="w-3.5 h-3.5"></i>
+                    <span>已完成场次</span>
                   </div>
                 </div>
                 <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7BAE98]/10 text-[#7BAE98] transition-transform duration-300 group-hover:scale-110">
@@ -329,10 +334,10 @@
               <div class="flex items-start justify-between">
                 <div>
                   <p class="text-xs font-medium text-[#6B6560] tracking-wide uppercase">活跃题库</p>
-                  <p class="mt-2 text-2xl font-bold text-[#3D3835] tracking-tight">356 <span class="text-sm font-normal text-[#A09890]">/ 400</span></p>
+                  <p class="mt-2 text-2xl font-bold text-[#3D3835] tracking-tight"><span id="kpi-active-puzzles">—</span> <span class="text-sm font-normal text-[#A09890]">/ <span id="kpi-total-puzzles">—</span></span></p>
                   <div class="mt-1.5 flex items-center gap-1">
                     <div class="h-1.5 flex-1 rounded-full bg-[#EDE8E3] overflow-hidden">
-                      <div class="h-full w-[89%] rounded-full bg-gradient-to-r from-[#C4A6B0] to-[#8B7DA8]"></div>
+                      <div id="kpi-puzzles-bar" class="h-full rounded-full bg-gradient-to-r from-[#C4A6B0] to-[#8B7DA8] transition-all duration-700" style="width:0%"></div>
                     </div>
                   </div>
                 </div>
@@ -347,10 +352,10 @@
               <div class="flex items-start justify-between">
                 <div>
                   <p class="text-xs font-medium text-[#6B6560] tracking-wide uppercase">AI 准确率</p>
-                  <p class="mt-2 text-2xl font-bold text-[#3D3835] tracking-tight">97.2%</p>
+                  <p id="kpi-ai-accuracy" class="mt-2 text-2xl font-bold text-[#3D3835] tracking-tight">—</p>
                   <div class="mt-1.5 flex items-center gap-1 text-xs font-medium text-[#7BAE98]">
-                    <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
-                    <span>+0.3% <span class="text-[#A09890] font-normal">较上周</span></span>
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                    <span>GLM 判定引擎</span>
                   </div>
                 </div>
                 <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#D4A76A]/10 text-[#D4A76A] transition-transform duration-300 group-hover:scale-110">
@@ -379,56 +384,8 @@
                   </div>
                 </div>
                 <!-- CSS-only chart bars -->
-                <div class="chart-bars flex items-end justify-between gap-2 lg:gap-3 h-[180px] px-1">
-                  <div class="flex flex-col items-center gap-1.5 flex-1">
-                    <div class="w-full flex flex-col items-center gap-1">
-                      <div class="w-full rounded-t-lg bg-gradient-to-t from-[#8B7DA8] to-[#B8AFCA] transition-all duration-700 ease-out" style="height: 80px"></div>
-                      <div class="w-full rounded-t-lg bg-gradient-to-t from-[#B8AFCA]/40 to-[#B8AFCA]/20 transition-all duration-700 ease-out" style="height: 50px"></div>
-                    </div>
-                    <span class="text-[10px] text-[#A09890]">周一</span>
-                  </div>
-                  <div class="flex flex-col items-center gap-1.5 flex-1">
-                    <div class="w-full flex flex-col items-center gap-1">
-                      <div class="w-full rounded-t-lg bg-gradient-to-t from-[#8B7DA8] to-[#B8AFCA] transition-all duration-700 ease-out" style="height: 110px"></div>
-                      <div class="w-full rounded-t-lg bg-gradient-to-t from-[#B8AFCA]/40 to-[#B8AFCA]/20 transition-all duration-700 ease-out" style="height: 65px"></div>
-                    </div>
-                    <span class="text-[10px] text-[#A09890]">周二</span>
-                  </div>
-                  <div class="flex flex-col items-center gap-1.5 flex-1">
-                    <div class="w-full flex flex-col items-center gap-1">
-                      <div class="w-full rounded-t-lg bg-gradient-to-t from-[#8B7DA8] to-[#B8AFCA] transition-all duration-700 ease-out" style="height: 70px"></div>
-                      <div class="w-full rounded-t-lg bg-gradient-to-t from-[#B8AFCA]/40 to-[#B8AFCA]/20 transition-all duration-700 ease-out" style="height: 45px"></div>
-                    </div>
-                    <span class="text-[10px] text-[#A09890]">周三</span>
-                  </div>
-                  <div class="flex flex-col items-center gap-1.5 flex-1">
-                    <div class="w-full flex flex-col items-center gap-1">
-                      <div class="w-full rounded-t-lg bg-gradient-to-t from-[#8B7DA8] to-[#B8AFCA] transition-all duration-700 ease-out" style="height: 130px"></div>
-                      <div class="w-full rounded-t-lg bg-gradient-to-t from-[#B8AFCA]/40 to-[#B8AFCA]/20 transition-all duration-700 ease-out" style="height: 80px"></div>
-                    </div>
-                    <span class="text-[10px] text-[#A09890]">周四</span>
-                  </div>
-                  <div class="flex flex-col items-center gap-1.5 flex-1">
-                    <div class="w-full flex flex-col items-center gap-1">
-                      <div class="w-full rounded-t-lg bg-gradient-to-t from-[#8B7DA8] to-[#B8AFCA] transition-all duration-700 ease-out" style="height: 95px"></div>
-                      <div class="w-full rounded-t-lg bg-gradient-to-t from-[#B8AFCA]/40 to-[#B8AFCA]/20 transition-all duration-700 ease-out" style="height: 60px"></div>
-                    </div>
-                    <span class="text-[10px] text-[#A09890]">周五</span>
-                  </div>
-                  <div class="flex flex-col items-center gap-1.5 flex-1">
-                    <div class="w-full flex flex-col items-center gap-1">
-                      <div class="w-full rounded-t-lg bg-gradient-to-t from-[#8B7DA8] to-[#B8AFCA] transition-all duration-700 ease-out" style="height: 150px"></div>
-                      <div class="w-full rounded-t-lg bg-gradient-to-t from-[#B8AFCA]/40 to-[#B8AFCA]/20 transition-all duration-700 ease-out" style="height: 100px"></div>
-                    </div>
-                    <span class="text-[10px] text-[#A09890]">周六</span>
-                  </div>
-                  <div class="flex flex-col items-center gap-1.5 flex-1">
-                    <div class="w-full flex flex-col items-center gap-1">
-                      <div class="w-full rounded-t-lg bg-gradient-to-t from-[#8B7DA8] to-[#B8AFCA] transition-all duration-700 ease-out" style="height: 140px"></div>
-                      <div class="w-full rounded-t-lg bg-gradient-to-t from-[#B8AFCA]/40 to-[#B8AFCA]/20 transition-all duration-700 ease-out" style="height: 90px"></div>
-                    </div>
-                    <span class="text-[10px] text-[#A09890]">周日</span>
-                  </div>
+                <div id="chart-bars" class="chart-bars flex items-end justify-between gap-2 lg:gap-3 h-[180px] px-1">
+                  <!-- 由 JS 渲染 -->
                 </div>
               </div>
 
@@ -439,7 +396,7 @@
                     <h3 class="text-sm font-bold text-[#3D3835]">最近对局记录</h3>
                     <p class="text-xs text-[#A09890] mt-0.5">实时更新</p>
                   </div>
-                  <button class="text-xs font-medium text-[#8B7DA8] hover:text-[#6B5B8A] transition-colors duration-300">查看全部</button>
+                  <a href="#" class="text-xs font-medium text-[#8B7DA8] hover:text-[#6B5B8A] transition-colors duration-300">查看全部</a>
                 </div>
                 <div class="overflow-x-auto -mx-5 lg:-mx-6 px-5 lg:px-6">
                   <table class="w-full text-xs">
@@ -453,62 +410,10 @@
                         <th class="py-2.5 text-left font-semibold text-[#6B6560] whitespace-nowrap">时间</th>
                       </tr>
                     </thead>
-                    <tbody class="text-[#3D3835]">
-                      <tr class="border-b border-[#E0D8D0]/30 hover:bg-[#8B7DA8]/5 transition-colors duration-200">
-                        <td class="py-3 pr-3 font-mono text-[#8B7DA8]">#10234</td>
-                        <td class="py-3 pr-3 whitespace-nowrap">小明同学</td>
-                        <td class="py-3 pr-3 truncate max-w-[140px]">最后的晚餐</td>
-                        <td class="py-3 pr-3 text-center">12</td>
-                        <td class="py-3 pr-3 text-center"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#7BAE98]/15 text-[#7BAE98] text-[10px] font-semibold">胜利</span></td>
-                        <td class="py-3 whitespace-nowrap text-[#A09890]">2 分钟前</td>
-                      </tr>
-                      <tr class="border-b border-[#E0D8D0]/30 hover:bg-[#8B7DA8]/5 transition-colors duration-200">
-                        <td class="py-3 pr-3 font-mono text-[#8B7DA8]">#10233</td>
-                        <td class="py-3 pr-3 whitespace-nowrap">侦探少女</td>
-                        <td class="py-3 pr-3 truncate max-w-[140px]">消失的钥匙</td>
-                        <td class="py-3 pr-3 text-center">8</td>
-                        <td class="py-3 pr-3 text-center"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D4908A]/15 text-[#D4908A] text-[10px] font-semibold">失败</span></td>
-                        <td class="py-3 whitespace-nowrap text-[#A09890]">5 分钟前</td>
-                      </tr>
-                      <tr class="border-b border-[#E0D8D0]/30 hover:bg-[#8B7DA8]/5 transition-colors duration-200">
-                        <td class="py-3 pr-3 font-mono text-[#8B7DA8]">#10232</td>
-                        <td class="py-3 pr-3 whitespace-nowrap">逻辑达人</td>
-                        <td class="py-3 pr-3 truncate max-w-[140px]">午夜来电</td>
-                        <td class="py-3 pr-3 text-center">15</td>
-                        <td class="py-3 pr-3 text-center"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#7BAE98]/15 text-[#7BAE98] text-[10px] font-semibold">胜利</span></td>
-                        <td class="py-3 whitespace-nowrap text-[#A09890]">12 分钟前</td>
-                      </tr>
-                      <tr class="border-b border-[#E0D8D0]/30 hover:bg-[#8B7DA8]/5 transition-colors duration-200">
-                        <td class="py-3 pr-3 font-mono text-[#8B7DA8]">#10231</td>
-                        <td class="py-3 pr-3 whitespace-nowrap">谜题猎手</td>
-                        <td class="py-3 pr-3 truncate max-w-[140px]">空房间</td>
-                        <td class="py-3 pr-3 text-center">20</td>
-                        <td class="py-3 pr-3 text-center"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D4A76A]/15 text-[#D4A76A] text-[10px] font-semibold">进行中</span></td>
-                        <td class="py-3 whitespace-nowrap text-[#A09890]">18 分钟前</td>
-                      </tr>
-                      <tr class="hover:bg-[#8B7DA8]/5 transition-colors duration-200">
-                        <td class="py-3 pr-3 font-mono text-[#8B7DA8]">#10230</td>
-                        <td class="py-3 pr-3 whitespace-nowrap">推理新手</td>
-                        <td class="py-3 pr-3 truncate max-w-[140px]">雨天的伞</td>
-                        <td class="py-3 pr-3 text-center">6</td>
-                        <td class="py-3 pr-3 text-center"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#7BAE98]/15 text-[#7BAE98] text-[10px] font-semibold">胜利</span></td>
-                        <td class="py-3 whitespace-nowrap text-[#A09890]">25 分钟前</td>
-                      </tr>
+                    <tbody id="recent-games-tbody" class="text-[#3D3835]">
+                      <tr><td colspan="6" class="py-6 text-center text-[#A09890]">加载中…</td></tr>
                     </tbody>
                   </table>
-                </div>
-                <!-- Pagination -->
-                <div class="flex items-center justify-between mt-4 pt-3 border-t border-[#E0D8D0]/40">
-                  <p class="text-[11px] text-[#A09890]">显示 1-5 / 共 1,234 条</p>
-                  <div class="flex items-center gap-1">
-                    <button class="flex h-7 w-7 items-center justify-center rounded-lg text-[#A09890] hover:bg-[#EDE8E3] transition-colors duration-200"><i data-lucide="chevron-left" class="w-3.5 h-3.5"></i></button>
-                    <button class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#8B7DA8] text-white text-xs font-medium">1</button>
-                    <button class="flex h-7 w-7 items-center justify-center rounded-lg text-[#6B6560] hover:bg-[#EDE8E3] text-xs transition-colors duration-200">2</button>
-                    <button class="flex h-7 w-7 items-center justify-center rounded-lg text-[#6B6560] hover:bg-[#EDE8E3] text-xs transition-colors duration-200">3</button>
-                    <span class="text-[#A09890] text-xs px-0.5">...</span>
-                    <button class="flex h-7 w-7 items-center justify-center rounded-lg text-[#6B6560] hover:bg-[#EDE8E3] text-xs transition-colors duration-200">247</button>
-                    <button class="flex h-7 w-7 items-center justify-center rounded-lg text-[#A09890] hover:bg-[#EDE8E3] transition-colors duration-200"><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>
-                  </div>
                 </div>
               </div>
             </div>
@@ -527,36 +432,36 @@
                   <div>
                     <div class="flex items-center justify-between mb-1.5">
                       <span class="text-xs text-[#6B6560]">简单</span>
-                      <span class="text-xs font-semibold text-[#3D3835]">45%</span>
+                      <span id="dist-easy-pct" class="text-xs font-semibold text-[#3D3835]">—</span>
                     </div>
                     <div class="h-2.5 w-full rounded-full bg-[#EDE8E3] overflow-hidden">
-                      <div class="h-full rounded-full bg-gradient-to-r from-[#7BAE98] to-[#7BAE98]/70 transition-all duration-700 ease-out" style="width: 45%"></div>
+                      <div id="dist-easy-bar" class="h-full rounded-full bg-gradient-to-r from-[#7BAE98] to-[#7BAE98]/70 transition-all duration-700 ease-out" style="width: 0%"></div>
                     </div>
                   </div>
                   <!-- Medium -->
                   <div>
                     <div class="flex items-center justify-between mb-1.5">
                       <span class="text-xs text-[#6B6560]">中等</span>
-                      <span class="text-xs font-semibold text-[#3D3835]">35%</span>
+                      <span id="dist-medium-pct" class="text-xs font-semibold text-[#3D3835]">—</span>
                     </div>
                     <div class="h-2.5 w-full rounded-full bg-[#EDE8E3] overflow-hidden">
-                      <div class="h-full rounded-full bg-gradient-to-r from-[#D4A76A] to-[#D4A76A]/70 transition-all duration-700 ease-out" style="width: 35%"></div>
+                      <div id="dist-medium-bar" class="h-full rounded-full bg-gradient-to-r from-[#D4A76A] to-[#D4A76A]/70 transition-all duration-700 ease-out" style="width: 0%"></div>
                     </div>
                   </div>
                   <!-- Hard -->
                   <div>
                     <div class="flex items-center justify-between mb-1.5">
                       <span class="text-xs text-[#6B6560]">困难</span>
-                      <span class="text-xs font-semibold text-[#3D3835]">20%</span>
+                      <span id="dist-hard-pct" class="text-xs font-semibold text-[#3D3835]">—</span>
                     </div>
                     <div class="h-2.5 w-full rounded-full bg-[#EDE8E3] overflow-hidden">
-                      <div class="h-full rounded-full bg-gradient-to-r from-[#D4908A] to-[#D4908A]/70 transition-all duration-700 ease-out" style="width: 20%"></div>
+                      <div id="dist-hard-bar" class="h-full rounded-full bg-gradient-to-r from-[#D4908A] to-[#D4908A]/70 transition-all duration-700 ease-out" style="width: 0%"></div>
                     </div>
                   </div>
                 </div>
                 <div class="mt-4 pt-3 border-t border-[#E0D8D0]/40 flex items-center justify-between">
-                  <span class="text-[11px] text-[#A09890]">共 400 道题目</span>
-                  <button class="text-[11px] font-medium text-[#8B7DA8] hover:text-[#6B5B8A] transition-colors duration-300">管理题库</button>
+                  <span id="dist-total" class="text-[11px] text-[#A09890]">共 — 道题目</span>
+                  <a href="admin-puzzles.html" class="text-[11px] font-medium text-[#8B7DA8] hover:text-[#6B5B8A] transition-colors duration-300">管理题库</a>
                 </div>
               </div>
 
@@ -566,62 +471,8 @@
                   <h3 class="text-sm font-bold text-[#3D3835]">热门题目 Top 5</h3>
                   <i data-lucide="flame" class="w-4 h-4 text-[#D4908A]"></i>
                 </div>
-                <div class="space-y-3">
-                  <!-- #1 -->
-                  <div class="flex items-center gap-3 group hover:bg-[#8B7DA8]/5 rounded-xl p-2 -mx-2 transition-colors duration-200">
-                    <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-[#8B7DA8] text-white text-[10px] font-bold shrink-0">1</span>
-                    <div class="flex-1 min-w-0">
-                      <p class="text-xs font-medium text-[#3D3835] truncate">最后的晚餐</p>
-                      <div class="mt-1 h-1.5 w-full rounded-full bg-[#EDE8E3] overflow-hidden">
-                        <div class="h-full rounded-full bg-gradient-to-r from-[#8B7DA8] to-[#C4A6B0]" style="width: 95%"></div>
-                      </div>
-                    </div>
-                    <span class="text-[10px] text-[#A09890] shrink-0">2,847 次</span>
-                  </div>
-                  <!-- #2 -->
-                  <div class="flex items-center gap-3 group hover:bg-[#8B7DA8]/5 rounded-xl p-2 -mx-2 transition-colors duration-200">
-                    <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-[#C4A6B0] text-white text-[10px] font-bold shrink-0">2</span>
-                    <div class="flex-1 min-w-0">
-                      <p class="text-xs font-medium text-[#3D3835] truncate">午夜来电</p>
-                      <div class="mt-1 h-1.5 w-full rounded-full bg-[#EDE8E3] overflow-hidden">
-                        <div class="h-full rounded-full bg-gradient-to-r from-[#C4A6B0] to-[#D4A76A]" style="width: 82%"></div>
-                      </div>
-                    </div>
-                    <span class="text-[10px] text-[#A09890] shrink-0">2,341 次</span>
-                  </div>
-                  <!-- #3 -->
-                  <div class="flex items-center gap-3 group hover:bg-[#8B7DA8]/5 rounded-xl p-2 -mx-2 transition-colors duration-200">
-                    <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-[#D4A76A] text-white text-[10px] font-bold shrink-0">3</span>
-                    <div class="flex-1 min-w-0">
-                      <p class="text-xs font-medium text-[#3D3835] truncate">消失的钥匙</p>
-                      <div class="mt-1 h-1.5 w-full rounded-full bg-[#EDE8E3] overflow-hidden">
-                        <div class="h-full rounded-full bg-gradient-to-r from-[#D4A76A] to-[#D4908A]" style="width: 68%"></div>
-                      </div>
-                    </div>
-                    <span class="text-[10px] text-[#A09890] shrink-0">1,986 次</span>
-                  </div>
-                  <!-- #4 -->
-                  <div class="flex items-center gap-3 group hover:bg-[#8B7DA8]/5 rounded-xl p-2 -mx-2 transition-colors duration-200">
-                    <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-[#A09890]/60 text-white text-[10px] font-bold shrink-0">4</span>
-                    <div class="flex-1 min-w-0">
-                      <p class="text-xs font-medium text-[#3D3835] truncate">空房间</p>
-                      <div class="mt-1 h-1.5 w-full rounded-full bg-[#EDE8E3] overflow-hidden">
-                        <div class="h-full rounded-full bg-gradient-to-r from-[#A09890] to-[#B8AFCA]" style="width: 55%"></div>
-                      </div>
-                    </div>
-                    <span class="text-[10px] text-[#A09890] shrink-0">1,654 次</span>
-                  </div>
-                  <!-- #5 -->
-                  <div class="flex items-center gap-3 group hover:bg-[#8B7DA8]/5 rounded-xl p-2 -mx-2 transition-colors duration-200">
-                    <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-[#A09890]/40 text-white text-[10px] font-bold shrink-0">5</span>
-                    <div class="flex-1 min-w-0">
-                      <p class="text-xs font-medium text-[#3D3835] truncate">雨天的伞</p>
-                      <div class="mt-1 h-1.5 w-full rounded-full bg-[#EDE8E3] overflow-hidden">
-                        <div class="h-full rounded-full bg-gradient-to-r from-[#B8AFCA] to-[#E8D5DD]" style="width: 42%"></div>
-                      </div>
-                    </div>
-                    <span class="text-[10px] text-[#A09890] shrink-0">1,320 次</span>
-                  </div>
+                <div id="hot-puzzles" class="space-y-3">
+                  <p class="text-xs text-[#A09890] text-center py-4">加载中…</p>
                 </div>
               </div>
 
@@ -629,45 +480,10 @@
               <div class="glass-card rounded-2xl backdrop-blur-xl bg-white/70 border border-white/40 shadow-lg p-5 lg:p-6 transition-all duration-300">
                 <div class="flex items-center justify-between mb-4">
                   <h3 class="text-sm font-bold text-[#3D3835]">待处理事项</h3>
-                  <span class="text-[10px] font-medium text-white bg-[#D4908A] rounded-full px-2 py-0.5">4 项</span>
+                  <span id="pending-count" class="text-[10px] font-medium text-white bg-[#D4908A] rounded-full px-2 py-0.5">— 项</span>
                 </div>
-                <div class="space-y-2.5">
-                  <!-- Item 1 -->
-                  <div class="flex items-center gap-3 rounded-xl p-2.5 bg-[#D4908A]/8 border border-[#D4908A]/15 hover:bg-[#D4908A]/12 transition-colors duration-200">
-                    <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#D4908A]/15 text-sm">🔴</span>
-                    <div class="flex-1">
-                      <p class="text-xs font-medium text-[#3D3835]">5 条举报待审核</p>
-                      <p class="text-[10px] text-[#A09890]">其中 2 条为紧急</p>
-                    </div>
-                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-[#A09890] shrink-0"></i>
-                  </div>
-                  <!-- Item 2 -->
-                  <div class="flex items-center gap-3 rounded-xl p-2.5 bg-[#D4A76A]/8 border border-[#D4A76A]/15 hover:bg-[#D4A76A]/12 transition-colors duration-200">
-                    <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#D4A76A]/15 text-sm">🟡</span>
-                    <div class="flex-1">
-                      <p class="text-xs font-medium text-[#3D3835]">3 道新题待审核</p>
-                      <p class="text-[10px] text-[#A09890]">提交于今日</p>
-                    </div>
-                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-[#A09890] shrink-0"></i>
-                  </div>
-                  <!-- Item 3 -->
-                  <div class="flex items-center gap-3 rounded-xl p-2.5 bg-[#7BAE98]/8 border border-[#7BAE98]/15 hover:bg-[#7BAE98]/12 transition-colors duration-200">
-                    <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#7BAE98]/15 text-sm">🟢</span>
-                    <div class="flex-1">
-                      <p class="text-xs font-medium text-[#3D3835]">AI 模型需更新</p>
-                      <p class="text-[10px] text-[#A09890]">v2.1.0 可用</p>
-                    </div>
-                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-[#A09890] shrink-0"></i>
-                  </div>
-                  <!-- Item 4 -->
-                  <div class="flex items-center gap-3 rounded-xl p-2.5 bg-[#8B7DA8]/8 border border-[#8B7DA8]/15 hover:bg-[#8B7DA8]/12 transition-colors duration-200">
-                    <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#8B7DA8]/15 text-sm">🔵</span>
-                    <div class="flex-1">
-                      <p class="text-xs font-medium text-[#3D3835]">系统维护计划</p>
-                      <p class="text-[10px] text-[#A09890]">定于 7/30 02:00</p>
-                    </div>
-                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-[#A09890] shrink-0"></i>
-                  </div>
+                <div id="pending-tasks" class="space-y-2.5">
+                  <p class="text-xs text-[#A09890] text-center py-4">加载中…</p>
                 </div>
               </div>
             </div>
@@ -759,8 +575,12 @@
     </style>
 
     <script>
-      // Initialize Lucide icons
       lucide.createIcons();
+
+      // 鉴权：未登录跳转
+      if (!window.Api || !Api.getAdminToken()) {
+        location.href = 'admin-login.html';
+      }
 
       // Mobile sidebar toggle
       const sidebar = document.getElementById('admin-sidebar');
@@ -772,20 +592,226 @@
         overlay.style.opacity = '1';
         overlay.style.pointerEvents = 'auto';
       }
-
       function closeSidebar() {
         sidebar.classList.remove('is-open');
         overlay.style.opacity = '0';
         overlay.style.pointerEvents = 'none';
       }
-
       menuBtn.addEventListener('click', openSidebar);
       overlay.addEventListener('click', closeSidebar);
-
-      // Close sidebar when resizing to desktop
       window.addEventListener('resize', function() {
         if (window.innerWidth >= 1024) closeSidebar();
       });
+
+      // 渲染管理员信息
+      (function renderAdminInfo() {
+        const info = Api.getAdminInfo();
+        if (!info) return;
+        const nameEl = document.getElementById('admin-name');
+        const roleEl = document.getElementById('admin-role');
+        const avatarEl = document.getElementById('admin-avatar');
+        if (nameEl) nameEl.textContent = info.name || '管理员';
+        if (roleEl) roleEl.textContent = info.role || '—';
+        if (avatarEl && info.name) avatarEl.textContent = info.name.charAt(0).toUpperCase();
+      })();
+
+      // 退出登录
+      const btnLogout = document.getElementById('btn-logout');
+      if (btnLogout) {
+        btnLogout.addEventListener('click', function() {
+          Api.clearAdmin();
+          location.href = 'admin-login.html';
+        });
+      }
+
+      // ===== Dashboard 数据加载 =====
+      (function() {
+        const rankBadges = ['#8B7DA8', '#C4A6B0', '#D4A76A', '#A09890', '#A09890'];
+        const hotGradients = [
+          'from-[#8B7DA8] to-[#C4A6B0]',
+          'from-[#C4A6B0] to-[#D4A76A]',
+          'from-[#D4A76A] to-[#D4908A]',
+          'from-[#A09890] to-[#B8AFCA]',
+          'from-[#B8AFCA] to-[#E8D5DD]',
+        ];
+
+        function fmtNum(n) {
+          if (n == null) return '—';
+          return n.toLocaleString('zh-CN');
+        }
+
+        function renderKPI(kpi) {
+          const loading = document.getElementById('kpi-loading');
+          const grid = document.getElementById('kpi-grid');
+          if (loading) loading.classList.add('hidden');
+          if (grid) {
+            grid.classList.remove('hidden');
+            grid.classList.add('grid');
+          }
+          document.getElementById('kpi-total-users').textContent = fmtNum(kpi.totalUsers);
+          document.getElementById('kpi-today-games').textContent = fmtNum(kpi.todayGames);
+          document.getElementById('kpi-active-puzzles').textContent = kpi.activePuzzles;
+          document.getElementById('kpi-total-puzzles').textContent = kpi.totalPuzzles;
+          const pct = kpi.totalPuzzles > 0 ? Math.round((kpi.activePuzzles / kpi.totalPuzzles) * 100) : 0;
+          const bar = document.getElementById('kpi-puzzles-bar');
+          if (bar) bar.style.width = pct + '%';
+          document.getElementById('kpi-ai-accuracy').textContent = (kpi.aiAccuracy ? (kpi.aiAccuracy * 100).toFixed(1) : '—') + '%';
+        }
+
+        function renderChart(userGrowth) {
+          const container = document.getElementById('chart-bars');
+          if (!container) return;
+          if (!userGrowth || userGrowth.length === 0) {
+            container.innerHTML = '<p class="text-xs text-[#A09890] w-full text-center self-center">暂无数据</p>';
+            return;
+          }
+          const maxVal = Math.max.apply(null, userGrowth.map(function(d) {
+            return Math.max(d.newUsers || 0, d.activeUsers || 0);
+          })) || 1;
+          const SCALE = 150; // 最大像素高度
+          container.innerHTML = userGrowth.map(function(d) {
+            const newH = Math.max(4, Math.round(((d.newUsers || 0) / maxVal) * SCALE));
+            const activeH = Math.max(4, Math.round(((d.activeUsers || 0) / maxVal) * SCALE));
+            return '<div class="flex flex-col items-center gap-1.5 flex-1">' +
+              '<div class="w-full flex flex-col items-center gap-1">' +
+                '<div class="w-full rounded-t-lg bg-gradient-to-t from-[#8B7DA8] to-[#B8AFCA] transition-all duration-700 ease-out" style="height:' + newH + 'px"></div>' +
+                '<div class="w-full rounded-t-lg bg-gradient-to-t from-[#B8AFCA]/40 to-[#B8AFCA]/20 transition-all duration-700 ease-out" style="height:' + activeH + 'px"></div>' +
+              '</div>' +
+              '<span class="text-[10px] text-[#A09890]">' + Helpers.escape(d.label || d.date) + '</span>' +
+            '</div>';
+          }).join('');
+        }
+
+        function renderRecentGames(games) {
+          const tbody = document.getElementById('recent-games-tbody');
+          if (!tbody) return;
+          if (!games || games.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-[#A09890]">暂无对局记录</td></tr>';
+            return;
+          }
+          tbody.innerHTML = games.map(function(g) {
+            const isWin = g.result === '胜利';
+            const badge = isWin
+              ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#7BAE98]/15 text-[#7BAE98] text-[10px] font-semibold">胜利</span>'
+              : '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D4908A]/15 text-[#D4908A] text-[10px] font-semibold">失败</span>';
+            const idShort = '#' + (g.gameId || '').slice(-5);
+            return '<tr class="border-b border-[#E0D8D0]/30 hover:bg-[#8B7DA8]/5 transition-colors duration-200">' +
+              '<td class="py-3 pr-3 font-mono text-[#8B7DA8]">' + Helpers.escape(idShort) + '</td>' +
+              '<td class="py-3 pr-3 whitespace-nowrap">' + Helpers.escape(g.player || '—') + '</td>' +
+              '<td class="py-3 pr-3 truncate max-w-[140px]">' + Helpers.escape(g.puzzle || '—') + '</td>' +
+              '<td class="py-3 pr-3 text-center">' + (g.rounds || 0) + '</td>' +
+              '<td class="py-3 pr-3 text-center">' + badge + '</td>' +
+              '<td class="py-3 whitespace-nowrap text-[#A09890]">' + Helpers.formatTimeAgo(g.time) + '</td>' +
+            '</tr>';
+          }).join('');
+        }
+
+        function renderDifficulty(dist) {
+          if (!dist) return;
+          const setBar = function(pctId, barId, val) {
+            const pctEl = document.getElementById(pctId);
+            const barEl = document.getElementById(barId);
+            if (pctEl) pctEl.textContent = val + '%';
+            if (barEl) barEl.style.width = val + '%';
+          };
+          setBar('dist-easy-pct', 'dist-easy-bar', dist.easy || 0);
+          setBar('dist-medium-pct', 'dist-medium-bar', dist.medium || 0);
+          setBar('dist-hard-pct', 'dist-hard-bar', dist.hard || 0);
+          const total = document.getElementById('dist-total');
+          if (total) total.textContent = '共 ' + (dist.total || 0) + ' 道题目';
+        }
+
+        function renderHotPuzzles(hot) {
+          const container = document.getElementById('hot-puzzles');
+          if (!container) return;
+          if (!hot || hot.length === 0) {
+            container.innerHTML = '<p class="text-xs text-[#A09890] text-center py-4">暂无数据</p>';
+            return;
+          }
+          const maxCount = Math.max.apply(null, hot.map(function(p) { return p.playCount || 0; })) || 1;
+          container.innerHTML = hot.map(function(p, i) {
+            const pct = Math.round(((p.playCount || 0) / maxCount) * 100);
+            const badgeColor = rankBadges[i] || '#A09890';
+            const gradient = hotGradients[i] || 'from-[#B8AFCA] to-[#E8D5DD]';
+            return '<div class="flex items-center gap-3 group hover:bg-[#8B7DA8]/5 rounded-xl p-2 -mx-2 transition-colors duration-200">' +
+              '<span class="flex h-6 w-6 items-center justify-center rounded-lg text-white text-[10px] font-bold shrink-0" style="background:' + badgeColor + ';">' + (i + 1) + '</span>' +
+              '<div class="flex-1 min-w-0">' +
+                '<p class="text-xs font-medium text-[#3D3835] truncate">' + Helpers.escape(p.title) + '</p>' +
+                '<div class="mt-1 h-1.5 w-full rounded-full bg-[#EDE8E3] overflow-hidden">' +
+                  '<div class="h-full rounded-full bg-gradient-to-r ' + gradient + '" style="width:' + pct + '%"></div>' +
+                '</div>' +
+              '</div>' +
+              '<span class="text-[10px] text-[#A09890] shrink-0">' + fmtNum(p.playCount) + ' 次</span>' +
+            '</div>';
+          }).join('');
+        }
+
+        function renderPending(tasks) {
+          const container = document.getElementById('pending-tasks');
+          const countEl = document.getElementById('pending-count');
+          if (!container) return;
+          if (!tasks || tasks.length === 0) {
+            container.innerHTML = '<p class="text-xs text-[#A09890] text-center py-4">暂无待办</p>';
+            if (countEl) countEl.textContent = '0 项';
+            return;
+          }
+          if (countEl) countEl.textContent = tasks.length + ' 项';
+          const colors = {
+            urgent: { bg: 'bg-[#D4908A]/8', border: 'border-[#D4908A]/15', iconBg: 'bg-[#D4908A]/15', icon: '🔴' },
+            normal: { bg: 'bg-[#D4A76A]/8', border: 'border-[#D4A76A]/15', iconBg: 'bg-[#D4A76A]/15', icon: '🟡' },
+            info:   { bg: 'bg-[#8B7DA8]/8', border: 'border-[#8B7DA8]/15', iconBg: 'bg-[#8B7DA8]/15', icon: '🔵' },
+          };
+          container.innerHTML = tasks.map(function(t) {
+            const c = colors[t.urgency] || colors.normal;
+            return '<div class="flex items-center gap-3 rounded-xl p-2.5 ' + c.bg + ' border ' + c.border + ' hover:bg-black/5 transition-colors duration-200">' +
+              '<span class="flex h-7 w-7 items-center justify-center rounded-lg ' + c.iconBg + ' text-sm">' + c.icon + '</span>' +
+              '<div class="flex-1">' +
+                '<p class="text-xs font-medium text-[#3D3835]">' + Helpers.escape(t.detail) + '</p>' +
+              '</div>' +
+              '<i data-lucide="chevron-right" class="w-3.5 h-3.5 text-[#A09890] shrink-0"></i>' +
+            '</div>';
+          }).join('');
+          Helpers.refreshIcons();
+        }
+
+        async function loadDashboard(range) {
+          try {
+            const data = await Api.adminDashboard(range);
+            renderKPI(data.kpi);
+            renderChart(data.userGrowth);
+            renderRecentGames(data.recentGames);
+            renderDifficulty(data.difficultyDist);
+            renderHotPuzzles(data.hotPuzzles);
+            renderPending(data.pendingTasks);
+            Helpers.refreshIcons();
+          } catch (err) {
+            console.error('[dashboard] 加载失败:', err);
+            Helpers.toast(err.message || '加载失败', 'error');
+          }
+        }
+
+        // 日期范围 tab 切换
+        const rangeTabs = document.getElementById('range-tabs');
+        if (rangeTabs) {
+          rangeTabs.addEventListener('click', function(e) {
+            const btn = e.target.closest('.range-btn');
+            if (!btn) return;
+            const range = btn.getAttribute('data-range');
+            rangeTabs.setAttribute('data-range', range);
+            // 切换样式
+            rangeTabs.querySelectorAll('.range-btn').forEach(function(b) {
+              const isActive = b === btn;
+              b.classList.toggle('bg-[#8B7DA8]', isActive);
+              b.classList.toggle('text-white', isActive);
+              b.classList.toggle('shadow-sm', isActive);
+              b.classList.toggle('text-[#6B6560]', !isActive);
+            });
+            loadDashboard(range);
+          });
+        }
+
+        loadDashboard('today');
+      })();
     </script>
 </body>
 </html>
