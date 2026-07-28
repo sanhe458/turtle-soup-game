@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>题库管理 — 海龟汤管理后台</title>
+    <style id="theme-vars">
+/* ==========================================
+   Turtle Soup Puzzle Game — Brand Design Tokens
+   Glassmorphism · Warm Minimal · Calm
+   ========================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* — Brand Palette — */
+  --ts-bg:           #F5F0EB;   /* warm cream background       */
+  --ts-surface:      #FFFFFF;   /* card / panel surface         */
+  --ts-surface-alt:  #EDE8E3;   /* subtle secondary surface     */
+  --ts-charcoal:     #3D3835;   /* primary text — charcoal      */
+  --ts-charcoal-soft:#6B6560;   /* secondary text — soft char   */
+  --ts-muted:        #A09890;   /* placeholder / disabled       */
+  --ts-border:       #E0D8D0;   /* borders / dividers           */
+  --ts-purple:       #8B7DA8;   /* accent purple — calm         */
+  --ts-purple-soft:  #B8AFCA;   /* light purple tint            */
+  --ts-pink:         #C4A6B0;   /* accent pink — warm           */
+  --ts-pink-soft:    #E8D5DD;   /* light pink tint              */
+  --ts-green:        #7BAE98;   /* correct / success            */
+  --ts-amber:        #D4A76A;   /* warning / hint               */
+  --ts-red-soft:     #D4908A;   /* wrong / reset                */
+
+  /* — Semantic Aliases — */
+  --ts-background:          #F5F0EB;
+  --ts-foreground:          #3D3835;
+  --ts-card:                rgba(255, 255, 255, 0.72);
+  --ts-card-foreground:    #3D3835;
+  --ts-popover:             rgba(255, 255, 255, 0.88);
+  --ts-popover-foreground:  #3D3835;
+  --ts-primary:            #8B7DA8;
+  --ts-primary-foreground: #FFFFFF;
+  --ts-muted:               #A09890;
+  --ts-muted-foreground:    #6B6560;
+  --ts-border:              #E0D8D0;
+  --ts-input:               #EDE8E3;
+  --ts-ring:                #8B7DA8;
+
+  /* — Radius — */
+  --ts-radius-sm:   8px;
+  --ts-radius-md:  16px;
+  --ts-radius-lg:  24px;
+  --ts-radius-xl:  32px;
+
+  /* — Shadows — */
+  --ts-shadow-sm:  0 2px 8px rgba(61, 56, 53, 0.06);
+  --ts-shadow-md:  0 8px 32px rgba(61, 56, 53, 0.08);
+  --ts-shadow-lg:  0 16px 48px rgba(61, 56, 53, 0.12);
+  --ts-glow-purple: 0 0 40px rgba(139, 125, 168, 0.15);
+  --ts-glow-pink:   0 0 40px rgba(196, 166, 176, 0.12);
+
+  /* — Typography — */
+  --ts-font-sans:  'Inter', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+  --ts-font-mono:  'SF Mono', 'Fira Code', monospace;
+
+  /* — Transitions — */
+  --ts-ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ts-duration:    320ms;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--ts-background);
+    --color-foreground: var(--ts-foreground);
+    --color-card: var(--ts-card);
+    --color-card-foreground: var(--ts-card-foreground);
+    --color-popover: var(--ts-popover);
+    --color-popover-foreground: var(--ts-popover-foreground);
+    --color-primary: var(--ts-primary);
+    --color-primary-foreground: var(--ts-primary-foreground);
+    --color-muted: var(--ts-muted);
+    --color-muted-foreground: var(--ts-muted-foreground);
+    --color-border: var(--ts-border);
+    --color-input: var(--ts-input);
+    --color-ring: var(--ts-ring);
+    --radius-sm: var(--ts-radius-sm);
+    --radius-md: var(--ts-radius-md);
+    --radius-lg: var(--ts-radius-lg);
+    --radius-xl: var(--ts-radius-xl);
+  }
+  @layer base {
+    body { background: var(--ts-background); color: var(--ts-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--ts-background); }
+      .text-background { color: var(--ts-background); }
+      .border-background { border-color: var(--ts-background); }
+      .ring-background { --tw-ring-color: var(--ts-background); }
+      .bg-foreground { background-color: var(--ts-foreground); }
+      .text-foreground { color: var(--ts-foreground); }
+      .border-foreground { border-color: var(--ts-foreground); }
+      .ring-foreground { --tw-ring-color: var(--ts-foreground); }
+      .bg-card { background-color: var(--ts-card); }
+      .text-card { color: var(--ts-card); }
+      .border-card { border-color: var(--ts-card); }
+      .ring-card { --tw-ring-color: var(--ts-card); }
+      .bg-card-foreground { background-color: var(--ts-card-foreground); }
+      .text-card-foreground { color: var(--ts-card-foreground); }
+      .border-card-foreground { border-color: var(--ts-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--ts-card-foreground); }
+      .bg-popover { background-color: var(--ts-popover); }
+      .text-popover { color: var(--ts-popover); }
+      .border-popover { border-color: var(--ts-popover); }
+      .ring-popover { --tw-ring-color: var(--ts-popover); }
+      .bg-popover-foreground { background-color: var(--ts-popover-foreground); }
+      .text-popover-foreground { color: var(--ts-popover-foreground); }
+      .border-popover-foreground { border-color: var(--ts-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--ts-popover-foreground); }
+      .bg-primary { background-color: var(--ts-primary); }
+      .text-primary { color: var(--ts-primary); }
+      .border-primary { border-color: var(--ts-primary); }
+      .ring-primary { --tw-ring-color: var(--ts-primary); }
+      .bg-primary-foreground { background-color: var(--ts-primary-foreground); }
+      .text-primary-foreground { color: var(--ts-primary-foreground); }
+      .border-primary-foreground { border-color: var(--ts-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--ts-primary-foreground); }
+      .bg-muted { background-color: var(--ts-muted); }
+      .text-muted { color: var(--ts-muted); }
+      .border-muted { border-color: var(--ts-muted); }
+      .ring-muted { --tw-ring-color: var(--ts-muted); }
+      .bg-muted-foreground { background-color: var(--ts-muted-foreground); }
+      .text-muted-foreground { color: var(--ts-muted-foreground); }
+      .border-muted-foreground { border-color: var(--ts-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--ts-muted-foreground); }
+      .bg-border { background-color: var(--ts-border); }
+      .text-border { color: var(--ts-border); }
+      .border-border { border-color: var(--ts-border); }
+      .ring-border { --tw-ring-color: var(--ts-border); }
+      .bg-input { background-color: var(--ts-input); }
+      .text-input { color: var(--ts-input); }
+      .border-input { border-color: var(--ts-input); }
+      .ring-input { --tw-ring-color: var(--ts-input); }
+      .bg-ring { background-color: var(--ts-ring); }
+      .text-ring { color: var(--ts-ring); }
+      .border-ring { border-color: var(--ts-ring); }
+      .ring-ring { --tw-ring-color: var(--ts-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main>
+        <!-- ========== SIDEBAR ========== -->
+        <aside class="ts-sidebar admin-sidebar fixed top-0 left-0 z-40 h-screen w-[200px] bg-[#3D3835] text-white/80 flex flex-col shadow-2xl transition-transform duration-300 ease-out">
+            <!-- Mobile hamburger -->
+            <button class="ts-sidebar-close absolute top-4 right-4 lg:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-all duration-200">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <!-- Logo -->
+            <div class="px-5 py-5 flex items-center gap-3 border-b border-white/10">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#8B7DA8] to-[#C4A6B0] flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="soup" class="w-5 h-5 text-white"></i>
+                </div>
+                <span class="text-sm font-semibold text-white tracking-wide">管理后台</span>
+            </div>
+
+            <!-- Nav -->
+            <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+                <a href="#" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
+                    <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
+                    <span>总览</span>
+                </a>
+                <a href="#" class="ts-nav-item active flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium bg-white/15 text-white transition-all duration-200">
+                    <i data-lucide="book-open" class="w-[18px] h-[18px] text-[#B8AFCA]"></i>
+                    <span>题库管理</span>
+                </a>
+                <a href="#" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
+                    <i data-lucide="users" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
+                    <span>用户管理</span>
+                </a>
+                <a href="#" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
+                    <i data-lucide="swords" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
+                    <span>对局记录</span>
+                </a>
+                <a href="#" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
+                    <i data-lucide="brain" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
+                    <span>AI 配置</span>
+                </a>
+                <a href="#" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group relative">
+                    <i data-lucide="flag" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
+                    <span>举报审核</span>
+                    <span class="absolute top-1.5 right-2 w-5 h-5 bg-[#D4908A] text-white text-[10px] font-bold rounded-full flex items-center justify-center">5</span>
+                </a>
+                <a href="#" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
+                    <i data-lucide="settings" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
+                    <span>系统设置</span>
+                </a>
+                <a href="#" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
+                    <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
+                    <span>数据统计</span>
+                </a>
+            </nav>
+
+            <!-- Admin user -->
+            <div class="px-4 py-4 border-t border-white/10 flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#8B7DA8] to-[#C4A6B0] flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="shield" class="w-4 h-4 text-white"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xs font-medium text-white truncate">超级管理员</p>
+                    <p class="text-[10px] text-white/40 truncate">admin@turtlesoup.com</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Mobile overlay -->
+        <div class="ts-sidebar-overlay fixed inset-0 z-30 bg-black/40 lg:hidden" style="opacity:0;pointer-events:none;"></div>
+
+        <!-- ========== MAIN CONTENT ========== -->
+        <div class="lg:ml-[200px] min-h-screen transition-all duration-300">
+            <!-- Mobile top bar -->
+            <div class="lg:hidden sticky top-0 z-20 bg-[#F5F0EB]/80 backdrop-blur-xl border-b border-[#E0D8D0] px-4 py-3 flex items-center gap-3">
+                <button class="ts-sidebar-toggle w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-[#E0D8D0]/60 shadow-sm hover:shadow-md transition-all duration-200">
+                    <i data-lucide="menu" class="w-5 h-5 text-[#3D3835]"></i>
+                </button>
+                <span class="text-sm font-semibold text-[#3D3835]">题库管理</span>
+            </div>
+
+            <!-- ========== TOP BAR ========== -->
+            <div class="px-4 sm:px-6 lg:px-8 pt-6 pb-4">
+                <!-- Title row -->
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+                    <div>
+                        <h1 class="text-2xl font-bold text-[#3D3835] tracking-tight">题库管理</h1>
+                        <p class="text-sm text-[#A09890] mt-1">管理海龟汤题目库，审核与编辑题目内容</p>
+                    </div>
+                    <button class="ts-btn-add flex items-center gap-2 px-5 py-2.5 bg-[#8B7DA8] hover:bg-[#7B6D98] text-white text-sm font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] w-fit">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        添加新题
+                    </button>
+                </div>
+
+                <!-- Filter row -->
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <select class="ts-filter-select px-4 py-2 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200 appearance-none min-w-[140px]">
+                        <option>全部难度</option>
+                        <option>简单</option>
+                        <option>中等</option>
+                        <option>困难</option>
+                    </select>
+                    <select class="ts-filter-select px-4 py-2 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200 appearance-none min-w-[140px]">
+                        <option>全部状态</option>
+                        <option>已上线</option>
+                        <option>待审核</option>
+                        <option>已下架</option>
+                    </select>
+                    <div class="relative flex-1 max-w-md">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A09890]"></i>
+                        <input type="text" placeholder="搜索题目 ID 或关键词..." class="w-full pl-10 pr-4 py-2 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] placeholder-[#A09890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== STATS ROW ========== -->
+            <div class="px-4 sm:px-6 lg:px-8 pb-5">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    <!-- Total -->
+                    <div class="backdrop-blur-xl bg-white/70 border border-white/40 shadow-lg rounded-2xl p-4 sm:p-5 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-[#8B7DA8]/10 flex items-center justify-center">
+                                <i data-lucide="book-open" class="w-5 h-5 text-[#8B7DA8]"></i>
+                            </div>
+                            <span class="text-xs text-[#A09890] font-medium">总题目数</span>
+                        </div>
+                        <p class="text-2xl font-bold text-[#3D3835]">356</p>
+                    </div>
+                    <!-- Online -->
+                    <div class="backdrop-blur-xl bg-white/70 border border-white/40 shadow-lg rounded-2xl p-4 sm:p-5 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-[#7BAE98]/10 flex items-center justify-center">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-[#7BAE98]"></i>
+                            </div>
+                            <span class="text-xs text-[#A09890] font-medium">已上线</span>
+                        </div>
+                        <p class="text-2xl font-bold text-[#7BAE98]">312</p>
+                    </div>
+                    <!-- Pending -->
+                    <div class="backdrop-blur-xl bg-white/70 border border-white/40 shadow-lg rounded-2xl p-4 sm:p-5 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-[#D4A76A]/10 flex items-center justify-center">
+                                <i data-lucide="clock" class="w-5 h-5 text-[#D4A76A]"></i>
+                            </div>
+                            <span class="text-xs text-[#A09890] font-medium">待审核</span>
+                        </div>
+                        <p class="text-2xl font-bold text-[#D4A76A]">23</p>
+                    </div>
+                    <!-- Offline -->
+                    <div class="backdrop-blur-xl bg-white/70 border border-white/40 shadow-lg rounded-2xl p-4 sm:p-5 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-[#A09890]/10 flex items-center justify-center">
+                                <i data-lucide="archive" class="w-5 h-5 text-[#A09890]"></i>
+                            </div>
+                            <span class="text-xs text-[#A09890] font-medium">已下架</span>
+                        </div>
+                        <p class="text-2xl font-bold text-[#A09890]">21</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== PUZZLE TABLE ========== -->
+            <div class="px-4 sm:px-6 lg:px-8 pb-8">
+                <div class="backdrop-blur-xl bg-white/70 border border-white/40 shadow-lg rounded-2xl overflow-hidden">
+                    <!-- Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-[#E0D8D0]/60">
+                                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-[#A09890] uppercase tracking-wider">ID</th>
+                                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-[#A09890] uppercase tracking-wider">汤面摘要</th>
+                                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-[#A09890] uppercase tracking-wider">难度</th>
+                                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-[#A09890] uppercase tracking-wider">状态</th>
+                                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-[#A09890] uppercase tracking-wider">玩过次数</th>
+                                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-[#A09890] uppercase tracking-wider">好评率</th>
+                                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-[#A09890] uppercase tracking-wider">创建时间</th>
+                                    <th class="px-5 py-3.5 text-right text-xs font-semibold text-[#A09890] uppercase tracking-wider">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#E0D8D0]/40">
+                                <!-- Row 1 -->
+                                <tr class="hover:bg-[#8B7DA8]/5 transition-colors duration-200">
+                                    <td class="px-5 py-3.5 text-xs font-mono text-[#8B7DA8] font-semibold">#001</td>
+                                    <td class="px-5 py-3.5 text-sm text-[#3D3835] max-w-[200px] truncate">一个男人在海边散步时...</td>
+                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#7BAE98]/15 text-[#5a9a7e]">简单</span></td>
+                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#7BAE98]/15 text-[#5a9a7e]">已上线</span></td>
+                                    <td class="px-5 py-3.5 text-sm text-[#6B6560] font-medium">2,847</td>
+                                    <td class="px-5 py-3.5 text-sm text-[#6B6560] font-medium">94%</td>
+                                    <td class="px-5 py-3.5 text-xs text-[#A09890]">2025-01-15</td>
+                                    <td class="px-5 py-3.5 text-right">
+                                        <div class="flex items-center justify-end gap-1.5">
+                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#8B7DA8]/10 text-[#8B7DA8] transition-all duration-200 hover:scale-110" title="编辑">
+                                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#D4908A]/10 text-[#D4908A] transition-all duration-200 hover:scale-110" title="下架">
+                                                <i data-lucide="eye-off" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- Row 2 -->
+                                <tr class="hover:bg-[#8B7DA8]/5 transition-colors duration-200">
+                                    <td class="px-5 py-3.5 text-xs font-mono text-[#8B7DA8] font-semibold">#002</td>
+                                    <td class="px-5 py-3.5 text-sm text-[#3D3835] max-w-[200px] truncate">深夜，一个女人接到一个电话...</td>
+                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#D4A76A]/15 text-[#b8893a]">中等</span></td>
+                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#7BAE98]/15 text-[#5a9a7e]">已上线</span></td>
+                                    <td class="px-5 py-3.5 text-sm text-[#6B6560] font-medium">1,923</td>
+                                    <td class="px-5 py-3.5 text-sm text-[#6B6560] font-medium">91%</td>
+                                    <td class="px-5 py-3.5 text-xs text-[#A09890]">2025-02-03</td>
+                                    <td class="px-5 py-3.5 text-right">
+                                        <div class="flex items-center justify-end gap-1.5">
+                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#8B7DA8]/10 text-[#8B7DA8] transition-all duration-200 hover:scale-110" title="编辑">
+                                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#D4908A]/10 text-[#D4908A] transition-all duration-200 hover:scale-110" title="下架">
+                                                <i data-lucide="eye-off" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- Row 3 -->
+                                <tr class="hover:bg-[#8B7DA8]/5 transition-colors duration-200">
+                                    <td class="px-5 py-3.5 text-xs font-mono text-[#8B7DA8] font-semibold">#003</td>
+                                    <td class="px-5 py-3.5 text-sm text-[#3D3835] max-w-[200px] truncate">一个富翁死在密室里...</td>
+                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#D4908A]/15 text-[#c07068]">困难</span></td>
+                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#7BAE98]/15 text-[#5a9a7e]">已上线</span></td>
+                                    <td class="px-5 py-3.5 text-sm text-[#6B6560] font-medium">3,456</td>
+                                    <td class="px-5 py-3.5 text-sm text-[#6B6560] font-medium">96%</td>
+                                    <td class="px-5 py-3.5 text-xs text-[#A09890]">2025-01-28</td>
+                                    <td class="px-5 py-3.5 text-right">
+                                        <div class="flex items-center justify-end gap-1.5">
+                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#8B7DA8]/10 text-[#8B7DA8] transition-all duration-200 hover:scale-110" title="编辑">
+                                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#D4908A]/10 text-[#D4908A] transition-all duration-200 hover:scale-110" title="下架">
+                                                <i data-lucide="eye-off" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- Row 4 -->
+                                <tr class="hover:bg-[#8B7DA8]/5 transition-colors duration-200 bg-[#D4A76A]/[0.03]">
+                                    <td class="px-5 py-3.5 text-xs font-mono text-[#8B7DA8] font-semibold">#004</td>
+                                    <td class="px-5 py-3.5 text-sm text-[#3D3835] max-w-[200px] truncate">小明的日记本上只有...</td>
+                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#7BAE98]/15 text-[#5a9a7e]">简单</span></td>
+                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#D4A76A]/15 text-[#b8893a]">待审核</span></td>
+                                    <td class="px-5 py-3.5 text-sm text-[#A09890]">0</td>
+                                    <td class="px-5 py-3.5 text-sm text-[#A09890]">—</td>
+                                    <td class="px-5 py-3.5 text-xs text-[#A09890]">2025-03-10</td>
+                                    <td class="px-5 py-3.5 text-right">
+                                        <div class="flex items-center justify-end gap-1.5">
+                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#7BAE98]/10 text-[#7BAE98] transition-all duration-200 hover:scale-110" title="审核">
+                                                <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#8B7DA8]/10 text-[#8B7DA8] transition-all duration-200 hover:scale-110" title="编辑">
+                                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- Row 5 -->
+                                <tr class="hover:bg-[#8B7DA8]/5 transition-colors duration-200">
+                                    <td class="px-5 py-3.5 text-xs font-mono text-[#8B7DA8] font-semibold">#005</td>
+                                    <td class="px-5 py-3.5 text-sm text-[#3D3835] max-w-[200px] truncate">雨夜，出租车司机...</td>
+                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#D4A76A]/15 text-[#b8893a]">中等</span></td>
+                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#7BAE98]/15 text-[#5a9a7e]">已上线</span></td>
+                                    <td class="px-5 py-3.5 text-sm text-[#6B6560] font-medium">1,102</td>
+                                    <td class="px-5 py-3.5 text-sm text-[#6B6560] font-medium">88%</td>
+                                    <td class="px-5 py-3.5 text-xs text-[#A09890]">2025-02-20</td>
+                                    <td class="px-5 py-3.5 text-right">
+                                        <div class="flex items-center justify-end gap-1.5">
+                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#8B7DA8]/10 text-[#8B7DA8] transition-all duration-200 hover:scale-110" title="编辑">
+                                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#D4908A]/10 text-[#D4908A] transition-all duration-200 hover:scale-110" title="下架">
+                                                <i data-lucide="eye-off" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- Row 6 -->
+                                <tr class="hover:bg-[#8B7DA8]/5 transition-colors duration-200 opacity-70">
+                                    <td class="px-5 py-3.5 text-xs font-mono text-[#8B7DA8] font-semibold">#006</td>
+                                    <td class="px-5 py-3.5 text-sm text-[#3D3835] max-w-[200px] truncate">一个人在沙漠中发现了...</td>
+                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#D4908A]/15 text-[#c07068]">困难</span></td>
+                                    <td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#E0D8D0]/30 text-[#A09890]">已下架</span></td>
+                                    <td class="px-5 py-3.5 text-sm text-[#A09890]">456</td>
+                                    <td class="px-5 py-3.5 text-sm text-[#A09890]">72%</td>
+                                    <td class="px-5 py-3.5 text-xs text-[#A09890]">2024-12-05</td>
+                                    <td class="px-5 py-3.5 text-right">
+                                        <div class="flex items-center justify-end gap-1.5">
+                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#7BAE98]/10 text-[#7BAE98] transition-all duration-200 hover:scale-110" title="重新上线">
+                                                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#8B7DA8]/10 text-[#8B7DA8] transition-all duration-200 hover:scale-110" title="编辑">
+                                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-[#E0D8D0]/40">
+                        <span class="text-xs text-[#A09890]">显示 1-6 / 共 356 条</span>
+                        <div class="flex items-center gap-1.5">
+                            <button class="w-8 h-8 rounded-lg flex items-center justify-center bg-white/50 border border-[#E0D8D0]/60 text-[#A09890] hover:bg-white/70 transition-all duration-200">
+                                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                            </button>
+                            <button class="w-8 h-8 rounded-lg flex items-center justify-center bg-[#8B7DA8] text-white text-xs font-semibold shadow-sm">1</button>
+                            <button class="w-8 h-8 rounded-lg flex items-center justify-center bg-white/50 border border-[#E0D8D0]/60 text-[#6B6560] text-xs font-medium hover:bg-white/70 transition-all duration-200">2</button>
+                            <button class="w-8 h-8 rounded-lg flex items-center justify-center bg-white/50 border border-[#E0D8D0]/60 text-[#6B6560] text-xs font-medium hover:bg-white/70 transition-all duration-200">3</button>
+                            <span class="w-8 h-8 flex items-center justify-center text-[#A09890] text-xs">...</span>
+                            <button class="w-8 h-8 rounded-lg flex items-center justify-center bg-white/50 border border-[#E0D8D0]/60 text-[#6B6560] text-xs font-medium hover:bg-white/70 transition-all duration-200">60</button>
+                            <button class="w-8 h-8 rounded-lg flex items-center justify-center bg-white/50 border border-[#E0D8D0]/60 text-[#A09890] hover:bg-white/70 transition-all duration-200">
+                                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== EDIT PANEL (Right-side sliding panel) ========== -->
+        <div class="ts-edit-panel fixed top-0 right-0 z-50 h-screen w-full sm:w-[420px] lg:w-[40%] max-w-[560px] bg-[#F5F0EB]/90 backdrop-blur-2xl border-l border-[#E0D8D0]/60 shadow-2xl transform translate-x-full transition-transform duration-500 ease-out flex flex-col hidden lg:block">
+            <!-- Panel header -->
+            <div class="px-6 py-5 flex items-center justify-between border-b border-[#E0D8D0]/40">
+                <h2 class="text-lg font-bold text-[#3D3835]">添加新题目</h2>
+                <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#E0D8D0]/40 text-[#A09890] transition-all duration-200 hover:scale-110">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Panel body -->
+            <div class="flex-1 overflow-y-auto px-6 py-6 space-y-5">
+                <!-- 汤面标题 -->
+                <div>
+                    <label class="block text-xs font-semibold text-[#6B6560] mb-2 tracking-wide uppercase">汤面标题</label>
+                    <input type="text" placeholder="输入题目标题..." class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] placeholder-[#A09890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200">
+                </div>
+
+                <!-- 汤面内容 -->
+                <div>
+                    <label class="block text-xs font-semibold text-[#6B6560] mb-2 tracking-wide uppercase">汤面内容</label>
+                    <textarea rows="3" placeholder="描述海龟汤的汤面（谜面）..." class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] placeholder-[#A09890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200 resize-none"></textarea>
+                </div>
+
+                <!-- 汤底/答案 -->
+                <div>
+                    <label class="block text-xs font-semibold text-[#6B6560] mb-2 tracking-wide uppercase">汤底 / 答案</label>
+                    <textarea rows="3" placeholder="输入完整的汤底真相..." class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] placeholder-[#A09890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200 resize-none"></textarea>
+                </div>
+
+                <!-- 难度选择 -->
+                <div>
+                    <label class="block text-xs font-semibold text-[#6B6560] mb-2 tracking-wide uppercase">难度选择</label>
+                    <div class="flex gap-2">
+                        <button class="flex-1 px-4 py-2 text-sm font-medium rounded-xl border-2 border-[#7BAE98]/40 bg-[#7BAE98]/10 text-[#5a9a7e] hover:border-[#7BAE98] hover:bg-[#7BAE98]/20 transition-all duration-200">
+                            简单
+                        </button>
+                        <button class="flex-1 px-4 py-2 text-sm font-medium rounded-xl border-2 border-[#D4A76A]/40 bg-[#D4A76A]/10 text-[#b8893a] hover:border-[#D4A76A] hover:bg-[#D4A76A]/20 transition-all duration-200">
+                            中等
+                        </button>
+                        <button class="flex-1 px-4 py-2 text-sm font-medium rounded-xl border-2 border-[#D4908A]/40 bg-[#D4908A]/10 text-[#c07068] hover:border-[#D4908A] hover:bg-[#D4908A]/20 transition-all duration-200">
+                            困难
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 分类标签 -->
+                <div>
+                    <label class="block text-xs font-semibold text-[#6B6560] mb-2 tracking-wide uppercase">分类标签</label>
+                    <div class="px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl min-h-[42px] flex flex-wrap gap-2 items-center">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-[#8B7DA8]/10 text-[#8B7DA8] text-xs font-medium rounded-lg">
+                            推理 <i data-lucide="x" class="w-3 h-3"></i>
+                        </span>
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-[#C4A6B0]/10 text-[#C4A6B0] text-xs font-medium rounded-lg">
+                            悬疑 <i data-lucide="x" class="w-3 h-3"></i>
+                        </span>
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-[#D4A76A]/10 text-[#D4A76A] text-xs font-medium rounded-lg">
+                            恐怖 <i data-lucide="x" class="w-3 h-3"></i>
+                        </span>
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-[#7BAE98]/10 text-[#7BAE98] text-xs font-medium rounded-lg">
+                            情感 <i data-lucide="x" class="w-3 h-3"></i>
+                        </span>
+                        <input type="text" placeholder="添加标签..." class="bg-transparent border-none outline-none text-sm text-[#3D3835] placeholder-[#A09890] flex-1 min-w-[80px] py-1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel footer -->
+            <div class="px-6 py-4 border-t border-[#E0D8D0]/40 flex gap-3">
+                <button class="flex-1 px-5 py-2.5 bg-[#8B7DA8] hover:bg-[#7B6D98] text-white text-sm font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
+                    保存
+                </button>
+                <button class="flex-1 px-5 py-2.5 bg-white/60 hover:bg-white/80 text-[#6B6560] text-sm font-medium rounded-xl border border-[#E0D8D0]/60 shadow-sm hover:shadow-md transition-all duration-300">
+                    取消
+                </button>
+            </div>
+        </div>
+
+        <!-- Edit panel overlay (mobile) -->
+        <div class="ts-edit-overlay fixed inset-0 z-45 bg-black/40 backdrop-blur-sm hidden"></div>
+    </main>
+
+    <!-- ========== CUSTOM ADMIN STYLES ========== -->
+    <style>
+        /* Sidebar mobile: pure CSS transform control */
+        .admin-sidebar {
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @media (min-width: 1024px) {
+            .admin-sidebar {
+                transform: translateX(0);
+            }
+        }
+        .admin-sidebar.is-open {
+            transform: translateX(0) !important;
+        }
+
+        /* Sidebar nav active indicator */
+        .ts-nav-item.active {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: inset 3px 0 0 #B8AFCA;
+        }
+        .ts-nav-item.active i { color: #B8AFCA; }
+        .ts-nav-item:hover { transform: scale(1.01); }
+
+        /* Sidebar hover effect */
+        .ts-sidebar { box-shadow: 4px 0 24px rgba(61, 56, 53, 0.15); }
+        .ts-sidebar a:hover { transform: translateX(2px); }
+
+        /* Filter select arrow */
+        .ts-filter-select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23A09890' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 6l3.5 4 3.5-4z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px;
+        }
+
+        /* Edit panel shown state (visual preview, no JS) */
+        .ts-edit-panel {
+            /* Panel is visually hidden by default via translate-x-full.
+               In production, a click handler would toggle a class to show it.
+               We show it via CSS for preview purposes: */
+        }
+
+        /* Glassmorphism layering */
+        .backdrop-blur-xl {
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+        }
+
+        /* Table row transitions */
+        tbody tr {
+            transition: background-color 0.2s ease, opacity 0.2s ease;
+        }
+
+        /* Badge animations */
+        span.inline-flex {
+            transition: transform 0.2s ease;
+        }
+        tr:hover span.inline-flex {
+            transform: scale(1.03);
+        }
+
+        /* Mobile sidebar */
+        .ts-sidebar-toggle:active {
+            transform: scale(0.95);
+        }
+
+        /* Stats card glow on hover */
+        .grid > div:hover {
+            box-shadow: 0 8px 32px rgba(139, 125, 168, 0.08), 0 2px 8px rgba(61, 56, 53, 0.06);
+        }
+
+        /* Pagination active */
+        .flex.items-center.gap-1\\.5 button:first-child:active,
+        .flex.items-center.gap-1\\.5 button:last-child:active {
+            transform: scale(0.92);
+        }
+
+        /* Smooth scrollbar for table */
+        .overflow-x-auto::-webkit-scrollbar {
+            height: 6px;
+        }
+        .overflow-x-auto::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .overflow-x-auto::-webkit-scrollbar-thumb {
+            background: #E0D8D0;
+            border-radius: 3px;
+        }
+    </style>
+
+    <script>
+      lucide.createIcons();
+
+      // Mobile sidebar toggle
+      const sidebar = document.querySelector('.ts-sidebar');
+      const overlay = document.querySelector('.ts-sidebar-overlay');
+      const toggleBtn = document.querySelector('.ts-sidebar-toggle');
+      const closeBtn = document.querySelector('.ts-sidebar-close');
+
+      function openSidebar() {
+        sidebar.classList.add('is-open');
+        overlay.style.opacity = '1';
+        overlay.style.pointerEvents = 'auto';
+      }
+
+      function closeSidebar() {
+        sidebar.classList.remove('is-open');
+        overlay.style.opacity = '0';
+        overlay.style.pointerEvents = 'none';
+      }
+
+      toggleBtn.addEventListener('click', openSidebar);
+      if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+      overlay.addEventListener('click', closeSidebar);
+
+      // Close sidebar when resizing to desktop
+      window.addEventListener('resize', function() {
+        if (window.innerWidth >= 1024) closeSidebar();
+      });
+    </script>
+</body>
+</html>

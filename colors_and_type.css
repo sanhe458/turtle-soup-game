@@ -1,0 +1,60 @@
+/* ==========================================
+   Turtle Soup Puzzle Game — Brand Design Tokens
+   Glassmorphism · Warm Minimal · Calm
+   ========================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* — Brand Palette — */
+  --ts-bg:           #F5F0EB;   /* warm cream background       */
+  --ts-surface:      #FFFFFF;   /* card / panel surface         */
+  --ts-surface-alt:  #EDE8E3;   /* subtle secondary surface     */
+  --ts-charcoal:     #3D3835;   /* primary text — charcoal      */
+  --ts-charcoal-soft:#6B6560;   /* secondary text — soft char   */
+  --ts-muted:        #A09890;   /* placeholder / disabled       */
+  --ts-border:       #E0D8D0;   /* borders / dividers           */
+  --ts-purple:       #8B7DA8;   /* accent purple — calm         */
+  --ts-purple-soft:  #B8AFCA;   /* light purple tint            */
+  --ts-pink:         #C4A6B0;   /* accent pink — warm           */
+  --ts-pink-soft:    #E8D5DD;   /* light pink tint              */
+  --ts-green:        #7BAE98;   /* correct / success            */
+  --ts-amber:        #D4A76A;   /* warning / hint               */
+  --ts-red-soft:     #D4908A;   /* wrong / reset                */
+
+  /* — Semantic Aliases — */
+  --ts-background:          #F5F0EB;
+  --ts-foreground:          #3D3835;
+  --ts-card:                rgba(255, 255, 255, 0.72);
+  --ts-card-foreground:    #3D3835;
+  --ts-popover:             rgba(255, 255, 255, 0.88);
+  --ts-popover-foreground:  #3D3835;
+  --ts-primary:            #8B7DA8;
+  --ts-primary-foreground: #FFFFFF;
+  --ts-muted:               #A09890;
+  --ts-muted-foreground:    #6B6560;
+  --ts-border:              #E0D8D0;
+  --ts-input:               #EDE8E3;
+  --ts-ring:                #8B7DA8;
+
+  /* — Radius — */
+  --ts-radius-sm:   8px;
+  --ts-radius-md:  16px;
+  --ts-radius-lg:  24px;
+  --ts-radius-xl:  32px;
+
+  /* — Shadows — */
+  --ts-shadow-sm:  0 2px 8px rgba(61, 56, 53, 0.06);
+  --ts-shadow-md:  0 8px 32px rgba(61, 56, 53, 0.08);
+  --ts-shadow-lg:  0 16px 48px rgba(61, 56, 53, 0.12);
+  --ts-glow-purple: 0 0 40px rgba(139, 125, 168, 0.15);
+  --ts-glow-pink:   0 0 40px rgba(196, 166, 176, 0.12);
+
+  /* — Typography — */
+  --ts-font-sans:  'Inter', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+  --ts-font-mono:  'SF Mono', 'Fira Code', monospace;
+
+  /* — Transitions — */
+  --ts-ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ts-duration:    320ms;
+}

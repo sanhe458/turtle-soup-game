@@ -1,0 +1,149 @@
+{
+  "data": [
+    {
+      "id": "page-match-hall",
+      "title": "匹配大厅",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753718400000,
+      "canvasData": {
+        "x": 0,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/match-hall.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-game-play-v2",
+      "title": "对局中",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753718400000,
+      "canvasData": {
+        "x": 620,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/game-play-v2.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-answer-reveal-v2",
+      "title": "汤底揭晓",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753718400000,
+      "canvasData": {
+        "x": 1240,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/answer-reveal-v2.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-admin-dashboard",
+      "title": "管理后台 — 总览",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753804800000,
+      "canvasData": {
+        "x": 1860,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/admin-dashboard.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-admin-puzzles",
+      "title": "管理后台 — 题库管理",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753804800000,
+      "canvasData": {
+        "x": 2480,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/admin-puzzles.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-admin-login",
+      "title": "管理员登录",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753891200000,
+      "canvasData": {
+        "x": 3100,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/admin-login.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "image-001",
+      "title": "背景纹理素材",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1753632000000,
+      "canvasData": {
+        "x": 0,
+        "y": 377
+      },
+      "devMetadata": {
+        "imageSrc": "assets/bg-pattern.jpg"
+      }
+    },
+    {
+      "id": "image-002",
+      "title": "主视觉插图",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1753632000000,
+      "canvasData": {
+        "x": 620,
+        "y": 377
+      },
+      "devMetadata": {
+        "imageSrc": "assets/hero-illustration.jpg"
+      }
+    },
+    {
+      "id": "image-003",
+      "title": "解题页装饰插图",
+      "type": "image",
+      "version": 1,
+      "createdAt": 1753632000000,
+      "canvasData": {
+        "x": 1240,
+        "y": 377
+      },
+      "devMetadata": {
+        "imageSrc": "assets/game-question-art.jpg"
+      }
+    }
+  ],
+  "config": {
+    "autoLayout": true,
+    "deviceType": "desktop",
+    "projectName": "海龟汤谜题游戏",
+    "visualEditorEnabled": true,
+    "showEdge": true
+  }
+}

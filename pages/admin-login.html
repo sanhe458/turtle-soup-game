@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员登录 — 海龟汤</title>
+    <style id="theme-vars">
+/* ==========================================
+   Turtle Soup Puzzle Game — Brand Design Tokens
+   Glassmorphism · Warm Minimal · Calm
+   ========================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* — Brand Palette — */
+  --ts-bg:           #F5F0EB;   /* warm cream background       */
+  --ts-surface:      #FFFFFF;   /* card / panel surface         */
+  --ts-surface-alt:  #EDE8E3;   /* subtle secondary surface     */
+  --ts-charcoal:     #3D3835;   /* primary text — charcoal      */
+  --ts-charcoal-soft:#6B6560;   /* secondary text — soft char   */
+  --ts-muted:        #A09890;   /* placeholder / disabled       */
+  --ts-border:       #E0D8D0;   /* borders / dividers           */
+  --ts-purple:       #8B7DA8;   /* accent purple — calm         */
+  --ts-purple-soft:  #B8AFCA;   /* light purple tint            */
+  --ts-pink:         #C4A6B0;   /* accent pink — warm           */
+  --ts-pink-soft:    #E8D5DD;   /* light pink tint              */
+  --ts-green:        #7BAE98;   /* correct / success            */
+  --ts-amber:        #D4A76A;   /* warning / hint               */
+  --ts-red-soft:     #D4908A;   /* wrong / reset                */
+
+  /* — Semantic Aliases — */
+  --ts-background:          #F5F0EB;
+  --ts-foreground:          #3D3835;
+  --ts-card:                rgba(255, 255, 255, 0.72);
+  --ts-card-foreground:    #3D3835;
+  --ts-popover:             rgba(255, 255, 255, 0.88);
+  --ts-popover-foreground:  #3D3835;
+  --ts-primary:            #8B7DA8;
+  --ts-primary-foreground: #FFFFFF;
+  --ts-muted:               #A09890;
+  --ts-muted-foreground:    #6B6560;
+  --ts-border:              #E0D8D0;
+  --ts-input:               #EDE8E3;
+  --ts-ring:                #8B7DA8;
+
+  /* — Radius — */
+  --ts-radius-sm:   8px;
+  --ts-radius-md:  16px;
+  --ts-radius-lg:  24px;
+  --ts-radius-xl:  32px;
+
+  /* — Shadows — */
+  --ts-shadow-sm:  0 2px 8px rgba(61, 56, 53, 0.06);
+  --ts-shadow-md:  0 8px 32px rgba(61, 56, 53, 0.08);
+  --ts-shadow-lg:  0 16px 48px rgba(61, 56, 53, 0.12);
+  --ts-glow-purple: 0 0 40px rgba(139, 125, 168, 0.15);
+  --ts-glow-pink:   0 0 40px rgba(196, 166, 176, 0.12);
+
+  /* — Typography — */
+  --ts-font-sans:  'Inter', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+  --ts-font-mono:  'SF Mono', 'Fira Code', monospace;
+
+  /* — Transitions — */
+  --ts-ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ts-duration:    320ms;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--ts-background);
+    --color-foreground: var(--ts-foreground);
+    --color-card: var(--ts-card);
+    --color-card-foreground: var(--ts-card-foreground);
+    --color-popover: var(--ts-popover);
+    --color-popover-foreground: var(--ts-popover-foreground);
+    --color-primary: var(--ts-primary);
+    --color-primary-foreground: var(--ts-primary-foreground);
+    --color-muted: var(--ts-muted);
+    --color-muted-foreground: var(--ts-muted-foreground);
+    --color-border: var(--ts-border);
+    --color-input: var(--ts-input);
+    --color-ring: var(--ts-ring);
+    --radius-sm: var(--ts-radius-sm);
+    --radius-md: var(--ts-radius-md);
+    --radius-lg: var(--ts-radius-lg);
+    --radius-xl: var(--ts-radius-xl);
+  }
+  @layer base {
+    body { background: var(--ts-background); color: var(--ts-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--ts-background); }
+      .text-background { color: var(--ts-background); }
+      .border-background { border-color: var(--ts-background); }
+      .ring-background { --tw-ring-color: var(--ts-background); }
+      .bg-foreground { background-color: var(--ts-foreground); }
+      .text-foreground { color: var(--ts-foreground); }
+      .border-foreground { border-color: var(--ts-foreground); }
+      .ring-foreground { --tw-ring-color: var(--ts-foreground); }
+      .bg-card { background-color: var(--ts-card); }
+      .text-card { color: var(--ts-card); }
+      .border-card { border-color: var(--ts-card); }
+      .ring-card { --tw-ring-color: var(--ts-card); }
+      .bg-card-foreground { background-color: var(--ts-card-foreground); }
+      .text-card-foreground { color: var(--ts-card-foreground); }
+      .border-card-foreground { border-color: var(--ts-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--ts-card-foreground); }
+      .bg-popover { background-color: var(--ts-popover); }
+      .text-popover { color: var(--ts-popover); }
+      .border-popover { border-color: var(--ts-popover); }
+      .ring-popover { --tw-ring-color: var(--ts-popover); }
+      .bg-popover-foreground { background-color: var(--ts-popover-foreground); }
+      .text-popover-foreground { color: var(--ts-popover-foreground); }
+      .border-popover-foreground { border-color: var(--ts-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--ts-popover-foreground); }
+      .bg-primary { background-color: var(--ts-primary); }
+      .text-primary { color: var(--ts-primary); }
+      .border-primary { border-color: var(--ts-primary); }
+      .ring-primary { --tw-ring-color: var(--ts-primary); }
+      .bg-primary-foreground { background-color: var(--ts-primary-foreground); }
+      .text-primary-foreground { color: var(--ts-primary-foreground); }
+      .border-primary-foreground { border-color: var(--ts-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--ts-primary-foreground); }
+      .bg-muted { background-color: var(--ts-muted); }
+      .text-muted { color: var(--ts-muted); }
+      .border-muted { border-color: var(--ts-muted); }
+      .ring-muted { --tw-ring-color: var(--ts-muted); }
+      .bg-muted-foreground { background-color: var(--ts-muted-foreground); }
+      .text-muted-foreground { color: var(--ts-muted-foreground); }
+      .border-muted-foreground { border-color: var(--ts-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--ts-muted-foreground); }
+      .bg-border { background-color: var(--ts-border); }
+      .text-border { color: var(--ts-border); }
+      .border-border { border-color: var(--ts-border); }
+      .ring-border { --tw-ring-color: var(--ts-border); }
+      .bg-input { background-color: var(--ts-input); }
+      .text-input { color: var(--ts-input); }
+      .border-input { border-color: var(--ts-input); }
+      .ring-input { --tw-ring-color: var(--ts-input); }
+      .bg-ring { background-color: var(--ts-ring); }
+      .text-ring { color: var(--ts-ring); }
+      .border-ring { border-color: var(--ts-ring); }
+      .ring-ring { --tw-ring-color: var(--ts-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main class="relative min-h-screen flex flex-col items-center justify-center px-5 py-10 overflow-hidden">
+
+      <!-- ==================== DECORATIVE BACKGROUND ==================== -->
+
+      <!-- Subtle background illustration -->
+      <div class="fixed inset-0 z-0">
+        <img src="../assets/hero-illustration.jpg" alt="" class="w-full h-full object-cover opacity-[0.04] blur-sm" aria-hidden="true">
+      </div>
+
+      <!-- Large purple/pink radial gradient blob — top right -->
+      <div class="fixed -top-32 -right-32 z-0 w-[500px] h-[500px] rounded-full opacity-[0.05]" style="background: radial-gradient(circle, rgba(139,125,168,0.6) 0%, rgba(196,166,176,0.3) 50%, transparent 70%);" aria-hidden="true"></div>
+
+      <!-- Smaller blob — bottom left -->
+      <div class="fixed -bottom-24 -left-24 z-0 w-[360px] h-[360px] rounded-full opacity-[0.04]" style="background: radial-gradient(circle, rgba(196,166,176,0.5) 0%, rgba(139,125,168,0.2) 60%, transparent 75%);" aria-hidden="true"></div>
+
+      <!-- ==================== LOGIN CARD ==================== -->
+      <div class="login-card relative z-10 w-full max-w-[420px] rounded-3xl border border-white/40 bg-white/72 backdrop-blur-xl shadow-xl p-8 md:p-10 transition-all duration-300 ease-out" style="box-shadow: var(--ts-shadow-lg), var(--ts-glow-purple);">
+
+        <!-- Logo Area -->
+        <div class="flex flex-col items-center text-center">
+          <!-- Turtle icon container -->
+          <div class="flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-lg" style="background: linear-gradient(135deg, #8B7DA8 0%, #C4A6B0 100%);">
+            <i data-lucide="turtle" class="w-7 h-7"></i>
+          </div>
+          <h1 class="mt-4 text-xl font-bold tracking-tight text-[#3D3835]">海龟汤</h1>
+          <p class="mt-1 text-sm text-[#A09890]">管理后台</p>
+        </div>
+
+        <!-- Divider -->
+        <div class="relative my-7 flex items-center">
+          <div class="flex-1 border-t border-[#E0D8D0]/50"></div>
+          <span class="mx-4 text-[11px] font-medium tracking-widest text-[#A09890] uppercase">管理员登录</span>
+          <div class="flex-1 border-t border-[#E0D8D0]/50"></div>
+        </div>
+
+        <!-- Form Fields -->
+        <form class="space-y-4" onsubmit="return false;">
+
+          <!-- Username / Account -->
+          <div>
+            <label class="mb-1.5 block text-xs font-medium text-[#6B6560] tracking-wide">账号</label>
+            <div class="relative">
+              <div class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A09890]">
+                <i data-lucide="user" class="w-4 h-4"></i>
+              </div>
+              <input type="text" placeholder="请输入管理员账号" class="w-full rounded-xl border border-white/60 bg-white/50 py-3 pl-10 pr-4 text-sm text-[#3D3835] placeholder-[#A09890] outline-none backdrop-blur-sm transition-all duration-300 focus:border-[#8B7DA8]/50 focus:bg-white/70 focus:shadow-[0_0_0_3px_rgba(139,125,168,0.12)]">
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div>
+            <label class="mb-1.5 block text-xs font-medium text-[#6B6560] tracking-wide">密码</label>
+            <div class="relative">
+              <div class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A09890]">
+                <i data-lucide="lock" class="w-4 h-4"></i>
+              </div>
+              <input type="password" placeholder="请输入密码" class="w-full rounded-xl border border-white/60 bg-white/50 py-3 pl-10 pr-10 text-sm text-[#3D3835] placeholder-[#A09890] outline-none backdrop-blur-sm transition-all duration-300 focus:border-[#8B7DA8]/50 focus:bg-white/70 focus:shadow-[0_0_0_3px_rgba(139,125,168,0.12)]">
+              <!-- Eye icon toggle (visual only) -->
+              <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#A09890] transition-colors duration-200 hover:text-[#6B6560]">
+                <i data-lucide="eye-off" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Remember me + Forgot password -->
+          <div class="flex items-center justify-between pt-0.5">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <div class="flex h-4 w-4 items-center justify-center rounded-full border-2 border-[#E0D8D0] transition-all duration-200 hover:border-[#8B7DA8]/60">
+                <!-- unchecked state circle -->
+              </div>
+              <span class="text-xs text-[#6B6560]">记住登录</span>
+            </label>
+            <a href="#" class="text-xs font-medium text-[#8B7DA8] transition-colors duration-200 hover:text-[#6B5B8A]">忘记密码?</a>
+          </div>
+
+          <!-- Error hint (hidden by default) -->
+          <div class="flex items-center gap-1.5 opacity-0 transition-opacity duration-300">
+            <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-[#D4908A]"></i>
+            <span class="text-xs text-[#D4908A]">账号或密码错误</span>
+          </div>
+
+          <!-- Login Button -->
+          <button type="submit" class="mt-2 flex w-full items-center justify-center rounded-xl py-3 text-sm font-semibold tracking-widest text-white transition-all duration-300 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]" style="background: linear-gradient(135deg, #8B7DA8 0%, #A08EBA 50%, #C4A6B0 100%); box-shadow: 0 4px 16px rgba(139,125,168,0.25);">
+            登 录
+          </button>
+
+        </form>
+
+        <!-- Bottom divider + notice -->
+        <div class="mt-7 pt-5 border-t border-[#E0D8D0]/40 text-center">
+          <p class="text-[11px] text-[#A09890] tracking-wide">仅限授权管理员访问</p>
+        </div>
+
+      </div>
+
+      <!-- ==================== FOOTER ==================== -->
+      <div class="relative z-10 mt-6 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5 text-[#8B7DA8]"></i>
+        <a href="#" class="text-xs font-medium text-[#8B7DA8] transition-colors duration-200 hover:text-[#6B5B8A]">返回用户端</a>
+      </div>
+
+    </main>
+
+    <!-- Inline custom styles -->
+    <style>
+      /* Glass card deep blur */
+      .login-card {
+        backdrop-filter: blur(32px);
+        -webkit-backdrop-filter: blur(32px);
+      }
+
+      /* Entrance animation */
+      @keyframes loginCardIn {
+        from {
+          opacity: 0;
+          transform: translateY(16px) scale(0.98);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .login-card {
+        animation: loginCardIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+
+      /* Footer entrance */
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      main > div:last-child {
+        animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
+      }
+
+      /* Custom checkbox fill state */
+      label .rounded-full {
+        transition: all 0.2s ease-out;
+      }
+
+      /* Input autofill override */
+      input:-webkit-autofill,
+      input:-webkit-autofill:hover,
+      input:-webkit-autofill:focus {
+        -webkit-text-fill-color: #3D3835;
+        -webkit-box-shadow: 0 0 0px 1000px rgba(255,255,255,0.5) inset;
+        transition: background-color 5000s ease-in-out 0s;
+      }
+    </style>
+
+    <script>
+      // Initialize Lucide icons
+      lucide.createIcons();
+    </script>
+</body>
+</html>

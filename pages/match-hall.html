@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海龟汤 — 匹配大厅</title>
+    <style id="theme-vars">
+/* ==========================================
+   Turtle Soup Puzzle Game — Brand Design Tokens
+   Glassmorphism · Warm Minimal · Calm
+   ========================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* — Brand Palette — */
+  --ts-bg:           #F5F0EB;   /* warm cream background       */
+  --ts-surface:      #FFFFFF;   /* card / panel surface         */
+  --ts-surface-alt:  #EDE8E3;   /* subtle secondary surface     */
+  --ts-charcoal:     #3D3835;   /* primary text — charcoal      */
+  --ts-charcoal-soft:#6B6560;   /* secondary text — soft char   */
+  --ts-muted:        #A09890;   /* placeholder / disabled       */
+  --ts-border:       #E0D8D0;   /* borders / dividers           */
+  --ts-purple:       #8B7DA8;   /* accent purple — calm         */
+  --ts-purple-soft:  #B8AFCA;   /* light purple tint            */
+  --ts-pink:         #C4A6B0;   /* accent pink — warm           */
+  --ts-pink-soft:    #E8D5DD;   /* light pink tint              */
+  --ts-green:        #7BAE98;   /* correct / success            */
+  --ts-amber:        #D4A76A;   /* warning / hint               */
+  --ts-red-soft:     #D4908A;   /* wrong / reset                */
+
+  /* — Semantic Aliases — */
+  --ts-background:          #F5F0EB;
+  --ts-foreground:          #3D3835;
+  --ts-card:                rgba(255, 255, 255, 0.72);
+  --ts-card-foreground:    #3D3835;
+  --ts-popover:             rgba(255, 255, 255, 0.88);
+  --ts-popover-foreground:  #3D3835;
+  --ts-primary:            #8B7DA8;
+  --ts-primary-foreground: #FFFFFF;
+  --ts-muted:               #A09890;
+  --ts-muted-foreground:    #6B6560;
+  --ts-border:              #E0D8D0;
+  --ts-input:               #EDE8E3;
+  --ts-ring:                #8B7DA8;
+
+  /* — Radius — */
+  --ts-radius-sm:   8px;
+  --ts-radius-md:  16px;
+  --ts-radius-lg:  24px;
+  --ts-radius-xl:  32px;
+
+  /* — Shadows — */
+  --ts-shadow-sm:  0 2px 8px rgba(61, 56, 53, 0.06);
+  --ts-shadow-md:  0 8px 32px rgba(61, 56, 53, 0.08);
+  --ts-shadow-lg:  0 16px 48px rgba(61, 56, 53, 0.12);
+  --ts-glow-purple: 0 0 40px rgba(139, 125, 168, 0.15);
+  --ts-glow-pink:   0 0 40px rgba(196, 166, 176, 0.12);
+
+  /* — Typography — */
+  --ts-font-sans:  'Inter', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+  --ts-font-mono:  'SF Mono', 'Fira Code', monospace;
+
+  /* — Transitions — */
+  --ts-ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ts-duration:    320ms;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--ts-background);
+    --color-foreground: var(--ts-foreground);
+    --color-card: var(--ts-card);
+    --color-card-foreground: var(--ts-card-foreground);
+    --color-popover: var(--ts-popover);
+    --color-popover-foreground: var(--ts-popover-foreground);
+    --color-primary: var(--ts-primary);
+    --color-primary-foreground: var(--ts-primary-foreground);
+    --color-muted: var(--ts-muted);
+    --color-muted-foreground: var(--ts-muted-foreground);
+    --color-border: var(--ts-border);
+    --color-input: var(--ts-input);
+    --color-ring: var(--ts-ring);
+    --radius-sm: var(--ts-radius-sm);
+    --radius-md: var(--ts-radius-md);
+    --radius-lg: var(--ts-radius-lg);
+    --radius-xl: var(--ts-radius-xl);
+  }
+  @layer base {
+    body { background: var(--ts-background); color: var(--ts-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--ts-background); }
+      .text-background { color: var(--ts-background); }
+      .border-background { border-color: var(--ts-background); }
+      .ring-background { --tw-ring-color: var(--ts-background); }
+      .bg-foreground { background-color: var(--ts-foreground); }
+      .text-foreground { color: var(--ts-foreground); }
+      .border-foreground { border-color: var(--ts-foreground); }
+      .ring-foreground { --tw-ring-color: var(--ts-foreground); }
+      .bg-card { background-color: var(--ts-card); }
+      .text-card { color: var(--ts-card); }
+      .border-card { border-color: var(--ts-card); }
+      .ring-card { --tw-ring-color: var(--ts-card); }
+      .bg-card-foreground { background-color: var(--ts-card-foreground); }
+      .text-card-foreground { color: var(--ts-card-foreground); }
+      .border-card-foreground { border-color: var(--ts-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--ts-card-foreground); }
+      .bg-popover { background-color: var(--ts-popover); }
+      .text-popover { color: var(--ts-popover); }
+      .border-popover { border-color: var(--ts-popover); }
+      .ring-popover { --tw-ring-color: var(--ts-popover); }
+      .bg-popover-foreground { background-color: var(--ts-popover-foreground); }
+      .text-popover-foreground { color: var(--ts-popover-foreground); }
+      .border-popover-foreground { border-color: var(--ts-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--ts-popover-foreground); }
+      .bg-primary { background-color: var(--ts-primary); }
+      .text-primary { color: var(--ts-primary); }
+      .border-primary { border-color: var(--ts-primary); }
+      .ring-primary { --tw-ring-color: var(--ts-primary); }
+      .bg-primary-foreground { background-color: var(--ts-primary-foreground); }
+      .text-primary-foreground { color: var(--ts-primary-foreground); }
+      .border-primary-foreground { border-color: var(--ts-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--ts-primary-foreground); }
+      .bg-muted { background-color: var(--ts-muted); }
+      .text-muted { color: var(--ts-muted); }
+      .border-muted { border-color: var(--ts-muted); }
+      .ring-muted { --tw-ring-color: var(--ts-muted); }
+      .bg-muted-foreground { background-color: var(--ts-muted-foreground); }
+      .text-muted-foreground { color: var(--ts-muted-foreground); }
+      .border-muted-foreground { border-color: var(--ts-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--ts-muted-foreground); }
+      .bg-border { background-color: var(--ts-border); }
+      .text-border { color: var(--ts-border); }
+      .border-border { border-color: var(--ts-border); }
+      .ring-border { --tw-ring-color: var(--ts-border); }
+      .bg-input { background-color: var(--ts-input); }
+      .text-input { color: var(--ts-input); }
+      .border-input { border-color: var(--ts-input); }
+      .ring-input { --tw-ring-color: var(--ts-input); }
+      .bg-ring { background-color: var(--ts-ring); }
+      .text-ring { color: var(--ts-ring); }
+      .border-ring { border-color: var(--ts-ring); }
+      .ring-ring { --tw-ring-color: var(--ts-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+
+      /* Pulse glow animation for CTA button */
+      @keyframes glowPulse {
+        0%, 100% {
+          box-shadow: 0 0 20px rgba(139, 125, 168, 0.25), 0 4px 16px rgba(139, 125, 168, 0.2);
+        }
+        50% {
+          box-shadow: 0 0 40px rgba(139, 125, 168, 0.45), 0 4px 24px rgba(196, 166, 176, 0.3);
+        }
+      }
+      .cta-pulse {
+        animation: glowPulse 2.4s ease-in-out infinite;
+      }
+
+      /* Fade-in on load */
+      @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      .fade-in {
+        animation: fadeInUp 0.6s var(--ts-ease-out) both;
+      }
+      .fade-in-d1 { animation-delay: 0.08s; }
+      .fade-in-d2 { animation-delay: 0.16s; }
+      .fade-in-d3 { animation-delay: 0.24s; }
+      .fade-in-d4 { animation-delay: 0.32s; }
+      .fade-in-d5 { animation-delay: 0.40s; }
+
+      /* Sidebar active indicator */
+      .sidebar-item {
+        position: relative;
+        transition: all 0.3s ease-out;
+      }
+      .sidebar-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 3px;
+        height: 0;
+        background: var(--ts-purple);
+        border-radius: 0 4px 4px 0;
+        transition: height 0.3s ease-out;
+      }
+      .sidebar-item.active::before {
+        height: 60%;
+      }
+      .sidebar-item.active {
+        color: #fff;
+        background: rgba(139, 125, 168, 0.15);
+      }
+      .sidebar-item:hover {
+        background: rgba(255, 255, 255, 0.06);
+        transform: scale(1.02);
+      }
+
+      /* Mobile drawer */
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(61, 56, 53, 0.4);
+        backdrop-filter: blur(4px);
+        z-index: 40;
+        opacity: 0;
+        transition: opacity 0.3s ease-out;
+      }
+      .sidebar-overlay.open {
+        display: block;
+        opacity: 1;
+      }
+      .sidebar-drawer {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 260px;
+        z-index: 50;
+        transform: translateX(-100%);
+        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .sidebar-drawer.open {
+        transform: translateX(0);
+      }
+
+      /* Glass card base */
+      .glass-card {
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 8px 32px rgba(61, 56, 53, 0.08);
+        border-radius: 20px;
+        transition: all 0.3s ease-out;
+      }
+      .glass-card:hover {
+        box-shadow: 0 12px 40px rgba(61, 56, 53, 0.12);
+        transform: scale(1.01);
+      }
+
+      /* Recent game row */
+      .game-row {
+        transition: background 0.2s ease-out;
+      }
+      .game-row:hover {
+        background: rgba(139, 125, 168, 0.06);
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+<main class="flex min-h-screen">
+
+  <!-- ========== MOBILE SIDEBAR OVERLAY ========== -->
+  <div id="sidebarOverlay" class="sidebar-overlay md:hidden"></div>
+
+  <!-- ========== SIDEBAR (Desktop: fixed narrow | Mobile: drawer) ========== -->
+  <aside id="sidebarDrawer"
+    class="sidebar-drawer md:fixed md:left-0 md:top-0 md:bottom-0 md:w-[72px] md:transform-none md:z-30
+           bg-[#3D3835] text-white/80 flex flex-col"
+  >
+    <!-- Logo -->
+    <div class="flex items-center justify-center h-16 md:h-20 shrink-0">
+      <div class="w-10 h-10 md:w-9 md:h-9 rounded-full flex items-center justify-center"
+           style="background: linear-gradient(135deg, var(--ts-purple), var(--ts-pink));">
+        <i data-lucide="turtle" class="w-5 h-5 text-white"></i>
+      </div>
+    </div>
+
+    <!-- Nav Items -->
+    <nav class="flex-1 flex flex-col gap-1 px-2 mt-2">
+      <a href="#" class="sidebar-item active flex items-center gap-3 px-3 py-3 rounded-xl text-sm tracking-tight">
+        <i data-lucide="home" class="w-5 h-5 shrink-0"></i>
+        <span class="md:hidden">匹配大厅</span>
+      </a>
+      <a href="#" class="sidebar-item flex items-center gap-3 px-3 py-3 rounded-xl text-sm tracking-tight text-white/60">
+        <i data-lucide="history" class="w-5 h-5 shrink-0"></i>
+        <span class="md:hidden">历史记录</span>
+      </a>
+      <a href="#" class="sidebar-item flex items-center gap-3 px-3 py-3 rounded-xl text-sm tracking-tight text-white/60">
+        <i data-lucide="trophy" class="w-5 h-5 shrink-0"></i>
+        <span class="md:hidden">排行榜</span>
+      </a>
+      <a href="#" class="sidebar-item flex items-center gap-3 px-3 py-3 rounded-xl text-sm tracking-tight text-white/60">
+        <i data-lucide="user" class="w-5 h-5 shrink-0"></i>
+        <span class="md:hidden">个人中心</span>
+      </a>
+    </nav>
+
+    <!-- Bottom spacer -->
+    <div class="h-6 shrink-0"></div>
+  </aside>
+
+  <!-- ========== MAIN CONTENT ========== -->
+  <div class="flex-1 md:ml-[72px] flex flex-col min-h-screen">
+
+    <!-- Top Bar -->
+    <header class="flex items-center px-6 py-4 md:px-10 md:py-5 fade-in">
+      <!-- Mobile hamburger -->
+      <button id="menuBtn" class="md:hidden flex items-center justify-center w-10 h-10 rounded-xl glass-card">
+        <i data-lucide="menu" class="w-5 h-5" style="color: var(--ts-charcoal);"></i>
+      </button>
+
+      <!-- Greeting (desktop only) -->
+      <div class="hidden md:block">
+        <h1 class="text-lg font-semibold tracking-tight" style="color: var(--ts-charcoal);">海龟汤</h1>
+      </div>
+    </header>
+
+    <!-- Scrollable Content -->
+    <div class="flex-1 px-5 md:px-10 pb-10 overflow-y-auto">
+
+      <!-- ===== NICKNAME BAR ===== -->
+      <section class="fade-in">
+        <div class="glass-card p-4 flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full shrink-0 flex items-center justify-center"
+               style="background: linear-gradient(135deg, var(--ts-purple-soft), var(--ts-pink-soft));">
+            <i data-lucide="user" class="w-4 h-4 text-white/80"></i>
+          </div>
+          <input type="text" placeholder="输入你的昵称"
+                 class="flex-1 bg-transparent text-sm tracking-tight outline-none placeholder-opacity-50"
+                 style="color: var(--ts-charcoal);">
+          <button class="px-4 py-1.5 rounded-xl text-xs font-medium text-white tracking-tight
+                         transition-all duration-300 ease-out hover:scale-105 active:scale-95 shrink-0"
+                  style="background: linear-gradient(135deg, var(--ts-purple), #A090BF);">
+            确认
+          </button>
+        </div>
+      </section>
+
+      <!-- ===== HERO SECTION ===== -->
+      <section class="relative flex flex-col items-center text-center py-10 md:py-16 fade-in fade-in-d1">
+        <!-- Decorative background circle -->
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+          <div class="w-64 h-64 md:w-80 md:h-80 rounded-full opacity-[0.07]"
+               style="background: linear-gradient(135deg, var(--ts-purple), var(--ts-pink)); filter: blur(40px);">
+          </div>
+        </div>
+
+        <!-- Title -->
+        <h2 class="relative text-4xl md:text-5xl font-bold tracking-tight leading-tight"
+            style="color: var(--ts-charcoal);">
+          海龟汤
+        </h2>
+        <p class="relative mt-3 text-base md:text-lg tracking-wide"
+           style="color: var(--ts-charcoal-soft);">
+          三人成局，推理至上
+        </p>
+
+        <!-- CTA Button -->
+        <button class="relative mt-8 cta-pulse px-10 py-3.5 rounded-2xl text-white font-semibold text-base tracking-tight
+                       transition-all duration-300 ease-out hover:scale-[1.03] hover:brightness-105 active:scale-[0.98]"
+                style="background: linear-gradient(135deg, var(--ts-purple), #A090BF); border: none; cursor: pointer;">
+          <span class="flex items-center gap-2">
+            <i data-lucide="play" class="w-5 h-5"></i>
+            开始匹配
+          </span>
+        </button>
+      </section>
+
+      <!-- ===== STATS ROW ===== -->
+      <section class="grid grid-cols-3 gap-3 md:gap-4 max-w-lg mx-auto fade-in fade-in-d2">
+        <!-- Stat: 今日场次 -->
+        <div class="glass-card p-4 flex flex-col items-center text-center">
+          <p class="text-xs tracking-wide mb-1" style="color: var(--ts-muted);">今日场次</p>
+          <p class="text-2xl font-bold tracking-tight" style="color: var(--ts-charcoal);">5</p>
+        </div>
+        <!-- Stat: 胜率 -->
+        <div class="glass-card p-4 flex flex-col items-center text-center">
+          <p class="text-xs tracking-wide mb-1" style="color: var(--ts-muted);">胜率</p>
+          <p class="text-2xl font-bold tracking-tight" style="color: var(--ts-green);">72%</p>
+        </div>
+        <!-- Stat: 连胜 -->
+        <div class="glass-card p-4 flex flex-col items-center text-center">
+          <p class="text-xs tracking-wide mb-1" style="color: var(--ts-muted);">连胜</p>
+          <p class="text-2xl font-bold tracking-tight" style="color: var(--ts-amber);">3</p>
+        </div>
+      </section>
+
+      <!-- ===== RECENT GAMES ===== -->
+      <section class="mt-8 max-w-lg mx-auto w-full fade-in fade-in-d3">
+        <div class="glass-card p-5 md:p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-base font-semibold tracking-tight" style="color: var(--ts-charcoal);">最近对局</h3>
+            <a href="#" class="text-xs tracking-wide transition-colors duration-200 hover:brightness-110" style="color: var(--ts-purple);">
+              查看全部
+            </a>
+          </div>
+
+          <div class="flex flex-col gap-0.5">
+            <!-- Game 1 — Win -->
+            <div class="game-row flex items-center gap-3 px-3 py-3 rounded-xl">
+              <div class="flex -space-x-2 shrink-0">
+                <div class="w-7 h-7 rounded-full ring-2 ring-white/80" style="background: linear-gradient(135deg, #A0C4B8, #7BAE98);"></div>
+                <div class="w-7 h-7 rounded-full ring-2 ring-white/80" style="background: linear-gradient(135deg, #C4A6B0, #B8909A);"></div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium truncate" style="color: var(--ts-charcoal);">与 小明、小红 对局</p>
+                <p class="text-xs" style="color: var(--ts-muted);">3 分钟前</p>
+              </div>
+              <span class="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full"
+                    style="background: rgba(123,174,152,0.15); color: var(--ts-green);">
+                胜利
+              </span>
+            </div>
+
+            <!-- Game 2 — Loss -->
+            <div class="game-row flex items-center gap-3 px-3 py-3 rounded-xl">
+              <div class="flex -space-x-2 shrink-0">
+                <div class="w-7 h-7 rounded-full ring-2 ring-white/80" style="background: linear-gradient(135deg, #D4A76A, #C49560);"></div>
+                <div class="w-7 h-7 rounded-full ring-2 ring-white/80" style="background: linear-gradient(135deg, #B8AFCA, #8B7DA8);"></div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium truncate" style="color: var(--ts-charcoal);">与 阿杰、路飞 对局</p>
+                <p class="text-xs" style="color: var(--ts-muted);">28 分钟前</p>
+              </div>
+              <span class="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full"
+                    style="background: rgba(212,144,138,0.15); color: var(--ts-red-soft);">
+                失败
+              </span>
+            </div>
+
+            <!-- Game 3 — Win -->
+            <div class="game-row flex items-center gap-3 px-3 py-3 rounded-xl">
+              <div class="flex -space-x-2 shrink-0">
+                <div class="w-7 h-7 rounded-full ring-2 ring-white/80" style="background: linear-gradient(135deg, #E8D5DD, #C4A6B0);"></div>
+                <div class="w-7 h-7 rounded-full ring-2 ring-white/80" style="background: linear-gradient(135deg, #B8AFCA, #A090BF);"></div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium truncate" style="color: var(--ts-charcoal);">与 慕容、一休 对局</p>
+                <p class="text-xs" style="color: var(--ts-muted);">1 小时前</p>
+              </div>
+              <span class="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full"
+                    style="background: rgba(123,174,152,0.15); color: var(--ts-green);">
+                胜利
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- end scrollable content -->
+
+  </div><!-- end main content wrapper -->
+
+</main>
+
+<script>
+  // Initialize Lucide icons
+  lucide.createIcons();
+
+  // Mobile sidebar toggle (CSS-only visual design, minimal JS for drawer state)
+  (function() {
+    const menuBtn  = document.getElementById('menuBtn');
+    const drawer   = document.getElementById('sidebarDrawer');
+    const overlay  = document.getElementById('sidebarOverlay');
+
+    function openDrawer()  { drawer.classList.add('open');  overlay.classList.add('open');  document.body.style.overflow = 'hidden'; }
+    function closeDrawer() { drawer.classList.remove('open'); overlay.classList.remove('open'); document.body.style.overflow = ''; }
+
+    if (menuBtn) {
+      menuBtn.addEventListener('click', openDrawer);
+    }
+    if (overlay) {
+      overlay.addEventListener('click', closeDrawer);
+    }
+  })();
+</script>
+</body>
+</html>
