@@ -69,6 +69,8 @@ function selectLoadBalance(models) {
       bestCount = c;
     }
   }
+  // 原子地在选择时增加在飞计数，防止并发调用读到相同计数而选中同一绑定
+  incInFlight(best.bindingId);
   return best;
 }
 
@@ -104,7 +106,8 @@ async function fetchWithTimeout(url, init, timeoutMs = TIMEOUT_MS) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(url, { ...init, signal: controller.signal });
+    // redirect: 'manual' 作为默认值，防止跟随重定向绕过 SSRF 校验
+    return await fetch(url, { redirect: 'manual', ...init, signal: controller.signal });
   } finally {
     clearTimeout(timer);
   }
@@ -133,6 +136,8 @@ async function callOpenAI(provider, modelId, messages, opts) {
     const errText = await res.text().catch(() => '');
     throw new Error(`OpenAI API ${res.status}: ${errText.slice(0, 200)}`);
   }
+  const contentLength = parseInt(res.headers.get('content-length') || '0', 10);
+  if (contentLength > 1024 * 1024) { throw new Error('上游响应体过大，已拒绝'); }
   const data = await res.json();
   const content = data?.choices?.[0]?.message?.content;
   if (!content) throw new Error('OpenAI API empty content');
@@ -140,14 +145,20 @@ async function callOpenAI(provider, modelId, messages, opts) {
 }
 
 // Anthropic 格式：POST {base_url}/v1/messages
+// Anthropic 不支持 messages 中的 system 角色，需提取为顶层 system 字段
 async function callAnthropic(provider, modelId, messages, opts) {
   const url = `${provider.baseUrl.replace(/\/$/, '')}/v1/messages`;
+  const systemMessages = messages.filter((m) => m.role === 'system');
+  const nonSystemMessages = messages.filter((m) => m.role !== 'system');
   const body = {
     model: modelId,
-    messages,
+    messages: nonSystemMessages,
     max_tokens: opts.maxOutput || 4096,
     temperature: opts.temperature != null ? opts.temperature : 0.3,
   };
+  if (systemMessages.length > 0) {
+    body.system = systemMessages.map((m) => m.content).join('\n\n');
+  }
   const res = await fetchWithTimeout(url, {
     method: 'POST',
     headers: {
@@ -161,17 +172,22 @@ async function callAnthropic(provider, modelId, messages, opts) {
     const errText = await res.text().catch(() => '');
     throw new Error(`Anthropic API ${res.status}: ${errText.slice(0, 200)}`);
   }
+  const contentLength = parseInt(res.headers.get('content-length') || '0', 10);
+  if (contentLength > 1024 * 1024) { throw new Error('上游响应体过大，已拒绝'); }
   const data = await res.json();
   const content = data?.content?.[0]?.text;
   if (!content) throw new Error('Anthropic API empty content');
   return content;
 }
 
-// Gemini 格式：POST {base_url}/v1beta/models/{model}:generateContent?key=
+// Gemini 格式：POST {base_url}/v1beta/models/{model}:generateContent
+// API Key 通过 x-goog-api-key 请求头传递，不放入 URL；system 角色需放入顶层 systemInstruction
 async function callGemini(provider, modelId, messages, opts) {
-  const url = `${provider.baseUrl.replace(/\/$/, '')}/v1beta/models/${modelId}:generateContent?key=${encodeURIComponent(provider.apiKey)}`;
+  const url = `${provider.baseUrl.replace(/\/$/, '')}/v1beta/models/${modelId}:generateContent`;
+  const systemMessages = messages.filter((m) => m.role === 'system');
+  const nonSystemMessages = messages.filter((m) => m.role !== 'system');
   // OpenAI messages -> Gemini contents
-  const contents = messages.map((m) => ({
+  const contents = nonSystemMessages.map((m) => ({
     role: m.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: m.content }],
   }));
@@ -182,15 +198,22 @@ async function callGemini(provider, modelId, messages, opts) {
       maxOutputTokens: opts.maxOutput || 4096,
     },
   };
+  if (systemMessages.length > 0) {
+    body.systemInstruction = {
+      parts: [{ text: systemMessages.map((m) => m.content).join('\n\n') }],
+    };
+  }
   const res = await fetchWithTimeout(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': provider.apiKey },
     body: JSON.stringify(body),
   });
   if (!res.ok) {
     const errText = await res.text().catch(() => '');
     throw new Error(`Gemini API ${res.status}: ${errText.slice(0, 200)}`);
   }
+  const contentLength = parseInt(res.headers.get('content-length') || '0', 10);
+  if (contentLength > 1024 * 1024) { throw new Error('上游响应体过大，已拒绝'); }
   const data = await res.json();
   const content = data?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!content) throw new Error('Gemini API empty content');
@@ -235,7 +258,7 @@ async function callRole(roleKey, messages, opts = {}) {
   if (!binding) throw new Error(`角色 ${roleKey} 无可用模型`);
 
   if (roleConfig.pollingStrategy === 'load_balance') {
-    incInFlight(binding.bindingId);
+    // incInFlight 已在 selectLoadBalance 中原子完成，此处仅负责调用结束后递减
     try {
       return await callProvider(binding, messages, opts);
     } finally {

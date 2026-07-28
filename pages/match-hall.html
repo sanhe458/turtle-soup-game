@@ -2,6 +2,8 @@
 <html lang="zh" class="light">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta name="referrer" content="no-referrer">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>海龟汤 — 匹配大厅</title>
     <style id="theme-vars">
@@ -67,8 +69,10 @@
 }
 
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
-    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <!-- TODO: compute and add integrity="sha384-..." for this resource -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js" crossorigin="anonymous"></script>
+    <!-- TODO: compute and add integrity="sha384-..." for this resource -->
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
     <style type="text/tailwindcss">
   @theme inline {
     --color-background: var(--ts-background);
@@ -471,7 +475,8 @@
 
 </main>
 
-<script src="https://cdn.socket.io/4.8.0/socket.io.min.js"></script>
+<!-- TODO: compute and add integrity="sha384-..." for this resource -->
+<script src="https://cdn.socket.io/4.8.0/socket.io.min.js" crossorigin="anonymous"></script>
 <script src="../js/api.js"></script>
 <script src="../js/socket.js"></script>
 <script src="../js/helpers.js"></script>
@@ -489,6 +494,11 @@
     if (menuBtn) menuBtn.addEventListener('click', openDrawer);
     if (overlay) overlay.addEventListener('click', closeDrawer);
   })();
+
+  // 生产环境静默 console 输出，避免泄露
+  if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    ['log','warn','error','debug'].forEach(function(m){ console[m] = function(){}; });
+  }
 
   // ===== 主逻辑 =====
   const nicknameInput = document.getElementById('nicknameInput');
@@ -559,7 +569,7 @@
             </div>
             <span class="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full"
                   style="background: ${isWin ? 'rgba(123,174,152,0.15)' : 'rgba(212,144,138,0.15)'}; color: ${isWin ? 'var(--ts-green)' : 'var(--ts-red-soft)'};">
-              ${g.result}
+              ${Helpers.escape(g.result)}
             </span>
           </div>
         `;
@@ -637,7 +647,7 @@
       cleanupMatch();
       Helpers.toast('匹配成功，进入对局', 'success');
       setTimeout(() => {
-        location.href = 'game-play-v2.html?gameId=' + data.gameId;
+        location.href = 'game-play-v2.html?gameId=' + encodeURIComponent(data.gameId);
       }, 500);
     });
     socket.on('match:cancelled', (data) => {

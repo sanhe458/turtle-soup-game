@@ -6,9 +6,14 @@ const config = require('./src/config');
 
 // 直接用内存数据库或文件数据库重建
 const DB_PATH = path.join(__dirname, 'data.db');
-if (fs.existsSync(DB_PATH)) {
-  fs.unlinkSync(DB_PATH);
-  console.log('[seed] 已删除旧 data.db');
+if (process.env.NODE_ENV !== 'production') {
+  if (fs.existsSync(DB_PATH)) {
+    fs.unlinkSync(DB_PATH);
+    console.log('[seed] 已删除旧 data.db');
+  }
+} else {
+  console.error('禁止在生产环境删除数据库');
+  process.exit(1);
 }
 
 const db = require('./src/db');
@@ -21,7 +26,7 @@ db.prepare(`
   INSERT INTO admins (id, account, password_hash, name, role, email)
   VALUES (?, ?, ?, ?, ?, ?)
 `).run(adminId, 'admin', adminHash, 'SuperAdmin', '超级管理员', 'admin@turtlesoup.com');
-console.log(`[seed] 管理员已创建: admin / ${adminPassword}`);
+console.log('[seed] 管理员账号 admin 已创建，请通过环境变量 ADMIN_DEFAULT_PASSWORD 查看口令');
 
 // 题目
 const puzzles = [
@@ -107,4 +112,4 @@ puzzles.forEach((p) => {
 console.log(`[seed] 已创建 ${puzzles.length} 道题目`);
 
 console.log('[seed] 种子数据初始化完成');
-console.log('[seed] 管理员登录: 账号 admin / 密码', adminPassword);
+console.log('[seed] 管理员账号 admin 已就绪，请通过环境变量 ADMIN_DEFAULT_PASSWORD 查看口令');

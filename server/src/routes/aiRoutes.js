@@ -1,7 +1,8 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
-const { adminAuth } = require('../middleware/adminAuth');
+const { adminAuth, requireRole } = require('../middleware/adminAuth');
 const aiConfig = require('../services/aiConfigService');
 const aiRouter = require('../services/aiRouter');
 
@@ -12,6 +13,42 @@ const FORMAT_DEFAULTS = {
   anthropic: 'https://api.anthropic.com',
   gemini: 'https://generativelanguage.googleapis.com',
 };
+
+// SSRF 防护：校验 baseUrl，禁止内网/回环/链路本地地址
+function validateBaseUrl(url) {
+  if (!url) return { ok: false, error: 'baseUrl 不能为空' };
+  let parsed;
+  try { parsed = new URL(url); } catch (e) { return { ok: false, error: 'baseUrl 格式非法' }; }
+  // Allow https always; allow http only in non-production
+  if (parsed.protocol === 'http:' && process.env.NODE_ENV === 'production') {
+    return { ok: false, error: '生产环境 baseUrl 必须使用 https' };
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    return { ok: false, error: 'baseUrl 协议必须是 http 或 https' };
+  }
+  const host = parsed.hostname;
+  // Block private/loopback/link-local addresses
+  const blocked = /^(127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2[0-9]|3[01])\.|0\.|localhost|::1$|fc|fd)/i;
+  if (blocked.test(host)) {
+    return { ok: false, error: '不允许的地址：禁止内网/回环/链路本地地址' };
+  }
+  return { ok: true };
+}
+
+// 数值字段校验：仅接受有限数
+function toFiniteNumber(v, fallback) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+// 测试调用限流：每分钟 10 次
+const testLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: '测试调用过于频繁' },
+});
 
 // ==================== 供应商 ====================
 
@@ -33,11 +70,15 @@ router.post('/admin/ai/providers', adminAuth, (req, res) => {
   if (!finalBaseUrl) {
     return res.status(400).json({ error: 'Base URL 不能为空' });
   }
+  const urlCheck = validateBaseUrl(finalBaseUrl);
+  if (!urlCheck.ok) {
+    return res.status(400).json({ error: urlCheck.error });
+  }
   const id = uuidv4();
   db.prepare(`
     INSERT INTO ai_providers (id, name, format, base_url, api_key, enabled, sort_order)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(id, name.trim(), format, finalBaseUrl, apiKey || '', enabled === false ? 0 : 1, sortOrder || 0);
+  `).run(id, name.trim(), format, finalBaseUrl, apiKey || '', enabled === false ? 0 : 1, toFiniteNumber(sortOrder, 0));
   res.json({ provider: aiConfig.listProviders().find((p) => p.id === id) });
 });
 
@@ -50,16 +91,21 @@ router.put('/admin/ai/providers/:id', adminAuth, (req, res) => {
     return res.status(400).json({ error: '格式必须为 openai / anthropic / gemini' });
   }
   const newApiKey = apiKey === undefined || apiKey === '' ? existing.apiKey : apiKey;
+  const finalBaseUrl = (baseUrl || existing.baseUrl).trim();
+  const urlCheck = validateBaseUrl(finalBaseUrl);
+  if (!urlCheck.ok) {
+    return res.status(400).json({ error: urlCheck.error });
+  }
   db.prepare(`
     UPDATE ai_providers SET name = ?, format = ?, base_url = ?, api_key = ?, enabled = ?, sort_order = ?, updated_at = datetime('now')
     WHERE id = ?
   `).run(
     name ?? existing.name,
     format ?? existing.format,
-    (baseUrl || existing.baseUrl).trim(),
+    finalBaseUrl,
     newApiKey,
     enabled === undefined ? (existing.enabled ? 1 : 0) : (enabled ? 1 : 0),
-    sortOrder ?? existing.sortOrder,
+    toFiniteNumber(sortOrder ?? existing.sortOrder, existing.sortOrder || 0),
     req.params.id
   );
   res.json({ provider: aiConfig.listProviders().find((p) => p.id === req.params.id) });
@@ -98,7 +144,7 @@ router.post('/admin/ai/models', adminAuth, (req, res) => {
   `).run(
     id, providerId, name.trim(), modelId.trim(),
     contextWindow || 128000, maxOutput || 4096, modalitiesJson,
-    enabled === false ? 0 : 1, sortOrder || 0
+    enabled === false ? 0 : 1, toFiniteNumber(sortOrder, 0)
   );
   res.json({ model: aiConfig.listModels().find((m) => m.id === id) });
 });
@@ -123,7 +169,7 @@ router.put('/admin/ai/models/:id', adminAuth, (req, res) => {
     maxOutput ?? existing.max_output,
     modalitiesJson,
     enabled === undefined ? existing.enabled : (enabled ? 1 : 0),
-    sortOrder ?? existing.sort_order,
+    toFiniteNumber(sortOrder ?? existing.sort_order, existing.sort_order || 0),
     req.params.id
   );
   res.json({ model: aiConfig.listModels().find((m) => m.id === req.params.id) });
@@ -237,9 +283,9 @@ router.put('/admin/ai/roles/:id/models', adminAuth, (req, res) => {
     bindings.forEach((b, idx) => {
       stmt.run(
         uuidv4(), req.params.id, b.modelId,
-        b.priority || 0, b.weight || 1,
+        toFiniteNumber(b.priority, 0), toFiniteNumber(b.weight, 1),
         b.enabled === false ? 0 : 1,
-        b.sortOrder != null ? b.sortOrder : idx
+        toFiniteNumber(b.sortOrder != null ? b.sortOrder : idx, idx)
       );
     });
   });
@@ -262,16 +308,20 @@ router.patch('/admin/ai/roles/:id/strategy', adminAuth, (req, res) => {
 // ==================== 测试 ====================
 
 // POST /api/admin/ai/test  { modelId, prompt }
-router.post('/admin/ai/test', adminAuth, async (req, res) => {
+router.post('/admin/ai/test', adminAuth, requireRole('superadmin'), testLimiter, async (req, res) => {
   const { modelId, prompt } = req.body || {};
   if (!modelId || !prompt) {
     return res.status(400).json({ error: 'modelId 与 prompt 均为必填' });
+  }
+  if (typeof prompt !== 'string' || prompt.length > 2000) {
+    return res.status(400).json({ error: 'prompt 长度不能超过 2000 字符' });
   }
   try {
     const content = await aiRouter.testModel(modelId, prompt);
     res.json({ ok: true, content });
   } catch (err) {
-    res.status(200).json({ ok: false, error: err.message });
+    console.error('[aiRoutes] testModel 失败:', err.message);
+    res.status(502).json({ ok: false, error: '供应商调用失败，请查看服务端日志' });
   }
 });
 

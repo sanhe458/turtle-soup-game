@@ -2,6 +2,8 @@
 <html lang="zh" class="light">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta name="referrer" content="no-referrer">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>题库管理 — 海龟汤管理后台</title>
     <style id="theme-vars">
@@ -67,8 +69,10 @@
 }
 
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
-    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <!-- TODO: compute and add integrity="sha384-..." for this resource -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js" crossorigin="anonymous"></script>
+    <!-- TODO: compute and add integrity="sha384-..." for this resource -->
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
     <script src="../js/api.js"></script>
     <script src="../js/helpers.js"></script>
     <style type="text/tailwindcss">
@@ -526,6 +530,16 @@
     <script>
       lucide.createIcons();
 
+      // 鉴权：未登录跳转
+      if (!window.Api || !Api.getAdminToken()) {
+        location.href = 'admin-login.html';
+      }
+
+      // 生产环境静默 console 输出，避免泄露
+      if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        ['log','warn','error','debug'].forEach(function(m){ console[m] = function(){}; });
+      }
+
       // ===== Mobile sidebar toggle =====
       const sidebar = document.querySelector('.ts-sidebar');
       const overlay = document.querySelector('.ts-sidebar-overlay');
@@ -649,8 +663,8 @@
           return '<tr class="hover:bg-[#8B7DA8]/5 transition-colors duration-200 ' + rowBg + ' ' + rowOpacity + '">' +
             '<td class="px-5 py-3.5 text-xs font-mono text-[#8B7DA8] font-semibold">' + Helpers.escape(shortId(p.id)) + '</td>' +
             '<td class="px-5 py-3.5 text-sm text-[#3D3835] max-w-[200px] truncate" title="' + Helpers.escape(p.title) + '">' + Helpers.escape(p.title) + '</td>' +
-            '<td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium ' + diffCls + '">' + (DIFF_LABEL[p.difficulty] || p.difficulty) + '</span></td>' +
-            '<td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium ' + stCls + '">' + (STATUS_LABEL[p.status] || p.status) + '</span></td>' +
+            '<td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium ' + diffCls + '">' + (DIFF_LABEL[p.difficulty] || '未知') + '</span></td>' +
+            '<td class="px-5 py-3.5"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium ' + stCls + '">' + (STATUS_LABEL[p.status] || '未知') + '</span></td>' +
             '<td class="px-5 py-3.5 text-sm text-[#6B6560] font-medium">' + fmtNum(p.playCount) + '</td>' +
             '<td class="px-5 py-3.5 text-sm text-[#6B6560] font-medium">' + (p.rating != null ? p.rating + '%' : '—') + '</td>' +
             '<td class="px-5 py-3.5 text-xs text-[#A09890]">' + fmtDate(p.createdAt) + '</td>' +

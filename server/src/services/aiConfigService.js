@@ -1,5 +1,10 @@
+// 安全说明：API Key 使用 AES-256-GCM 加密存储。
+// 历史明文 Key 会在读取时通过 decrypt() 的向后兼容逻辑自动透传（未加密的值原样返回）。
+// 建议运行迁移脚本 encrypt 历史数据，或通过管理后台重新保存每个供应商以触发加密。
+
 // AI 配置读取服务：从数据库查询 providers / models / roles / 绑定关系
 const db = require('../db');
+const { encrypt, decrypt } = require('../utils/crypto');
 
 const VALID_FORMATS = ['openai', 'anthropic', 'gemini'];
 const VALID_STRATEGIES = ['round_robin', 'failover', 'weighted_random', 'load_balance'];
@@ -31,7 +36,7 @@ function listProviders(includeDisabled = true) {
     name: r.name,
     format: r.format,
     baseUrl: r.base_url,
-    apiKey: maskKey(r.api_key),
+    apiKey: maskKey(decrypt(r.api_key)),
     enabled: !!r.enabled,
     sortOrder: r.sort_order,
     createdAt: r.created_at,
@@ -47,7 +52,7 @@ function getProvider(id) {
     name: r.name,
     format: r.format,
     baseUrl: r.base_url,
-    apiKey: r.api_key, // 明文，仅内部用
+    apiKey: decrypt(r.api_key), // 解密后明文，仅内部用
     enabled: !!r.enabled,
     sortOrder: r.sort_order,
     createdAt: r.created_at,
@@ -115,7 +120,7 @@ function getModel(id) {
       name: r.provider_name,
       format: r.provider_format,
       baseUrl: r.provider_base_url,
-      apiKey: r.provider_api_key,
+      apiKey: decrypt(r.provider_api_key),
       enabled: !!r.provider_enabled,
     },
   };
@@ -202,7 +207,7 @@ function getRoleBindings(roleId) {
       id: r.provider_id,
       format: r.format,
       baseUrl: r.base_url,
-      apiKey: r.api_key,
+      apiKey: decrypt(r.api_key),
     },
   }));
 }

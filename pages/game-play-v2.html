@@ -2,6 +2,8 @@
 <html lang="zh" class="light">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta name="referrer" content="no-referrer">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>对局中 — 海龟汤</title>
     <style id="theme-vars">
@@ -67,8 +69,10 @@
 }
 
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
-    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <!-- TODO: compute and add integrity="sha384-..." for this resource -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js" crossorigin="anonymous"></script>
+    <!-- TODO: compute and add integrity="sha384-..." for this resource -->
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
     <style type="text/tailwindcss">
   @theme inline {
     --color-background: var(--ts-background);
@@ -570,7 +574,8 @@
 
     </main>
 
-    <script src="https://cdn.socket.io/4.8.0/socket.io.min.js"></script>
+    <!-- TODO: compute and add integrity="sha384-..." for this resource -->
+    <script src="https://cdn.socket.io/4.8.0/socket.io.min.js" crossorigin="anonymous"></script>
     <script src="../js/api.js"></script>
     <script src="../js/socket.js"></script>
     <script src="../js/helpers.js"></script>
@@ -603,6 +608,11 @@
           if (window.innerWidth >= 1024) closeDrawer();
         });
       })();
+
+      // 生产环境静默 console 输出，避免泄露
+      if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        ['log','warn','error','debug'].forEach(function(m){ console[m] = function(){}; });
+      }
 
       // ===== 主逻辑：实时对局 =====
       const params = new URLSearchParams(location.search);
@@ -932,7 +942,7 @@
           appendSystemMessage('真相揭晓中…');
           Helpers.toast('对局结束，正在跳转揭晓页', 'success');
           setTimeout(() => {
-            location.href = 'answer-reveal-v2.html?gameId=' + (data.gameId || game.gameId);
+            location.href = 'answer-reveal-v2.html?gameId=' + encodeURIComponent(data.gameId || game.gameId);
           }, 1200);
         });
 

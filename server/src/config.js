@@ -1,10 +1,32 @@
 require('dotenv').config();
 
+// 启动校验：JWT_SECRET 必须设置且长度 >= 32
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret || jwtSecret.length < 32) {
+  console.error('JWT_SECRET 必须设置且长度>=32');
+  process.exit(1);
+}
+
+// 启动校验：管理员默认口令必须设置且不能使用弱口令
+const adminDefaultPassword = process.env.ADMIN_DEFAULT_PASSWORD;
+const WEAK_PASSWORDS = ['admin123', 'admin', 'password', '123456', 'admin@123', '12345678'];
+if (!adminDefaultPassword || WEAK_PASSWORDS.includes(adminDefaultPassword)) {
+  console.error('管理员默认口令过弱，请设置强口令');
+  process.exit(1);
+}
+
+// API Key 加密所需 KEK：API_KEY_ENCRYPTION_KEY 必须设置且长度 >= 16，用于 AES-256-GCM 加密落库的供应商 API Key。
+// 此处不强制退出（避免破坏未配置该变量的开发环境）；缺失时 crypto.js 的 getKey() 会在实际加解密时抛错。
+if (!process.env.API_KEY_ENCRYPTION_KEY || process.env.API_KEY_ENCRYPTION_KEY.length < 16) {
+  console.warn('API_KEY_ENCRYPTION_KEY 未设置或长度 < 16，API Key 加密功能将不可用');
+}
+
 module.exports = {
   port: parseInt(process.env.PORT || '3000', 10),
-  jwtSecret: process.env.JWT_SECRET || 'turtle-soup-dev-secret',
-  jwtExpiresIn: '7d',
-  adminJwtExpiresIn: '12h',
+  jwtSecret,
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1h',
+  adminJwtExpiresIn: process.env.ADMIN_JWT_EXPIRES_IN || '15m',
+  refreshTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
 
   clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:8080',
 
@@ -17,5 +39,5 @@ module.exports = {
     playersPerGame: 3,
   },
 
-  adminDefaultPassword: process.env.ADMIN_DEFAULT_PASSWORD || 'admin123',
+  adminDefaultPassword,
 };

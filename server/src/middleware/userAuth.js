@@ -1,4 +1,5 @@
 const { verify } = require('../utils/jwt');
+const db = require('../db');
 
 function userAuth(req, res, next) {
   const header = req.headers.authorization || '';
@@ -11,6 +12,15 @@ function userAuth(req, res, next) {
     if (decoded.type !== 'user') {
       return res.status(401).json({ error: '身份凭证类型错误' });
     }
+    const user = db
+      .prepare('SELECT id, token_version FROM users WHERE id = ?')
+      .get(decoded.userId);
+    if (!user) {
+      return res.status(401).json({ error: '身份凭证无效或已过期' });
+    }
+    if (user.token_version !== decoded.tokenVersion) {
+      return res.status(401).json({ error: '身份凭证无效或已过期' });
+    }
     req.user = { userId: decoded.userId, nickname: decoded.nickname };
     next();
   } catch (err) {
@@ -18,7 +28,7 @@ function userAuth(req, res, next) {
   }
 }
 
-// 可选鉴权：有 token 就解析，没有也放行
+// 可选鉴权：有 token 就解析，没有也放行；token 失效或已撤销则视同未登录
 function optionalUserAuth(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : '';
@@ -26,7 +36,12 @@ function optionalUserAuth(req, res, next) {
     try {
       const decoded = verify(token);
       if (decoded.type === 'user') {
-        req.user = { userId: decoded.userId, nickname: decoded.nickname };
+        const user = db
+          .prepare('SELECT id, token_version FROM users WHERE id = ?')
+          .get(decoded.userId);
+        if (user && user.token_version === decoded.tokenVersion) {
+          req.user = { userId: decoded.userId, nickname: decoded.nickname };
+        }
       }
     } catch {
       // 忽略无效 token
