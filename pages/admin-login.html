@@ -69,6 +69,8 @@
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
     <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/helpers.js"></script>
     <style type="text/tailwindcss">
   @theme inline {
     --color-background: var(--ts-background);
@@ -203,7 +205,7 @@
         </div>
 
         <!-- Form Fields -->
-        <form class="space-y-4" onsubmit="return false;">
+        <form id="login-form" class="space-y-4" novalidate>
 
           <!-- Username / Account -->
           <div>
@@ -212,7 +214,7 @@
               <div class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A09890]">
                 <i data-lucide="user" class="w-4 h-4"></i>
               </div>
-              <input type="text" placeholder="请输入管理员账号" class="w-full rounded-xl border border-white/60 bg-white/50 py-3 pl-10 pr-4 text-sm text-[#3D3835] placeholder-[#A09890] outline-none backdrop-blur-sm transition-all duration-300 focus:border-[#8B7DA8]/50 focus:bg-white/70 focus:shadow-[0_0_0_3px_rgba(139,125,168,0.12)]">
+              <input id="input-account" type="text" autocomplete="username" placeholder="请输入管理员账号" class="w-full rounded-xl border border-white/60 bg-white/50 py-3 pl-10 pr-4 text-sm text-[#3D3835] placeholder-[#A09890] outline-none backdrop-blur-sm transition-all duration-300 focus:border-[#8B7DA8]/50 focus:bg-white/70 focus:shadow-[0_0_0_3px_rgba(139,125,168,0.12)]">
             </div>
           </div>
 
@@ -223,9 +225,9 @@
               <div class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A09890]">
                 <i data-lucide="lock" class="w-4 h-4"></i>
               </div>
-              <input type="password" placeholder="请输入密码" class="w-full rounded-xl border border-white/60 bg-white/50 py-3 pl-10 pr-10 text-sm text-[#3D3835] placeholder-[#A09890] outline-none backdrop-blur-sm transition-all duration-300 focus:border-[#8B7DA8]/50 focus:bg-white/70 focus:shadow-[0_0_0_3px_rgba(139,125,168,0.12)]">
-              <!-- Eye icon toggle (visual only) -->
-              <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#A09890] transition-colors duration-200 hover:text-[#6B6560]">
+              <input id="input-password" type="password" autocomplete="current-password" placeholder="请输入密码" class="w-full rounded-xl border border-white/60 bg-white/50 py-3 pl-10 pr-10 text-sm text-[#3D3835] placeholder-[#A09890] outline-none backdrop-blur-sm transition-all duration-300 focus:border-[#8B7DA8]/50 focus:bg-white/70 focus:shadow-[0_0_0_3px_rgba(139,125,168,0.12)]">
+              <!-- Eye icon toggle -->
+              <button id="toggle-password" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#A09890] transition-colors duration-200 hover:text-[#6B6560]">
                 <i data-lucide="eye-off" class="w-4 h-4"></i>
               </button>
             </div>
@@ -233,9 +235,9 @@
 
           <!-- Remember me + Forgot password -->
           <div class="flex items-center justify-between pt-0.5">
-            <label class="flex items-center gap-2 cursor-pointer">
-              <div class="flex h-4 w-4 items-center justify-center rounded-full border-2 border-[#E0D8D0] transition-all duration-200 hover:border-[#8B7DA8]/60">
-                <!-- unchecked state circle -->
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input id="input-remember" type="checkbox" class="sr-only peer">
+              <div class="flex h-4 w-4 items-center justify-center rounded-full border-2 border-[#E0D8D0] transition-all duration-200 peer-checked:border-[#8B7DA8] peer-checked:bg-[#8B7DA8] peer-focus:shadow-[0_0_0_3px_rgba(139,125,168,0.18)]">
               </div>
               <span class="text-xs text-[#6B6560]">记住登录</span>
             </label>
@@ -243,14 +245,15 @@
           </div>
 
           <!-- Error hint (hidden by default) -->
-          <div class="flex items-center gap-1.5 opacity-0 transition-opacity duration-300">
+          <div id="error-hint" class="flex items-center gap-1.5 opacity-0 transition-opacity duration-300">
             <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-[#D4908A]"></i>
-            <span class="text-xs text-[#D4908A]">账号或密码错误</span>
+            <span id="error-text" class="text-xs text-[#D4908A]">账号或密码错误</span>
           </div>
 
           <!-- Login Button -->
-          <button type="submit" class="mt-2 flex w-full items-center justify-center rounded-xl py-3 text-sm font-semibold tracking-widest text-white transition-all duration-300 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]" style="background: linear-gradient(135deg, #8B7DA8 0%, #A08EBA 50%, #C4A6B0 100%); box-shadow: 0 4px 16px rgba(139,125,168,0.25);">
-            登 录
+          <button id="btn-login" type="submit" class="mt-2 flex w-full items-center justify-center rounded-xl py-3 text-sm font-semibold tracking-widest text-white transition-all duration-300 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] disabled:opacity-60 disabled:hover:scale-100 disabled:cursor-not-allowed" style="background: linear-gradient(135deg, #8B7DA8 0%, #A08EBA 50%, #C4A6B0 100%); box-shadow: 0 4px 16px rgba(139,125,168,0.25);">
+            <span id="btn-login-text">登 录</span>
+            <i id="btn-login-spinner" data-lucide="loader-2" class="w-4 h-4 ml-2 hidden animate-spin"></i>
           </button>
 
         </form>
@@ -265,7 +268,7 @@
       <!-- ==================== FOOTER ==================== -->
       <div class="relative z-10 mt-6 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105">
         <i data-lucide="arrow-left" class="w-3.5 h-3.5 text-[#8B7DA8]"></i>
-        <a href="#" class="text-xs font-medium text-[#8B7DA8] transition-colors duration-200 hover:text-[#6B5B8A]">返回用户端</a>
+        <a href="match-hall.html" class="text-xs font-medium text-[#8B7DA8] transition-colors duration-200 hover:text-[#6B5B8A]">返回用户端</a>
       </div>
 
     </main>
@@ -326,8 +329,84 @@
     </style>
 
     <script>
-      // Initialize Lucide icons
       lucide.createIcons();
+
+      (function() {
+        // 已登录则直接跳转
+        if (window.Api && Api.getAdminToken()) {
+          location.href = 'admin-dashboard.html';
+          return;
+        }
+
+        const form = document.getElementById('login-form');
+        const inputAccount = document.getElementById('input-account');
+        const inputPassword = document.getElementById('input-password');
+        const inputRemember = document.getElementById('input-remember');
+        const togglePassword = document.getElementById('toggle-password');
+        const btnLogin = document.getElementById('btn-login');
+        const btnText = document.getElementById('btn-login-text');
+        const btnSpinner = document.getElementById('btn-login-spinner');
+        const errorHint = document.getElementById('error-hint');
+        const errorText = document.getElementById('error-text');
+
+        function showError(msg) {
+          if (errorText) errorText.textContent = msg || '账号或密码错误';
+          if (errorHint) errorHint.classList.remove('opacity-0');
+        }
+        function hideError() {
+          if (errorHint) errorHint.classList.add('opacity-0');
+        }
+        function setLoading(loading) {
+          if (!btnLogin) return;
+          btnLogin.disabled = !!loading;
+          if (btnText) btnText.textContent = loading ? '登 录 中' : '登 录';
+          if (btnSpinner) btnSpinner.classList.toggle('hidden', !loading);
+        }
+
+        // 密码可见性切换
+        if (togglePassword) {
+          togglePassword.addEventListener('click', function() {
+            const isPwd = inputPassword.type === 'password';
+            inputPassword.type = isPwd ? 'text' : 'password';
+            togglePassword.innerHTML = isPwd
+              ? '<i data-lucide="eye" class="w-4 h-4"></i>'
+              : '<i data-lucide="eye-off" class="w-4 h-4"></i>';
+            lucide.createIcons();
+          });
+        }
+
+        // 输入时隐藏错误
+        [inputAccount, inputPassword].forEach(function(inp) {
+          if (inp) inp.addEventListener('input', hideError);
+        });
+
+        if (form) {
+          form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            hideError();
+            const account = (inputAccount.value || '').trim();
+            const password = inputPassword.value || '';
+            if (!account || !password) {
+              showError('请输入账号和密码');
+              return;
+            }
+            setLoading(true);
+            try {
+              const data = await Api.adminLogin(account, password);
+              Api.setAdminToken(data.token, data.admin, !!inputRemember.checked);
+              Helpers.toast('登录成功', 'success');
+              setTimeout(function() {
+                location.href = 'admin-dashboard.html';
+              }, 300);
+            } catch (err) {
+              console.error('[admin login] 失败:', err);
+              showError(err.message || '登录失败，请稍后重试');
+            } finally {
+              setLoading(false);
+            }
+          });
+        }
+      })();
     </script>
 </body>
 </html>
