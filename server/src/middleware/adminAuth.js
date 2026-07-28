@@ -1,7 +1,7 @@
 const { verify } = require('../utils/jwt');
 const db = require('../db');
 
-function adminAuth(req, res, next) {
+async function adminAuth(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : '';
   if (!token) {
@@ -12,9 +12,10 @@ function adminAuth(req, res, next) {
     if (decoded.type !== 'admin') {
       return res.status(403).json({ error: '需要管理员权限' });
     }
-    const admin = db
-      .prepare('SELECT id, token_version FROM admins WHERE id = ?')
-      .get(decoded.id);
+    const admin = await db.getOne(
+      'SELECT id, token_version FROM admins WHERE id = ?',
+      [decoded.id]
+    );
     if (!admin) {
       return res.status(401).json({ error: '登录已过期，请重新登录' });
     }

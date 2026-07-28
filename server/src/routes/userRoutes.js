@@ -18,7 +18,7 @@ const registerLimiter = rateLimit({
 });
 
 // POST /api/users/register - 提交昵称获取身份
-router.post('/users/register', registerLimiter, (req, res) => {
+router.post('/users/register', registerLimiter, async (req, res) => {
   const { nickname } = req.body || {};
   if (!nickname || typeof nickname !== 'string' || nickname.trim().length === 0) {
     return res.status(400).json({ error: '昵称不能为空' });
@@ -30,35 +30,35 @@ router.post('/users/register', registerLimiter, (req, res) => {
   }
   const userId = uuidv4();
   const avatarSeed = userId.slice(0, 8);
-  db.prepare(`
+  await db.run(`
     INSERT INTO users (id, nickname, avatar_seed) VALUES (?, ?, ?)
-  `).run(userId, trimmed, avatarSeed);
+  `, [userId, trimmed, avatarSeed]);
   // 新建用户 token_version 默认为 0
   const token = signUser(userId, trimmed, 0);
   res.json({ userId, nickname: trimmed, token });
 });
 
 // POST /api/users/logout - 退出登录（通过递增 token_version 吊销当前 token）
-router.post('/users/logout', userAuth, (req, res) => {
-  db.prepare('UPDATE users SET token_version = token_version + 1 WHERE id = ?').run(req.user.userId);
+router.post('/users/logout', userAuth, async (req, res) => {
+  await db.run('UPDATE users SET token_version = token_version + 1 WHERE id = ?', [req.user.userId]);
   res.json({ ok: true });
 });
 
 // GET /api/user/profile - 个人统计
-router.get('/user/profile', userAuth, (req, res) => {
-  const row = db.prepare(`
+router.get('/user/profile', userAuth, async (req, res) => {
+  const row = await db.getOne(`
     SELECT total_games, wins, current_streak, created_at FROM users WHERE id = ?
-  `).get(req.user.userId);
+  `, [req.user.userId]);
   if (!row) return res.status(404).json({ error: '用户不存在' });
 
   // 今日场次
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
-  const todayGames = db.prepare(`
+  const todayGames = await db.getOne(`
     SELECT COUNT(*) as c FROM games g
     JOIN game_players gp ON gp.game_id = g.id
     WHERE gp.user_id = ? AND g.ended_at >= ?
-  `).get(req.user.userId, todayStart.toISOString());
+  `, [req.user.userId, todayStart]);
   const totalGames = row.total_games || 0;
   const wins = row.wins || 0;
   const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) / 100 : 0;
@@ -72,8 +72,8 @@ router.get('/user/profile', userAuth, (req, res) => {
 });
 
 // GET /api/user/recent-games - 最近对局
-router.get('/user/recent-games', userAuth, (req, res) => {
-  const games = db.prepare(`
+router.get('/user/recent-games', userAuth, async (req, res) => {
+  const games = await db.query(`
     SELECT g.id, g.ended_at, g.puzzle_id, gp.is_winner, gp2.nickname
     FROM games g
     JOIN game_players gp ON gp.game_id = g.id AND gp.user_id = ?
@@ -81,7 +81,7 @@ router.get('/user/recent-games', userAuth, (req, res) => {
     WHERE g.status = 'revealed'
     ORDER BY g.ended_at DESC
     LIMIT 10
-  `).all(req.user.userId, req.user.userId);
+  `, [req.user.userId, req.user.userId]);
 
   // 聚合对手
   const result = games.map((g) => {
@@ -107,8 +107,8 @@ router.get('/user/recent-games', userAuth, (req, res) => {
 });
 
 // GET /api/game/:id/reveal - 揭晓数据（仅参与者可读，防止 IDOR）
-router.get('/game/:id/reveal', userAuth, (req, res) => {
-  const data = gameService.getRevealDataForUser(req.params.id, req.user.userId);
+router.get('/game/:id/reveal', userAuth, async (req, res) => {
+  const data = await gameService.getRevealDataForUser(req.params.id, req.user.userId);
   if (!data) return res.status(403).json({ error: '对局不存在、未揭晓或您非参与者' });
   res.json(data);
 });

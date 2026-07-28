@@ -5,6 +5,8 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { Server } = require('socket.io');
 const config = require('./config');
+const db = require('./db');
+const aiConfig = require('./services/aiConfigService');
 const { setupMatchSockets } = require('./sockets/matchSocket');
 
 const app = express();
@@ -69,12 +71,20 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ error: '服务器内部错误' });
 });
 
-server.listen(config.port, () => {
-  console.log(`[turtle-soup] Server running on port ${config.port}`);
-  console.log(`[turtle-soup] CORS origin: ${config.clientOrigin}`);
-  console.log(`[turtle-soup] Socket.IO ready`);
-  const aiConfig = require('./services/aiConfigService');
-  if (!aiConfig.hasEnabledProvider()) {
+// 异步启动：先初始化数据库 schema，再监听端口
+async function boot() {
+  await db.initSchema();
+  server.listen(config.port, () => {
+    console.log(`[turtle-soup] Server running on port ${config.port}`);
+    console.log(`[turtle-soup] CORS origin: ${config.clientOrigin}`);
+    console.log(`[turtle-soup] Socket.IO ready`);
+  });
+  if (!(await aiConfig.hasEnabledProvider())) {
     console.warn('[turtle-soup] WARNING: 未配置任何启用的 AI 供应商，AI 角色将走降级逻辑（请在管理后台「AI 配置」页面维护）');
   }
+}
+
+boot().catch((err) => {
+  console.error('[turtle-soup] 启动失败:', err.message);
+  process.exit(1);
 });

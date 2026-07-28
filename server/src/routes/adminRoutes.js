@@ -53,7 +53,7 @@ router.post('/admin/login', loginLimiter, async (req, res) => {
   if (!account || !password) {
     return res.status(400).json({ error: '账号和密码不能为空' });
   }
-  const admin = db.prepare(`SELECT * FROM admins WHERE account = ?`).get(account);
+  const admin = await db.getOne(`SELECT * FROM admins WHERE account = ?`, [account]);
   if (!admin) {
     // 等时处理：执行一次无意义的 bcrypt 比较以抹平时序差异
     await bcrypt.compare(
@@ -74,24 +74,24 @@ router.post('/admin/login', loginLimiter, async (req, res) => {
 });
 
 // POST /api/admin/logout - 退出登录（通过递增 token_version 吊销当前 token）
-router.post('/admin/logout', adminAuth, (req, res) => {
-  db.prepare('UPDATE admins SET token_version = token_version + 1 WHERE id = ?').run(req.admin.id);
+router.post('/admin/logout', adminAuth, async (req, res) => {
+  await db.run('UPDATE admins SET token_version = token_version + 1 WHERE id = ?', [req.admin.id]);
   res.json({ ok: true });
 });
 
 // GET /api/admin/dashboard - 总览 KPI
-router.get('/admin/dashboard', adminAuth, (req, res) => {
+router.get('/admin/dashboard', adminAuth, async (req, res) => {
   const range = req.query.range || 'today'; // today / week / month
 
   // KPI
-  const totalUsers = db.prepare(`SELECT COUNT(*) as c FROM users`).get().c;
+  const totalUsers = (await db.getOne(`SELECT COUNT(*) as c FROM users`)).c;
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
-  const todayGames = db.prepare(`
+  const todayGames = (await db.getOne(`
     SELECT COUNT(*) as c FROM games WHERE ended_at >= ? AND status = 'revealed'
-  `).get(todayStart.toISOString()).c;
-  const totalPuzzles = db.prepare(`SELECT COUNT(*) as c FROM puzzles`).get().c;
-  const activePuzzles = db.prepare(`SELECT COUNT(*) as c FROM puzzles WHERE status = 'online'`).get().c;
+  `, [todayStart])).c;
+  const totalPuzzles = (await db.getOne(`SELECT COUNT(*) as c FROM puzzles`)).c;
+  const activePuzzles = (await db.getOne(`SELECT COUNT(*) as c FROM puzzles WHERE status = 'online'`)).c;
 
   // 用户增长（最近 7 天）
   const userGrowth = [];
@@ -101,15 +101,15 @@ router.get('/admin/dashboard', adminAuth, (req, res) => {
     d.setDate(d.getDate() - i);
     const next = new Date(d);
     next.setDate(next.getDate() + 1);
-    const newUsers = db.prepare(`
+    const newUsers = (await db.getOne(`
       SELECT COUNT(*) as c FROM users WHERE created_at >= ? AND created_at < ?
-    `).get(d.toISOString(), next.toISOString()).c;
-    const activeUsers = db.prepare(`
+    `, [d, next])).c;
+    const activeUsers = (await db.getOne(`
       SELECT COUNT(DISTINCT gp.user_id) as c
       FROM game_players gp
       JOIN games g ON g.id = gp.game_id
       WHERE g.ended_at >= ? AND g.ended_at < ? AND gp.is_bot = 0
-    `).get(d.toISOString(), next.toISOString()).c;
+    `, [d, next])).c;
     userGrowth.push({
       date: d.toISOString().slice(0, 10),
       label: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][d.getDay()],
@@ -119,15 +119,15 @@ router.get('/admin/dashboard', adminAuth, (req, res) => {
   }
 
   // 最近对局
-  const recentGamesRows = db.prepare(`
+  const recentGamesRows = await db.query(`
     SELECT g.id, g.ended_at, g.current_round, g.winner_user_id, p.title as puzzle_title,
-      (SELECT GROUP_CONCAT(nickname, ', ') FROM game_players WHERE game_id = g.id AND is_bot = 0 LIMIT 1) as player
+      (SELECT GROUP_CONCAT(nickname SEPARATOR ', ') FROM game_players WHERE game_id = g.id AND is_bot = 0) as player
     FROM games g
     JOIN puzzles p ON p.id = g.puzzle_id
     WHERE g.status = 'revealed'
     ORDER BY g.ended_at DESC
     LIMIT 5
-  `).all();
+  `);
   const recentGames = recentGamesRows.map((r) => ({
     gameId: r.id,
     player: r.player || '—',
@@ -138,9 +138,9 @@ router.get('/admin/dashboard', adminAuth, (req, res) => {
   }));
 
   // 难度分布
-  const distRows = db.prepare(`
+  const distRows = await db.query(`
     SELECT difficulty, COUNT(*) as c FROM puzzles WHERE status = 'online' GROUP BY difficulty
-  `).all();
+  `);
   const difficultyDist = { easy: 0, medium: 0, hard: 0 };
   distRows.forEach((r) => {
     if (difficultyDist.hasOwnProperty(r.difficulty)) difficultyDist[r.difficulty] = r.c;
@@ -148,15 +148,15 @@ router.get('/admin/dashboard', adminAuth, (req, res) => {
   const totalDist = difficultyDist.easy + difficultyDist.medium + difficultyDist.hard;
 
   // 热门题目 Top 5
-  const hotPuzzles = db.prepare(`
+  const hotPuzzles = (await db.query(`
     SELECT title, play_count FROM puzzles WHERE status = 'online'
     ORDER BY play_count DESC LIMIT 5
-  `).all().map((r, i) => ({ rank: i + 1, title: r.title, playCount: r.play_count }));
+  `)).map((r, i) => ({ rank: i + 1, title: r.title, playCount: r.play_count }));
 
   // 待办事项
-  const pendingPuzzles = db.prepare(`
+  const pendingPuzzles = (await db.getOne(`
     SELECT COUNT(*) as c FROM puzzles WHERE status = 'pending'
-  `).get().c;
+  `)).c;
   const pendingTasks = [];
   if (pendingPuzzles > 0) {
     pendingTasks.push({
@@ -196,7 +196,7 @@ router.get('/admin/dashboard', adminAuth, (req, res) => {
 });
 
 // GET /api/admin/puzzles - 题库列表
-router.get('/admin/puzzles', adminAuth, (req, res) => {
+router.get('/admin/puzzles', adminAuth, async (req, res) => {
   const { difficulty, status, search } = req.query;
   const page = Math.max(1, parseInt(req.query.page || '1', 10));
   const limit = Math.max(1, Math.min(100, parseInt(req.query.limit || '10', 10)));
@@ -218,11 +218,11 @@ router.get('/admin/puzzles', adminAuth, (req, res) => {
   }
   const whereSql = where.join(' AND ');
 
-  const total = db.prepare(`SELECT COUNT(*) as c FROM puzzles WHERE ${whereSql}`).get(...params).c;
-  const items = db.prepare(`
+  const total = (await db.getOne(`SELECT COUNT(*) as c FROM puzzles WHERE ${whereSql}`, params)).c;
+  const items = await db.query(`
     SELECT * FROM puzzles WHERE ${whereSql}
     ORDER BY created_at DESC LIMIT ? OFFSET ?
-  `).all(...params, limit, offset);
+  `, [...params, limit, offset]);
 
   res.json({
     items: items.map((r) => ({
@@ -244,7 +244,7 @@ router.get('/admin/puzzles', adminAuth, (req, res) => {
 });
 
 // POST /api/admin/puzzles - 新建题目
-router.post('/admin/puzzles', adminAuth, (req, res) => {
+router.post('/admin/puzzles', adminAuth, async (req, res) => {
   const { title, scenario, truth, difficulty, tags } = req.body || {};
   if (!title || !scenario || !truth || !difficulty) {
     return res.status(400).json({ error: '标题、汤面、汤底、难度均为必填' });
@@ -256,11 +256,11 @@ router.post('/admin/puzzles', adminAuth, (req, res) => {
   if (fieldErr) return res.status(400).json({ error: fieldErr });
   const id = uuidv4();
   const tagsJson = Array.isArray(tags) ? JSON.stringify(tags) : '[]';
-  db.prepare(`
+  await db.run(`
     INSERT INTO puzzles (id, title, scenario, truth, difficulty, status, tags)
     VALUES (?, ?, ?, ?, ?, 'pending', ?)
-  `).run(id, title, scenario, truth, difficulty, tagsJson);
-  const row = db.prepare(`SELECT * FROM puzzles WHERE id = ?`).get(id);
+  `, [id, title, scenario, truth, difficulty, tagsJson]);
+  const row = await db.getOne(`SELECT * FROM puzzles WHERE id = ?`, [id]);
   res.json({
     puzzle: {
       ...row,
@@ -272,9 +272,9 @@ router.post('/admin/puzzles', adminAuth, (req, res) => {
 });
 
 // PUT /api/admin/puzzles/:id - 编辑题目
-router.put('/admin/puzzles/:id', adminAuth, (req, res) => {
+router.put('/admin/puzzles/:id', adminAuth, async (req, res) => {
   const { title, scenario, truth, difficulty, tags } = req.body || {};
-  const existing = db.prepare(`SELECT * FROM puzzles WHERE id = ?`).get(req.params.id);
+  const existing = await db.getOne(`SELECT * FROM puzzles WHERE id = ?`, [req.params.id]);
   if (!existing) return res.status(404).json({ error: '题目不存在' });
   const fieldErr = validatePuzzleFields({ title, scenario, truth, tags });
   if (fieldErr) return res.status(400).json({ error: fieldErr });
@@ -288,11 +288,11 @@ router.put('/admin/puzzles/:id', adminAuth, (req, res) => {
   if (newData.difficulty && !['easy', 'medium', 'hard'].includes(newData.difficulty)) {
     return res.status(400).json({ error: '难度必须为 easy / medium / hard' });
   }
-  db.prepare(`
+  await db.run(`
     UPDATE puzzles SET title = ?, scenario = ?, truth = ?, difficulty = ?, tags = ?
     WHERE id = ?
-  `).run(newData.title, newData.scenario, newData.truth, newData.difficulty, newData.tags, req.params.id);
-  const row = db.prepare(`SELECT * FROM puzzles WHERE id = ?`).get(req.params.id);
+  `, [newData.title, newData.scenario, newData.truth, newData.difficulty, newData.tags, req.params.id]);
+  const row = await db.getOne(`SELECT * FROM puzzles WHERE id = ?`, [req.params.id]);
   res.json({
     puzzle: {
       ...row,
@@ -304,15 +304,15 @@ router.put('/admin/puzzles/:id', adminAuth, (req, res) => {
 });
 
 // PATCH /api/admin/puzzles/:id/status - 改状态
-router.patch('/admin/puzzles/:id/status', adminAuth, (req, res) => {
+router.patch('/admin/puzzles/:id/status', adminAuth, async (req, res) => {
   const { status } = req.body || {};
   if (!['online', 'pending', 'offline'].includes(status)) {
     return res.status(400).json({ error: '状态必须为 online / pending / offline' });
   }
-  const existing = db.prepare(`SELECT * FROM puzzles WHERE id = ?`).get(req.params.id);
+  const existing = await db.getOne(`SELECT * FROM puzzles WHERE id = ?`, [req.params.id]);
   if (!existing) return res.status(404).json({ error: '题目不存在' });
-  db.prepare(`UPDATE puzzles SET status = ? WHERE id = ?`).run(status, req.params.id);
-  const row = db.prepare(`SELECT * FROM puzzles WHERE id = ?`).get(req.params.id);
+  await db.run(`UPDATE puzzles SET status = ? WHERE id = ?`, [status, req.params.id]);
+  const row = await db.getOne(`SELECT * FROM puzzles WHERE id = ?`, [req.params.id]);
   res.json({
     puzzle: {
       ...row,

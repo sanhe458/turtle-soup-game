@@ -28,9 +28,9 @@ function parseModalities(raw) {
 
 // ===== 供应商 =====
 
-function listProviders(includeDisabled = true) {
+async function listProviders(includeDisabled = true) {
   const where = includeDisabled ? '' : 'WHERE enabled = 1';
-  const rows = db.prepare(`SELECT * FROM ai_providers ${where} ORDER BY sort_order, created_at`).all();
+  const rows = await db.query(`SELECT * FROM ai_providers ${where} ORDER BY sort_order, created_at`);
   return rows.map((r) => ({
     id: r.id,
     name: r.name,
@@ -44,8 +44,8 @@ function listProviders(includeDisabled = true) {
   }));
 }
 
-function getProvider(id) {
-  const r = db.prepare(`SELECT * FROM ai_providers WHERE id = ?`).get(id);
+async function getProvider(id) {
+  const r = await db.getOne(`SELECT * FROM ai_providers WHERE id = ?`, [id]);
   if (!r) return null;
   return {
     id: r.id,
@@ -60,26 +60,27 @@ function getProvider(id) {
   };
 }
 
-function providerModelCount(providerId) {
-  return db.prepare(`SELECT COUNT(*) as c FROM ai_models WHERE provider_id = ?`).get(providerId).c;
+async function providerModelCount(providerId) {
+  const row = await db.getOne(`SELECT COUNT(*) as c FROM ai_models WHERE provider_id = ?`, [providerId]);
+  return row ? row.c : 0;
 }
 
 // ===== 模型 =====
 
-function listModels(providerId) {
+async function listModels(providerId) {
   const params = [];
   let where = '';
   if (providerId) {
     where = 'WHERE m.provider_id = ?';
     params.push(providerId);
   }
-  const rows = db.prepare(`
+  const rows = await db.query(`
     SELECT m.*, p.name as provider_name, p.format as provider_format
     FROM ai_models m
     JOIN ai_providers p ON p.id = m.provider_id
     ${where}
     ORDER BY m.sort_order, m.created_at
-  `).all(...params);
+  `, params);
   return rows.map((r) => ({
     id: r.id,
     providerId: r.provider_id,
@@ -97,13 +98,13 @@ function listModels(providerId) {
   }));
 }
 
-function getModel(id) {
-  const r = db.prepare(`
+async function getModel(id) {
+  const r = await db.getOne(`
     SELECT m.*, p.name as provider_name, p.format as provider_format, p.base_url as provider_base_url, p.api_key as provider_api_key, p.enabled as provider_enabled
     FROM ai_models m
     JOIN ai_providers p ON p.id = m.provider_id
     WHERE m.id = ?
-  `).get(id);
+  `, [id]);
   if (!r) return null;
   return {
     id: r.id,
@@ -128,8 +129,13 @@ function getModel(id) {
 
 // ===== 角色 =====
 
-function listRoles() {
-  const rows = db.prepare(`SELECT * FROM ai_roles ORDER BY is_builtin DESC, created_at`).all();
+// 修复 N+1：单条 SQL 用相关子查询统计每个角色的模型数
+async function listRoles() {
+  const rows = await db.query(`
+    SELECT r.*, (SELECT COUNT(*) FROM ai_role_models rm WHERE rm.role_id = r.id) AS model_count
+    FROM ai_roles r
+    ORDER BY is_builtin DESC, created_at
+  `);
   return rows.map((r) => ({
     id: r.id,
     roleKey: r.role_key,
@@ -140,12 +146,12 @@ function listRoles() {
     enabled: !!r.enabled,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
-    modelCount: db.prepare(`SELECT COUNT(*) as c FROM ai_role_models WHERE role_id = ?`).get(r.id).c,
+    modelCount: r.model_count || 0,
   }));
 }
 
-function getRoleById(id) {
-  const r = db.prepare(`SELECT * FROM ai_roles WHERE id = ?`).get(id);
+async function getRoleById(id) {
+  const r = await db.getOne(`SELECT * FROM ai_roles WHERE id = ?`, [id]);
   if (!r) return null;
   return {
     id: r.id,
@@ -160,8 +166,8 @@ function getRoleById(id) {
   };
 }
 
-function getRoleByKey(roleKey) {
-  const r = db.prepare(`SELECT * FROM ai_roles WHERE role_key = ?`).get(roleKey);
+async function getRoleByKey(roleKey) {
+  const r = await db.getOne(`SELECT * FROM ai_roles WHERE role_key = ?`, [roleKey]);
   if (!r) return null;
   const role = {
     id: r.id,
@@ -171,7 +177,7 @@ function getRoleByKey(roleKey) {
     enabled: !!r.enabled,
   };
   if (!role.enabled) return { ...role, models: [] };
-  role.models = getRoleBindings(r.id);
+  role.models = await getRoleBindings(r.id);
   return role;
 }
 
@@ -181,8 +187,8 @@ function getRoleByKey(roleKey) {
  * - failover: 按 priority 升序
  * - weighted_random: 任意顺序（按 sort_order 保持稳定）
  */
-function getRoleBindings(roleId) {
-  const rows = db.prepare(`
+async function getRoleBindings(roleId) {
+  const rows = await db.query(`
     SELECT rm.id as binding_id, rm.priority, rm.weight, rm.enabled as rm_enabled, rm.sort_order,
       m.id as model_id, m.model_id, m.name, m.context_window, m.max_output, m.modalities,
       p.id as provider_id, p.format, p.base_url, p.api_key, p.enabled as provider_enabled
@@ -191,7 +197,7 @@ function getRoleBindings(roleId) {
     JOIN ai_providers p ON p.id = m.provider_id
     WHERE rm.role_id = ? AND rm.enabled = 1 AND m.enabled = 1 AND p.enabled = 1
     ORDER BY rm.sort_order, rm.priority
-  `).all(roleId);
+  `, [roleId]);
   return rows.map((r) => ({
     bindingId: r.binding_id,
     modelId: r.model_id,
@@ -213,8 +219,8 @@ function getRoleBindings(roleId) {
 }
 
 /** 角色绑定的模型列表（管理后台展示用，含未启用项与模型详情） */
-function getRoleBindingsAdmin(roleId) {
-  const rows = db.prepare(`
+async function getRoleBindingsAdmin(roleId) {
+  const rows = await db.query(`
     SELECT rm.id as binding_id, rm.priority, rm.weight, rm.enabled as rm_enabled, rm.sort_order,
       m.id as model_id, m.model_id, m.name, m.context_window, m.max_output, m.modalities,
       p.name as provider_name, p.format as provider_format
@@ -223,7 +229,7 @@ function getRoleBindingsAdmin(roleId) {
     JOIN ai_providers p ON p.id = m.provider_id
     WHERE rm.role_id = ?
     ORDER BY rm.sort_order
-  `).all(roleId);
+  `, [roleId]);
   return rows.map((r) => ({
     bindingId: r.binding_id,
     modelId: r.model_id,
@@ -241,8 +247,9 @@ function getRoleBindingsAdmin(roleId) {
   }));
 }
 
-function hasEnabledProvider() {
-  return db.prepare(`SELECT COUNT(*) as c FROM ai_providers WHERE enabled = 1 AND api_key != ''`).get().c > 0;
+async function hasEnabledProvider() {
+  const row = await db.getOne(`SELECT COUNT(*) as c FROM ai_providers WHERE enabled = 1 AND api_key != ''`);
+  return row ? row.c > 0 : false;
 }
 
 module.exports = {

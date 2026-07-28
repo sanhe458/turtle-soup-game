@@ -32,7 +32,7 @@ function setupMatchSockets(io) {
   // 注入匹配服务钩子
   matchService.setHooks({
     onMatchSuccess: async (players, isHybrid) => {
-      const puzzle = gameService.pickRandomPuzzle();
+      const puzzle = await gameService.pickRandomPuzzle();
       if (!puzzle) {
         console.error('[matchSocket] 无可用题目');
         players.forEach((p) => {
@@ -41,7 +41,14 @@ function setupMatchSockets(io) {
         return;
       }
       // 构造带 socketId 的 players（真人保留 socketId，bot 为 null）
-      const gameId = gameService.createGame(puzzle, players);
+      const gameId = await gameService.createGame(puzzle, players);
+      if (!gameId) {
+        console.error('[matchSocket] 对局创建失败（容量已满）');
+        players.forEach((p) => {
+          if (p.socketId) io.to(p.socketId).emit('error', { message: '服务器繁忙，请稍后再试' });
+        });
+        return;
+      }
       // 把所有真人 socket 加入对局房间
       players.forEach((p) => {
         if (p.socketId) {
