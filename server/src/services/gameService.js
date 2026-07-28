@@ -12,30 +12,30 @@ const activeGames = new Map();
  * 创建对局（持久化 + 内存状态）
  * @param {object} puzzle - 题目
  * @param {Array} players - [{ socketId, userId, nickname, isBot }]
- * @returns {string} gameId
+ * @returns {Promise<string|null>} gameId
  */
-function createGame(puzzle, players) {
+async function createGame(puzzle, players) {
   if (activeGames.size >= 200) return null;
   const gameId = uuidv4();
   const now = Date.now();
 
-  // 写入 games 表
-  db.prepare(`
-    INSERT INTO games (id, puzzle_id, status, current_round, max_rounds, progress)
-    VALUES (?, ?, 'playing', 1, ?, 0)
-  `).run(gameId, puzzle.id, config.game.maxRounds);
+  // 写入 games / game_players / 更新 play_count，置于同一事务
+  await db.withTransaction(async (conn) => {
+    await conn.execute(`
+      INSERT INTO games (id, puzzle_id, status, current_round, max_rounds, progress)
+      VALUES (?, ?, 'playing', 1, ?, 0)
+    `, [gameId, puzzle.id, config.game.maxRounds]);
 
-  // 写入 game_players 表
-  const seatStmt = db.prepare(`
-    INSERT INTO game_players (game_id, user_id, nickname, is_bot, seat, questions_asked, score, stars, is_winner)
-    VALUES (?, ?, ?, ?, ?, 0, 0, 0, 0)
-  `);
-  players.forEach((p, idx) => {
-    seatStmt.run(gameId, p.userId, p.nickname, p.isBot ? 1 : 0, idx);
+    for (let idx = 0; idx < players.length; idx++) {
+      const p = players[idx];
+      await conn.execute(`
+        INSERT INTO game_players (game_id, user_id, nickname, is_bot, seat, questions_asked, score, stars, is_winner)
+        VALUES (?, ?, ?, ?, ?, 0, 0, 0, 0)
+      `, [gameId, p.userId, p.nickname, p.isBot ? 1 : 0, idx]);
+    }
+
+    await conn.execute(`UPDATE puzzles SET play_count = play_count + 1 WHERE id = ?`, [puzzle.id]);
   });
-
-  // 题目玩过次数 +1
-  db.prepare(`UPDATE puzzles SET play_count = play_count + 1 WHERE id = ?`).run(puzzle.id);
 
   // 安全解析 tags（防止损坏的 JSON 导致对局创建失败）
   let puzzleTags = [];
@@ -97,11 +97,8 @@ function getGameBySocketId(socketId) {
   return null;
 }
 
-function pickRandomPuzzle() {
-  const row = db.prepare(`
-    SELECT * FROM puzzles WHERE status = 'online' ORDER BY RANDOM() LIMIT 1
-  `).get();
-  return row;
+async function pickRandomPuzzle() {
+  return db.getOne(`SELECT * FROM puzzles WHERE status = 'online' ORDER BY RAND() LIMIT 1`);
 }
 
 /**
@@ -110,7 +107,6 @@ function pickRandomPuzzle() {
 function startGame(gameId, io) {
   const state = getGame(gameId);
   if (!state) return;
-  const room = `game:${gameId}`;
   // 给每个真人下发 game:start（包含自己的座位号）
   state.players.forEach((p) => {
     if (p.socketId) {
@@ -196,7 +192,9 @@ async function handleBotTurn(gameId, io) {
 
   const question = await botService.generateQuestion(state.puzzle.scenario, history);
   if (!question) return;
-  receiveQuestion(gameId, state.currentSeat, question, io, true);
+  receiveQuestion(gameId, state.currentSeat, question, io, true).catch((err) => {
+    console.error('[gameService] handleBotTurn receiveQuestion error:', err.message);
+  });
 }
 
 /**
@@ -279,10 +277,10 @@ async function receiveQuestion(gameId, seat, question, io, isBot = false) {
   );
 
   // 5) 写入 game_chat
-  db.prepare(`
+  await db.run(`
     INSERT INTO game_chat (game_id, round, seat, nickname, question, judgment, close_hint)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(gameId, chatEntry.round, chatEntry.seat, chatEntry.nickname, chatEntry.question, chatEntry.judgment, chatEntry.closeHint ? 1 : 0);
+  `, [gameId, chatEntry.round, chatEntry.seat, chatEntry.nickname, chatEntry.question, chatEntry.judgment, chatEntry.closeHint ? 1 : 0]);
 
   // 6) 广播判定
   io.to(room).emit('game:judgment', {
@@ -310,23 +308,23 @@ async function receiveQuestion(gameId, seat, question, io, isBot = false) {
     (state.closeStreak >= 2 && state.closeStreakRounds.size >= 2) ||
     state.currentRound >= state.maxRounds;
   if (shouldReveal) {
-    revealGame(gameId, io);
+    await revealGame(gameId, io);
     return { ok: true, revealed: true };
   }
 
   // 9) 下一轮
-  nextTurn(gameId, io);
+  await nextTurn(gameId, io);
   return { ok: true };
 }
 
-function nextTurn(gameId, io) {
+async function nextTurn(gameId, io) {
   const state = getGame(gameId);
   if (!state || state.status !== 'playing') return;
   state.currentSeat = (state.currentSeat + 1) % state.players.length;
   if (state.currentSeat === 0) {
     state.currentRound += 1;
-    db.prepare(`UPDATE games SET current_round = ?, progress = ? WHERE id = ?`)
-      .run(state.currentRound, state.progress, gameId);
+    await db.run(`UPDATE games SET current_round = ?, progress = ? WHERE id = ?`,
+      [state.currentRound, state.progress, gameId]);
   }
   setTimeout(() => beginTurn(gameId, io), 800);
 }
@@ -341,10 +339,14 @@ function handleTurnTimeout(gameId, io) {
   });
   // bot 不应超时，但兜底
   if (player.isBot) {
-    handleBotTurn(gameId, io);
+    handleBotTurn(gameId, io).catch((err) => {
+      console.error('[gameService] handleTurnTimeout handleBotTurn error:', err.message);
+    });
     return;
   }
-  nextTurn(gameId, io);
+  nextTurn(gameId, io).catch((err) => {
+    console.error('[gameService] handleTurnTimeout nextTurn error:', err.message);
+  });
 }
 
 function getRanking(state) {
@@ -356,7 +358,7 @@ function getRanking(state) {
 /**
  * 揭晓对局
  */
-function revealGame(gameId, io) {
+async function revealGame(gameId, io) {
   const state = getGame(gameId);
   if (!state || state.status !== 'playing') return;
   state.status = 'revealed';
@@ -380,37 +382,37 @@ function revealGame(gameId, io) {
     }
   }
 
-  // 计算星级与持久化
+  // 计算星级与持久化：批量写入置于同一事务
   const durationSec = Math.floor((Date.now() - state.createdAt) / 1000);
-  const updatePlayerStmt = db.prepare(`
-    UPDATE game_players SET questions_asked = ?, score = ?, stars = ?, is_winner = ?
-    WHERE game_id = ? AND user_id = ?
-  `);
-  state.players.forEach((p) => {
-    const stars = Math.max(1, Math.min(5, p.closeCount * 2 + Math.floor(p.questionsAsked / 2)));
-    const isWinner = winnerSeat === p.seat ? 1 : 0;
-    updatePlayerStmt.run(p.questionsAsked, p.score, stars, isWinner, gameId, p.userId);
-    if (isWinner && !p.isBot) {
-      // 更新用户统计
-      db.prepare(`
-        UPDATE users SET total_games = total_games + 1, wins = wins + 1, current_streak = current_streak + 1
-        WHERE id = ?
-      `).run(p.userId);
-    } else if (!p.isBot) {
-      db.prepare(`
-        UPDATE users SET total_games = total_games + 1, current_streak = 0
-        WHERE id = ?
-      `).run(p.userId);
-    }
-  });
-
-  // 更新 games 表
   const winnerUserId = winnerSeat !== null ? state.players[winnerSeat].userId : null;
-  db.prepare(`
-    UPDATE games SET status = 'revealed', current_round = ?, progress = ?,
-    winner_user_id = ?, duration_sec = ?, ended_at = datetime('now')
-    WHERE id = ?
-  `).run(state.currentRound, state.progress, winnerUserId, durationSec, gameId);
+
+  await db.withTransaction(async (conn) => {
+    for (const p of state.players) {
+      const stars = Math.max(1, Math.min(5, p.closeCount * 2 + Math.floor(p.questionsAsked / 2)));
+      const isWinner = winnerSeat === p.seat ? 1 : 0;
+      await conn.execute(`
+        UPDATE game_players SET questions_asked = ?, score = ?, stars = ?, is_winner = ?
+        WHERE game_id = ? AND user_id = ?
+      `, [p.questionsAsked, p.score, stars, isWinner, gameId, p.userId]);
+      if (isWinner && !p.isBot) {
+        await conn.execute(`
+          UPDATE users SET total_games = total_games + 1, wins = wins + 1, current_streak = current_streak + 1
+          WHERE id = ?
+        `, [p.userId]);
+      } else if (!p.isBot) {
+        await conn.execute(`
+          UPDATE users SET total_games = total_games + 1, current_streak = 0
+          WHERE id = ?
+        `, [p.userId]);
+      }
+    }
+
+    await conn.execute(`
+      UPDATE games SET status = 'revealed', current_round = ?, progress = ?,
+      winner_user_id = ?, duration_sec = ?, ended_at = NOW()
+      WHERE id = ?
+    `, [state.currentRound, state.progress, winnerUserId, durationSec, gameId]);
+  });
 
   // 广播揭晓
   io.to(room).emit('game:reveal', {
@@ -443,25 +445,23 @@ function leaveGame(gameId, socketId, io) {
     io.to(`game:${gameId}`).emit('game:insight', {
       message: `${player.nickname} 已离开，跳过其回合`,
     });
-    nextTurn(gameId, io);
+    nextTurn(gameId, io).catch((err) => {
+      console.error('[gameService] leaveGame nextTurn error:', err.message);
+    });
   }
 }
 
 /**
  * 获取揭晓数据（供 REST API）
  */
-function getRevealData(gameId) {
-  const game = db.prepare(`SELECT * FROM games WHERE id = ?`).get(gameId);
+async function getRevealData(gameId) {
+  const game = await db.getOne(`SELECT * FROM games WHERE id = ?`, [gameId]);
   if (!game) return null;
   if (game.status !== 'revealed') return null;
-  const puzzle = db.prepare(`SELECT * FROM puzzles WHERE id = ?`).get(game.puzzle_id);
+  const puzzle = await db.getOne(`SELECT * FROM puzzles WHERE id = ?`, [game.puzzle_id]);
   if (!puzzle) return null;
-  const players = db.prepare(`
-    SELECT * FROM game_players WHERE game_id = ? ORDER BY seat
-  `).all(gameId);
-  const chat = db.prepare(`
-    SELECT * FROM game_chat WHERE game_id = ? ORDER BY id
-  `).all(gameId);
+  const players = await db.query(`SELECT * FROM game_players WHERE game_id = ? ORDER BY seat`, [gameId]);
+  const chat = await db.query(`SELECT * FROM game_chat WHERE game_id = ? ORDER BY id`, [gameId]);
 
   const winner = players.find((p) => p.is_winner);
   return {
@@ -497,15 +497,16 @@ function getRevealData(gameId) {
  * 防止 IDOR：仅当对局已揭晓且调用者为该对局参与者时才返回真相数据。
  * @param {string} gameId
  * @param {string} userId
- * @returns {object|null}
+ * @returns {Promise<object|null>}
  */
-function getRevealDataForUser(gameId, userId) {
-  const data = getRevealData(gameId);
+async function getRevealDataForUser(gameId, userId) {
+  const data = await getRevealData(gameId);
   if (!data) return null;
   if (!userId) return null;
-  const participant = db
-    .prepare(`SELECT 1 FROM game_players WHERE game_id = ? AND user_id = ?`)
-    .get(gameId, userId);
+  const participant = await db.getOne(
+    `SELECT 1 FROM game_players WHERE game_id = ? AND user_id = ?`,
+    [gameId, userId]
+  );
   if (!participant) return null;
   return data;
 }

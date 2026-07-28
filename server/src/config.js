@@ -21,6 +21,14 @@ if (!process.env.API_KEY_ENCRYPTION_KEY || process.env.API_KEY_ENCRYPTION_KEY.le
   console.warn('API_KEY_ENCRYPTION_KEY 未设置或长度 < 16，API Key 加密功能将不可用');
 }
 
+// 启动校验：MySQL 凭据必须设置
+const dbUser = process.env.DB_USER;
+const dbPassword = process.env.DB_PASSWORD;
+if (!dbUser || !dbPassword) {
+  console.error('DB_USER 与 DB_PASSWORD 必须设置（MySQL 5.7 连接凭据）');
+  process.exit(1);
+}
+
 module.exports = {
   port: parseInt(process.env.PORT || '3000', 10),
   jwtSecret,
@@ -40,4 +48,13 @@ module.exports = {
   },
 
   adminDefaultPassword,
+
+  db: {
+    host: process.env.DB_HOST || '127.0.0.1',
+    port: parseInt(process.env.DB_PORT || '3306', 10),
+    user: dbUser,
+    password: dbPassword,
+    database: process.env.DB_DATABASE || 'turtle_soup',
+    connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || '10', 10),
+  },
 };

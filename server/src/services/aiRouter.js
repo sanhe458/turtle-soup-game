@@ -230,7 +230,7 @@ async function callGemini(provider, modelId, messages, opts) {
  * @returns {Promise<string>} 模型回复文本
  */
 async function callRole(roleKey, messages, opts = {}) {
-  const roleConfig = aiConfig.getRoleByKey(roleKey);
+  const roleConfig = await aiConfig.getRoleByKey(roleKey);
   if (!roleConfig) {
     throw new Error(`未找到角色: ${roleKey}`);
   }
@@ -271,7 +271,7 @@ async function callRole(roleKey, messages, opts = {}) {
 
 /** 测试单个模型（管理后台用） */
 async function testModel(modelId, prompt) {
-  const binding = aiConfig.getModel(modelId);
+  const binding = await aiConfig.getModel(modelId);
   if (!binding) throw new Error('模型不存在');
   if (!binding.provider) throw new Error('模型所属供应商不存在');
   // 复用 callProvider，构造一个临时 binding 结构

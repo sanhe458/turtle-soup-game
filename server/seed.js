@@ -1,32 +1,13 @@
-const path = require('path');
-const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const config = require('./src/config');
-
-// 直接用内存数据库或文件数据库重建
-const DB_PATH = path.join(__dirname, 'data.db');
-if (process.env.NODE_ENV !== 'production') {
-  if (fs.existsSync(DB_PATH)) {
-    fs.unlinkSync(DB_PATH);
-    console.log('[seed] 已删除旧 data.db');
-  }
-} else {
-  console.error('禁止在生产环境删除数据库');
-  process.exit(1);
-}
-
 const db = require('./src/db');
 
-// 管理员
-const adminId = uuidv4();
-const adminPassword = config.adminDefaultPassword;
-const adminHash = bcrypt.hashSync(adminPassword, 10);
-db.prepare(`
-  INSERT INTO admins (id, account, password_hash, name, role, email)
-  VALUES (?, ?, ?, ?, ?, ?)
-`).run(adminId, 'admin', adminHash, 'SuperAdmin', '超级管理员', 'admin@turtlesoup.com');
-console.log('[seed] 管理员账号 admin 已创建，请通过环境变量 ADMIN_DEFAULT_PASSWORD 查看口令');
+// 生产环境禁止重置数据
+if (config && process.env.NODE_ENV === 'production') {
+  console.error('禁止在生产环境执行 seed（会清空数据）');
+  process.exit(1);
+}
 
 // 题目
 const puzzles = [
@@ -92,24 +73,69 @@ const puzzles = [
   },
 ];
 
-const insertPuzzle = db.prepare(`
-  INSERT INTO puzzles (id, title, scenario, truth, difficulty, status, tags, play_count, rating)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-`);
-puzzles.forEach((p) => {
-  insertPuzzle.run(
-    uuidv4(),
-    p.title,
-    p.scenario,
-    p.truth,
-    p.difficulty,
-    p.status,
-    JSON.stringify(p.tags),
-    p.playCount,
-    p.rating
-  );
-});
-console.log(`[seed] 已创建 ${puzzles.length} 道题目`);
+async function main() {
+  // 1) 确保表结构存在（含内置角色种子）
+  await db.initSchema();
+  console.log('[seed] schema 已就绪');
 
-console.log('[seed] 种子数据初始化完成');
-console.log('[seed] 管理员账号 admin 已就绪，请通过环境变量 ADMIN_DEFAULT_PASSWORD 查看口令');
+  // 2) 清空数据表（保留 ai_roles 内置角色，仅清非内置）
+  await db.query('SET FOREIGN_KEY_CHECKS = 0');
+  try {
+    for (const t of [
+      'game_chat',
+      'game_players',
+      'games',
+      'users',
+      'admins',
+      'puzzles',
+      'ai_role_models',
+      'ai_models',
+      'ai_providers',
+    ]) {
+      await db.query(`TRUNCATE TABLE ${t}`);
+    }
+    // 清除非内置角色，保留内置角色（judge / bot_question）
+    await db.run(`DELETE FROM ai_roles WHERE is_builtin = 0`);
+  } finally {
+    await db.query('SET FOREIGN_KEY_CHECKS = 1');
+  }
+  console.log('[seed] 已清空旧数据');
+
+  // 3) 管理员
+  const adminId = uuidv4();
+  const adminHash = bcrypt.hashSync(config.adminDefaultPassword, 10);
+  await db.run(`
+    INSERT INTO admins (id, account, password_hash, name, role, email)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `, [adminId, 'admin', adminHash, 'SuperAdmin', '超级管理员', 'admin@turtlesoup.com']);
+  console.log('[seed] 管理员账号 admin 已创建，请通过环境变量 ADMIN_DEFAULT_PASSWORD 查看口令');
+
+  // 4) 题目
+  for (const p of puzzles) {
+    await db.run(`
+      INSERT INTO puzzles (id, title, scenario, truth, difficulty, status, tags, play_count, rating)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      uuidv4(),
+      p.title,
+      p.scenario,
+      p.truth,
+      p.difficulty,
+      p.status,
+      JSON.stringify(p.tags),
+      p.playCount,
+      p.rating,
+    ]);
+  }
+  console.log(`[seed] 已创建 ${puzzles.length} 道题目`);
+
+  console.log('[seed] 种子数据初始化完成');
+  console.log('[seed] 管理员账号 admin 已就绪，请通过环境变量 ADMIN_DEFAULT_PASSWORD 查看口令');
+}
+
+main()
+  .then(() => process.exit(0))
+  .catch((err) => {
+    console.error('[seed] 失败:', err.message);
+    process.exit(1);
+  });
