@@ -79,6 +79,7 @@ router.post('/admin/ai/providers', adminAuth, async (req, res) => {
     INSERT INTO ai_providers (id, name, format, base_url, api_key, enabled, sort_order)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `, [id, name.trim(), format, finalBaseUrl, apiKey || '', enabled === false ? 0 : 1, toFiniteNumber(sortOrder, 0)]);
+  await aiConfig.invalidateAiConfigCache();
   const providers = await aiConfig.listProviders();
   res.json({ provider: providers.find((p) => p.id === id) });
 });
@@ -109,6 +110,7 @@ router.put('/admin/ai/providers/:id', adminAuth, async (req, res) => {
     toFiniteNumber(sortOrder ?? existing.sortOrder, existing.sortOrder || 0),
     req.params.id,
   ]);
+  await aiConfig.invalidateAiConfigCache();
   const providers = await aiConfig.listProviders();
   res.json({ provider: providers.find((p) => p.id === req.params.id) });
 });
@@ -119,6 +121,7 @@ router.delete('/admin/ai/providers/:id', adminAuth, async (req, res) => {
   if (!existing) return res.status(404).json({ error: '供应商不存在' });
   // ON DELETE CASCADE 会自动删除其下模型；模型被删后角色绑定也会级联
   await db.run(`DELETE FROM ai_providers WHERE id = ?`, [req.params.id]);
+  await aiConfig.invalidateAiConfigCache();
   res.json({ ok: true });
 });
 
@@ -148,6 +151,7 @@ router.post('/admin/ai/models', adminAuth, async (req, res) => {
     contextWindow || 128000, maxOutput || 4096, modalitiesJson,
     enabled === false ? 0 : 1, toFiniteNumber(sortOrder, 0),
   ]);
+  await aiConfig.invalidateAiConfigCache();
   const models = await aiConfig.listModels();
   res.json({ model: models.find((m) => m.id === id) });
 });
@@ -172,9 +176,10 @@ router.put('/admin/ai/models/:id', adminAuth, async (req, res) => {
     maxOutput ?? existing.max_output,
     modalitiesJson,
     enabled === undefined ? existing.enabled : (enabled ? 1 : 0),
-    toFiniteNumber(sortOrder ?? existing.sortOrder, existing.sortOrder || 0),
+    toFiniteNumber(sortOrder ?? existing.sort_order, existing.sort_order || 0),
     req.params.id,
   ]);
+  await aiConfig.invalidateAiConfigCache();
   const models = await aiConfig.listModels();
   res.json({ model: models.find((m) => m.id === req.params.id) });
 });
@@ -184,6 +189,7 @@ router.delete('/admin/ai/models/:id', adminAuth, async (req, res) => {
   const existing = await db.getOne(`SELECT id FROM ai_models WHERE id = ?`, [req.params.id]);
   if (!existing) return res.status(404).json({ error: '模型不存在' });
   await db.run(`DELETE FROM ai_models WHERE id = ?`, [req.params.id]);
+  await aiConfig.invalidateAiConfigCache();
   res.json({ ok: true });
 });
 
@@ -214,6 +220,7 @@ router.post('/admin/ai/roles', adminAuth, async (req, res) => {
     INSERT INTO ai_roles (id, role_key, name, description, is_builtin, polling_strategy, enabled)
     VALUES (?, ?, ?, ?, 0, ?, ?)
   `, [id, roleKey, name.trim(), description || '', pollingStrategy || 'round_robin', enabled === false ? 0 : 1]);
+  await aiConfig.invalidateAiConfigCache();
   res.json({ role: await aiConfig.getRoleById(id) });
 });
 
@@ -244,6 +251,7 @@ router.put('/admin/ai/roles/:id', adminAuth, async (req, res) => {
     (existing.isBuiltin ? existing.roleKey : (roleKey || existing.roleKey)),
     req.params.id,
   ]);
+  await aiConfig.invalidateAiConfigCache();
   res.json({ role: await aiConfig.getRoleById(req.params.id) });
 });
 
@@ -255,6 +263,7 @@ router.delete('/admin/ai/roles/:id', adminAuth, async (req, res) => {
     return res.status(400).json({ error: '内置角色不可删除' });
   }
   await db.run(`DELETE FROM ai_roles WHERE id = ?`, [req.params.id]);
+  await aiConfig.invalidateAiConfigCache();
   res.json({ ok: true });
 });
 
@@ -294,6 +303,7 @@ router.put('/admin/ai/roles/:id/models', adminAuth, async (req, res) => {
       );
     }
   });
+  await aiConfig.invalidateAiConfigCache();
   res.json({ items: await aiConfig.getRoleBindingsAdmin(req.params.id) });
 });
 
@@ -306,6 +316,7 @@ router.patch('/admin/ai/roles/:id/strategy', adminAuth, async (req, res) => {
     return res.status(400).json({ error: 'strategy 必须为 ' + aiConfig.VALID_STRATEGIES.join(' / ') });
   }
   await db.run(`UPDATE ai_roles SET polling_strategy = ?, updated_at = NOW() WHERE id = ?`, [strategy, req.params.id]);
+  await aiConfig.invalidateAiConfigCache();
   res.json({ role: await aiConfig.getRoleById(req.params.id) });
 });
 

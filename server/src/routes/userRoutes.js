@@ -2,6 +2,7 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
+const redis = require('../redis');
 const { signUser } = require('../utils/jwt');
 const { userAuth } = require('../middleware/userAuth');
 const gameService = require('../services/gameService');
@@ -41,6 +42,8 @@ router.post('/users/register', registerLimiter, async (req, res) => {
 // POST /api/users/logout - 退出登录（通过递增 token_version 吊销当前 token）
 router.post('/users/logout', userAuth, async (req, res) => {
   await db.run('UPDATE users SET token_version = token_version + 1 WHERE id = ?', [req.user.userId]);
+  // 主动失效缓存，确保旧 token 立即不可用（不必等 TTL 兜底）
+  await redis.del(`auth:u:${req.user.userId}`);
   res.json({ ok: true });
 });
 

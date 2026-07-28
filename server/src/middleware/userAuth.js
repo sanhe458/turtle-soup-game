@@ -1,5 +1,6 @@
 const { verify } = require('../utils/jwt');
 const db = require('../db');
+const redis = require('../redis');
 
 async function userAuth(req, res, next) {
   const header = req.headers.authorization || '';
@@ -12,14 +13,23 @@ async function userAuth(req, res, next) {
     if (decoded.type !== 'user') {
       return res.status(401).json({ error: '身份凭证类型错误' });
     }
-    const user = await db.getOne(
-      'SELECT id, token_version FROM users WHERE id = ?',
-      [decoded.userId]
+    // token_version 读穿透缓存：TTL 60s 兜底，登出时主动 del
+    const cached = await redis.getOrSet(
+      `auth:u:${decoded.userId}`,
+      60,
+      async () => {
+        const u = await db.getOne(
+          'SELECT id, token_version FROM users WHERE id = ?',
+          [decoded.userId]
+        );
+        if (!u) return null; // 不缓存 null，避免新建用户短时被误判
+        return { tokenVersion: u.token_version };
+      }
     );
-    if (!user) {
+    if (!cached) {
       return res.status(401).json({ error: '身份凭证无效或已过期' });
     }
-    if (user.token_version !== decoded.tokenVersion) {
+    if (cached.tokenVersion !== decoded.tokenVersion) {
       return res.status(401).json({ error: '身份凭证无效或已过期' });
     }
     req.user = { userId: decoded.userId, nickname: decoded.nickname };
@@ -37,11 +47,19 @@ async function optionalUserAuth(req, res, next) {
     try {
       const decoded = verify(token);
       if (decoded.type === 'user') {
-        const user = await db.getOne(
-          'SELECT id, token_version FROM users WHERE id = ?',
-          [decoded.userId]
+        const cached = await redis.getOrSet(
+          `auth:u:${decoded.userId}`,
+          60,
+          async () => {
+            const u = await db.getOne(
+              'SELECT id, token_version FROM users WHERE id = ?',
+              [decoded.userId]
+            );
+            if (!u) return null;
+            return { tokenVersion: u.token_version };
+          }
         );
-        if (user && user.token_version === decoded.tokenVersion) {
+        if (cached && cached.tokenVersion === decoded.tokenVersion) {
           req.user = { userId: decoded.userId, nickname: decoded.nickname };
         }
       }

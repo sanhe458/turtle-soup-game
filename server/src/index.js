@@ -4,8 +4,10 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { Server } = require('socket.io');
+const { createAdapter } = require('@socket.io/redis-adapter');
 const config = require('./config');
 const db = require('./db');
+const redis = require('./redis');
 const aiConfig = require('./services/aiConfigService');
 const { setupMatchSockets } = require('./sockets/matchSocket');
 
@@ -52,7 +54,7 @@ app.use('/api', apiLimiter);
 
 // 健康检查
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true, time: new Date().toISOString() });
+  res.json({ ok: true, time: new Date().toISOString(), redis: redis.isAvailable() });
 });
 
 // 路由
@@ -74,10 +76,25 @@ app.use((err, req, res, next) => {
 // 异步启动：先初始化数据库 schema，再监听端口
 async function boot() {
   await db.initSchema();
+  // 初始化 Redis（可选；失败时降级直查 DB，不阻断启动）
+  redis.init();
+  // 若已配置 Redis，启用 Socket.IO Redis 适配器以支持多实例水平扩展
+  if (process.env.REDIS_URL || process.env.REDIS_HOST) {
+    try {
+      const pubClient = redis.createClient('pub');
+      const subClient = redis.createClient('sub');
+      await Promise.all([pubClient.connect(), subClient.connect()]);
+      io.adapter(createAdapter(pubClient, subClient));
+      console.log('[turtle-soup] Socket.IO Redis adapter 已启用');
+    } catch (err) {
+      console.warn('[turtle-soup] Socket.IO Redis adapter 启用失败，回退到内存适配器:', err.message);
+    }
+  }
   server.listen(config.port, () => {
     console.log(`[turtle-soup] Server running on port ${config.port}`);
     console.log(`[turtle-soup] CORS origin: ${config.clientOrigin}`);
     console.log(`[turtle-soup] Socket.IO ready`);
+    console.log(`[turtle-soup] Redis: ${redis.isAvailable() ? 'ready' : 'degraded (直查 DB)'}`);
   });
   if (!(await aiConfig.hasEnabledProvider())) {
     console.warn('[turtle-soup] WARNING: 未配置任何启用的 AI 供应商，AI 角色将走降级逻辑（请在管理后台「AI 配置」页面维护）');
