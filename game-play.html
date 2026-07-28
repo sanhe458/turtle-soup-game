@@ -377,7 +377,7 @@
             <div class="flex gap-4 sm:gap-5">
               <!-- Decorative art accent -->
               <div class="hidden sm:block flex-shrink-0 w-24 h-24 rounded-2xl overflow-hidden relative" style="box-shadow: var(--ts-shadow-md);">
-                <img src="../assets/game-question-art.jpg" alt="puzzle art" class="w-full h-full object-cover relative z-10"
+                <img src="/assets/game-question-art.jpg" alt="puzzle art" class="w-full h-full object-cover relative z-10"
                   onerror="this.style.display='none'">
                 <!-- Fallback gradient if image missing -->
                 <div class="w-full h-full absolute top-0 left-0" style="background: linear-gradient(135deg, #B8AFCA, #E8D5DD);"></div>
@@ -576,9 +576,9 @@
 
     <!-- TODO: compute and add integrity="sha384-..." for this resource -->
     <script src="https://cdn.socket.io/4.8.0/socket.io.min.js" crossorigin="anonymous"></script>
-    <script src="../js/api.js"></script>
-    <script src="../js/socket.js"></script>
-    <script src="../js/helpers.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/socket.js"></script>
+    <script src="/js/helpers.js"></script>
     <script>
       lucide.createIcons();
 
@@ -942,7 +942,7 @@
           appendSystemMessage('真相揭晓中…');
           Helpers.toast('对局结束，正在跳转揭晓页', 'success');
           setTimeout(() => {
-            location.href = 'answer-reveal-v2.html?gameId=' + encodeURIComponent(data.gameId || game.gameId);
+            location.href = '/answer-reveal?gameId=' + encodeURIComponent(data.gameId || game.gameId);
           }, 1200);
         });
 
@@ -988,12 +988,12 @@
 
         if (!Api.getUserToken()) {
           Helpers.toast('请先在匹配大厅输入昵称', 'warn');
-          setTimeout(() => { location.href = 'match-hall.html'; }, 1200);
+          setTimeout(() => { location.href = '/'; }, 1200);
           return;
         }
         if (!expectedGameId) {
           Helpers.toast('缺少对局 ID，返回大厅', 'warn');
-          setTimeout(() => { location.href = 'match-hall.html'; }, 1200);
+          setTimeout(() => { location.href = '/'; }, 1200);
           return;
         }
 
