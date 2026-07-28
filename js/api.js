@@ -129,6 +129,62 @@
     adminUpdatePuzzleStatus(id, status) {
       return Api.request('PATCH', '/admin/puzzles/' + id + '/status', { status }, { admin: true });
     },
+
+    // ===== 管理端 AI 配置 =====
+    // 供应商
+    adminListProviders() {
+      return Api.request('GET', '/admin/ai/providers', null, { admin: true });
+    },
+    adminCreateProvider(data) {
+      return Api.request('POST', '/admin/ai/providers', data, { admin: true });
+    },
+    adminUpdateProvider(id, data) {
+      return Api.request('PUT', '/admin/ai/providers/' + id, data, { admin: true });
+    },
+    adminDeleteProvider(id) {
+      return Api.request('DELETE', '/admin/ai/providers/' + id, null, { admin: true });
+    },
+    // 模型
+    adminListModels(providerId) {
+      const qs = providerId ? '?providerId=' + encodeURIComponent(providerId) : '';
+      return Api.request('GET', '/admin/ai/models' + qs, null, { admin: true });
+    },
+    adminCreateModel(data) {
+      return Api.request('POST', '/admin/ai/models', data, { admin: true });
+    },
+    adminUpdateModel(id, data) {
+      return Api.request('PUT', '/admin/ai/models/' + id, data, { admin: true });
+    },
+    adminDeleteModel(id) {
+      return Api.request('DELETE', '/admin/ai/models/' + id, null, { admin: true });
+    },
+    // 角色
+    adminListRoles() {
+      return Api.request('GET', '/admin/ai/roles', null, { admin: true });
+    },
+    adminCreateRole(data) {
+      return Api.request('POST', '/admin/ai/roles', data, { admin: true });
+    },
+    adminUpdateRole(id, data) {
+      return Api.request('PUT', '/admin/ai/roles/' + id, data, { admin: true });
+    },
+    adminDeleteRole(id) {
+      return Api.request('DELETE', '/admin/ai/roles/' + id, null, { admin: true });
+    },
+    // 角色绑定与策略
+    adminGetRoleModels(id) {
+      return Api.request('GET', '/admin/ai/roles/' + id + '/models', null, { admin: true });
+    },
+    adminUpdateRoleModels(id, bindings) {
+      return Api.request('PUT', '/admin/ai/roles/' + id + '/models', { bindings }, { admin: true });
+    },
+    adminUpdateRoleStrategy(id, strategy) {
+      return Api.request('PATCH', '/admin/ai/roles/' + id + '/strategy', { strategy }, { admin: true });
+    },
+    // 测试
+    adminTestAI(modelId, prompt) {
+      return Api.request('POST', '/admin/ai/test', { modelId, prompt }, { admin: true });
+    },
   };
 
   window.Api = Api;

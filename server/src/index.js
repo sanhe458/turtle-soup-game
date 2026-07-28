@@ -23,6 +23,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api', require('./routes/userRoutes'));
 app.use('/api', require('./routes/puzzleRoutes'));
 app.use('/api', require('./routes/adminRoutes'));
+app.use('/api', require('./routes/aiRoutes'));
 
 // Socket.IO
 setupMatchSockets(io);
@@ -31,7 +32,8 @@ server.listen(config.port, () => {
   console.log(`[turtle-soup] Server running on port ${config.port}`);
   console.log(`[turtle-soup] CORS origin: ${config.clientOrigin}`);
   console.log(`[turtle-soup] Socket.IO ready`);
-  if (!config.zhipu.apiKey) {
-    console.warn('[turtle-soup] WARNING: ZHIPU_API_KEY 未配置，AI 判定将降级为"无关"');
+  const aiConfig = require('./services/aiConfigService');
+  if (!aiConfig.hasEnabledProvider()) {
+    console.warn('[turtle-soup] WARNING: 未配置任何启用的 AI 供应商，AI 角色将走降级逻辑（请在管理后台「AI 配置」页面维护）');
   }
 });
