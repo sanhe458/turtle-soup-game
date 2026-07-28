@@ -6,13 +6,6 @@ module.exports = {
   jwtExpiresIn: '7d',
   adminJwtExpiresIn: '12h',
 
-  zhipu: {
-    apiKey: process.env.ZHIPU_API_KEY || '',
-    model: process.env.ZHIPU_MODEL || 'glm-4-flash',
-    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-    timeoutMs: 8000,
-  },
-
   clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:8080',
 
   game: {

@@ -1,4 +1,4 @@
-const config = require('../config');
+const aiRouter = require('./aiRouter');
 const { buildJudgePrompt, buildBotQuestionPrompt } = require('../utils/prompts');
 
 const JUDGMENT_LABELS = { yes: '是', no: '不是', irrelevant: '无关' };
@@ -20,48 +20,18 @@ function extractJson(text) {
   }
 }
 
-async function callZhipu(messages) {
-  if (!config.zhipu.apiKey) {
-    throw new Error('ZHIPU_API_KEY not configured');
-  }
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), config.zhipu.timeoutMs);
-  try {
-    const res = await fetch(`${config.zhipu.baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${config.zhipu.apiKey}`,
-      },
-      body: JSON.stringify({
-        model: config.zhipu.model,
-        messages,
-        temperature: 0.3,
-        response_format: { type: 'json_object' },
-      }),
-      signal: controller.signal,
-    });
-    if (!res.ok) {
-      const errText = await res.text().catch(() => '');
-      throw new Error(`Zhipu API ${res.status}: ${errText.slice(0, 200)}`);
-    }
-    const data = await res.json();
-    const content = data?.choices?.[0]?.message?.content;
-    if (!content) throw new Error('Zhipu API empty content');
-    return content;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 /**
- * 判定玩家提问
+ * 判定玩家提问（角色：judge）
  * @returns {Promise<{judgment: 'yes'|'no'|'irrelevant', judgmentLabel: string, closeToTruth: boolean}>}
  */
 async function judgeQuestion(scenario, truth, history, question) {
   const prompt = buildJudgePrompt(scenario, truth, history, question);
   try {
-    const content = await callZhipu([{ role: 'user', content: prompt }]);
+    const content = await aiRouter.callRole(
+      'judge',
+      [{ role: 'user', content: prompt }],
+      { temperature: 0.3, jsonMode: true }
+    );
     const parsed = extractJson(content);
     if (parsed && ['yes', 'no', 'irrelevant'].includes(parsed.judgment)) {
       return {
@@ -79,13 +49,17 @@ async function judgeQuestion(scenario, truth, history, question) {
 }
 
 /**
- * 让 AI 机器人生成一个提问
+ * 让 AI 机器人生成一个提问（角色：bot_question）
  * @returns {Promise<string|null>}
  */
 async function generateBotQuestion(scenario, history) {
   const prompt = buildBotQuestionPrompt(scenario, history);
   try {
-    const content = await callZhipu([{ role: 'user', content: prompt }]);
+    const content = await aiRouter.callRole(
+      'bot_question',
+      [{ role: 'user', content: prompt }],
+      { temperature: 0.3, jsonMode: true }
+    );
     const parsed = extractJson(content);
     if (parsed && typeof parsed.question === 'string' && parsed.question.trim()) {
       return parsed.question.trim();

@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="zh" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 配置 — 海龟汤管理后台</title>
+    <style id="theme-vars">
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --ts-bg:           #F5F0EB;
+  --ts-surface:      #FFFFFF;
+  --ts-surface-alt:  #EDE8E3;
+  --ts-charcoal:     #3D3835;
+  --ts-charcoal-soft:#6B6560;
+  --ts-muted:        #A09890;
+  --ts-border:       #E0D8D0;
+  --ts-purple:       #8B7DA8;
+  --ts-purple-soft:  #B8AFCA;
+  --ts-pink:         #C4A6B0;
+  --ts-pink-soft:    #E8D5DD;
+  --ts-green:        #7BAE98;
+  --ts-amber:        #D4A76A;
+  --ts-red-soft:     #D4908A;
+
+  --ts-background:          #F5F0EB;
+  --ts-foreground:          #3D3835;
+  --ts-card:                rgba(255, 255, 255, 0.72);
+  --ts-card-foreground:    #3D3835;
+  --ts-popover:             rgba(255, 255, 255, 0.88);
+  --ts-popover-foreground:  #3D3835;
+  --ts-primary:            #8B7DA8;
+  --ts-primary-foreground: #FFFFFF;
+  --ts-muted:               #A09890;
+  --ts-muted-foreground:    #6B6560;
+  --ts-border:              #E0D8D0;
+  --ts-input:               #EDE8E3;
+  --ts-ring:                #8B7DA8;
+
+  --ts-radius-sm:   8px;
+  --ts-radius-md:  16px;
+  --ts-radius-lg:  24px;
+  --ts-radius-xl:  32px;
+
+  --ts-shadow-sm:  0 2px 8px rgba(61, 56, 53, 0.06);
+  --ts-shadow-md:  0 8px 32px rgba(61, 56, 53, 0.08);
+  --ts-shadow-lg:  0 16px 48px rgba(61, 56, 53, 0.12);
+  --ts-glow-purple: 0 0 40px rgba(139, 125, 168, 0.15);
+  --ts-glow-pink:   0 0 40px rgba(196, 166, 176, 0.12);
+
+  --ts-font-sans:  'Inter', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+  --ts-font-mono:  'SF Mono', 'Fira Code', monospace;
+
+  --ts-ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ts-duration:    320ms;
+}
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/helpers.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--ts-background);
+    --color-foreground: var(--ts-foreground);
+    --color-card: var(--ts-card);
+    --color-card-foreground: var(--ts-card-foreground);
+    --color-popover: var(--ts-popover);
+    --color-popover-foreground: var(--ts-popover-foreground);
+    --color-primary: var(--ts-primary);
+    --color-primary-foreground: var(--ts-primary-foreground);
+    --color-muted: var(--ts-muted);
+    --color-muted-foreground: var(--ts-muted-foreground);
+    --color-border: var(--ts-border);
+    --color-input: var(--ts-input);
+    --color-ring: var(--ts-ring);
+    --radius-sm: var(--ts-radius-sm);
+    --radius-md: var(--ts-radius-md);
+    --radius-lg: var(--ts-radius-lg);
+    --radius-xl: var(--ts-radius-xl);
+  }
+  @layer base {
+    body { background: var(--ts-background); color: var(--ts-foreground); }
+  }
+    </style>
+    <style>
+      .backdrop-blur-xl { -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
+      .admin-sidebar { transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+      @media (min-width: 1024px) { .admin-sidebar { transform: translateX(0); } }
+      .admin-sidebar.is-open { transform: translateX(0) !important; }
+      .ts-nav-item.active { background: rgba(255,255,255,0.15); box-shadow: inset 3px 0 0 #B8AFCA; }
+      .ts-nav-item.active i { color: #B8AFCA; }
+      .ts-nav-item:hover { transform: scale(1.01); }
+      .ts-sidebar { box-shadow: 4px 0 24px rgba(61,56,53,0.15); }
+      .ts-sidebar a:hover { transform: translateX(2px); }
+      .ts-edit-panel { transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.16,1,0.3,1); }
+      .ts-edit-panel.is-open-panel { transform: translateX(0); box-shadow: -16px 0 48px rgba(61,56,53,0.18); }
+      .ts-tab-btn.active { background: #8B7DA8; color: #fff; box-shadow: 0 4px 12px rgba(139,125,168,0.25); }
+      .ts-format-btn.active, .ts-strategy-btn.active, .ts-modality-chip.active {
+        border-color: #8B7DA8 !important; background: #8B7DA8 !important; color: #fff !important;
+      }
+      .ts-grid-card:hover { box-shadow: 0 8px 32px rgba(139,125,168,0.08), 0 2px 8px rgba(61,56,53,0.06); }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main>
+        <!-- ========== SIDEBAR ========== -->
+        <aside class="ts-sidebar admin-sidebar fixed top-0 left-0 z-40 h-screen w-[200px] bg-[#3D3835] text-white/80 flex flex-col shadow-2xl">
+            <button class="ts-sidebar-close absolute top-4 right-4 lg:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-all duration-200">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div class="px-5 py-5 flex items-center gap-3 border-b border-white/10">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#8B7DA8] to-[#C4A6B0] flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="soup" class="w-5 h-5 text-white"></i>
+                </div>
+                <span class="text-sm font-semibold text-white tracking-wide">管理后台</span>
+            </div>
+            <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+                <a href="admin-dashboard.html" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
+                    <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
+                    <span>总览</span>
+                </a>
+                <a href="admin-puzzles.html" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
+                    <i data-lucide="book-open" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
+                    <span>题库管理</span>
+                </a>
+                <a href="#" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
+                    <i data-lucide="users" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
+                    <span>用户管理</span>
+                </a>
+                <a href="#" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
+                    <i data-lucide="swords" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
+                    <span>对局记录</span>
+                </a>
+                <a href="admin-ai.html" class="ts-nav-item active flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium bg-white/15 text-white transition-all duration-200">
+                    <i data-lucide="brain" class="w-[18px] h-[18px] text-[#B8AFCA]"></i>
+                    <span>AI 配置</span>
+                </a>
+                <a href="#" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
+                    <i data-lucide="settings" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
+                    <span>系统设置</span>
+                </a>
+                <a href="#" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
+                    <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
+                    <span>数据统计</span>
+                </a>
+            </nav>
+            <div class="px-4 py-4 border-t border-white/10 flex items-center gap-3">
+                <div id="admin-avatar" class="w-9 h-9 rounded-full bg-gradient-to-br from-[#8B7DA8] to-[#C4A6B0] flex items-center justify-center flex-shrink-0 text-white text-xs font-bold">SA</div>
+                <div class="min-w-0 flex-1">
+                    <p id="admin-name" class="text-xs font-medium text-white truncate">管理员</p>
+                    <p id="admin-role" class="text-[10px] text-white/40 truncate">—</p>
+                </div>
+                <button id="btn-logout" title="退出登录" class="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all duration-200">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </aside>
+
+        <div class="ts-sidebar-overlay fixed inset-0 z-30 bg-black/40 lg:hidden" style="opacity:0;pointer-events:none;"></div>
+
+        <!-- ========== MAIN CONTENT ========== -->
+        <div class="lg:ml-[200px] min-h-screen transition-all duration-300">
+            <!-- Mobile top bar -->
+            <div class="lg:hidden sticky top-0 z-20 bg-[#F5F0EB]/80 backdrop-blur-xl border-b border-[#E0D8D0] px-4 py-3 flex items-center gap-3">
+                <button class="ts-sidebar-toggle w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-[#E0D8D0]/60 shadow-sm hover:shadow-md transition-all duration-200">
+                    <i data-lucide="menu" class="w-5 h-5 text-[#3D3835]"></i>
+                </button>
+                <span class="text-sm font-semibold text-[#3D3835]">AI 配置</span>
+            </div>
+
+            <!-- ========== TOP BAR ========== -->
+            <div class="px-4 sm:px-6 lg:px-8 pt-6 pb-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+                    <div>
+                        <h1 class="text-2xl font-bold text-[#3D3835] tracking-tight">AI 配置</h1>
+                        <p class="text-sm text-[#A09890] mt-1">管理供应商、模型与角色，为每个 AI 使用场景配置独立的轮询策略</p>
+                    </div>
+                    <button id="btn-add" class="flex items-center gap-2 px-5 py-2.5 bg-[#8B7DA8] hover:bg-[#7B6D98] text-white text-sm font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] w-fit">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span id="btn-add-label">添加供应商</span>
+                    </button>
+                </div>
+
+                <!-- Tabs -->
+                <div class="flex gap-2 mb-2">
+                    <button data-tab="providers" class="ts-tab-btn active flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl bg-white/70 border border-[#E0D8D0]/60 text-[#3D3835] transition-all duration-300">
+                        <i data-lucide="server" class="w-4 h-4"></i>供应商
+                    </button>
+                    <button data-tab="models" class="ts-tab-btn flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl bg-white/70 border border-[#E0D8D0]/60 text-[#3D3835] transition-all duration-300">
+                        <i data-lucide="boxes" class="w-4 h-4"></i>模型
+                    </button>
+                    <button data-tab="roles" class="ts-tab-btn flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl bg-white/70 border border-[#E0D8D0]/60 text-[#3D3835] transition-all duration-300">
+                        <i data-lucide="users-cog" class="w-4 h-4"></i>角色
+                    </button>
+                </div>
+            </div>
+
+            <!-- ========== STATS ROW ========== -->
+            <div class="px-4 sm:px-6 lg:px-8 pb-5">
+                <div id="stats-row" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"></div>
+            </div>
+
+            <!-- ========== FILTER ROW (models tab only) ========== -->
+            <div id="filter-row" class="px-4 sm:px-6 lg:px-8 pb-5" style="display:none;">
+                <select id="filter-provider" class="px-4 py-2 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200 appearance-none min-w-[200px]">
+                    <option value="">全部供应商</option>
+                </select>
+            </div>
+
+            <!-- ========== GRID LIST ========== -->
+            <div class="px-4 sm:px-6 lg:px-8 pb-8">
+                <div id="grid-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <div class="col-span-full text-center text-[#A09890] text-sm py-12">加载中…</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== EDIT PANEL ========== -->
+        <div id="edit-panel" class="ts-edit-panel fixed top-0 right-0 z-50 h-screen w-full sm:w-[440px] lg:w-[40%] max-w-[560px] bg-[#F5F0EB]/90 backdrop-blur-2xl border-l border-[#E0D8D0]/60 shadow-2xl flex flex-col">
+            <div class="px-6 py-5 flex items-center justify-between border-b border-[#E0D8D0]/40">
+                <h2 id="edit-panel-title" class="text-lg font-bold text-[#3D3835]">添加</h2>
+                <button id="btn-close-panel" class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#E0D8D0]/40 text-[#A09890] transition-all duration-200 hover:scale-110">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div id="edit-panel-body" class="flex-1 overflow-y-auto px-6 py-6 space-y-5"></div>
+            <div id="edit-panel-footer" class="px-6 py-4 border-t border-[#E0D8D0]/40 flex gap-3">
+                <button id="btn-save" class="flex-1 px-5 py-2.5 bg-[#8B7DA8] hover:bg-[#7B6D98] text-white text-sm font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">保存</button>
+                <button id="btn-cancel" class="flex-1 px-5 py-2.5 bg-white/60 hover:bg-white/80 text-[#6B6560] text-sm font-medium rounded-xl border border-[#E0D8D0]/60 shadow-sm hover:shadow-md transition-all duration-300">取消</button>
+            </div>
+        </div>
+
+        <div id="edit-overlay" class="fixed inset-0 z-45 bg-black/40 backdrop-blur-sm" style="opacity:0;pointer-events:none;"></div>
+
+        <!-- ========== TEST RESULT MODAL ========== -->
+        <div id="test-modal" class="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" style="opacity:0;pointer-events:none;">
+            <div class="bg-[#F5F0EB] rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] flex flex-col">
+                <div class="px-6 py-4 flex items-center justify-between border-b border-[#E0D8D0]/40">
+                    <h3 class="text-base font-bold text-[#3D3835]">模型测试</h3>
+                    <button id="btn-close-test" class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#E0D8D0]/40 text-[#A09890] transition-all duration-200">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <div id="test-modal-body" class="flex-1 overflow-y-auto px-6 py-5 space-y-3"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+      lucide.createIcons();
+
+      // ===== Sidebar toggle =====
+      const sidebar = document.querySelector('.ts-sidebar');
+      const overlay = document.querySelector('.ts-sidebar-overlay');
+      (function(){
+        const toggleBtn = document.querySelector('.ts-sidebar-toggle');
+        const closeBtn = document.querySelector('.ts-sidebar-close');
+        function openSidebar(){ sidebar.classList.add('is-open'); overlay.style.opacity='1'; overlay.style.pointerEvents='auto'; }
+        function closeSidebar(){ sidebar.classList.remove('is-open'); overlay.style.opacity='0'; overlay.style.pointerEvents='none'; }
+        if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+        if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+        if (overlay) overlay.addEventListener('click', closeSidebar);
+        window.addEventListener('resize', function(){ if (window.innerWidth >= 1024) closeSidebar(); });
+      })();
+
+      // ===== Admin info & logout =====
+      (function(){
+        const info = Api.getAdminInfo();
+        if (!info) return;
+        const nameEl = document.getElementById('admin-name');
+        const roleEl = document.getElementById('admin-role');
+        const avatarEl = document.getElementById('admin-avatar');
+        if (nameEl) nameEl.textContent = info.name || '管理员';
+        if (roleEl) roleEl.textContent = info.role || '—';
+        if (avatarEl && info.name) avatarEl.textContent = info.name.charAt(0).toUpperCase();
+      })();
+      document.getElementById('btn-logout').addEventListener('click', function(){
+        Api.clearAdmin();
+        location.href = 'admin-login.html';
+      });
+
+      // ===== State =====
+      const state = {
+        tab: 'providers',
+        providers: [],
+        models: [],
+        roles: [],
+        filterProviderId: '',
+      };
+
+      const FORMAT_LABELS = { openai: 'OpenAI', anthropic: 'Anthropic', gemini: 'Gemini' };
+      const FORMAT_BADGE = {
+        openai: 'bg-[#7BAE98]/15 text-[#5a9a7e]',
+        anthropic: 'bg-[#D4A76A]/15 text-[#b8893a]',
+        gemini: 'bg-[#8B7DA8]/15 text-[#8B7DA8]',
+      };
+      const STRATEGY_LABELS = {
+        round_robin: '顺序轮询',
+        failover: '主备故障转移',
+        weighted_random: '加权随机',
+        load_balance: '负载均衡',
+      };
+      const STRATEGY_BADGE = {
+        round_robin: 'bg-[#8B7DA8]/15 text-[#8B7DA8]',
+        failover: 'bg-[#D4908A]/15 text-[#c07068]',
+        weighted_random: 'bg-[#D4A76A]/15 text-[#b8893a]',
+        load_balance: 'bg-[#7BAE98]/15 text-[#5a9a7e]',
+      };
+      const MODALITY_LABELS = { text: '文本', image: '图像', audio: '音频', tool: '工具' };
+      const FORMAT_DEFAULTS = {
+        openai: 'https://api.openai.com/v1',
+        anthropic: 'https://api.anthropic.com',
+        gemini: 'https://generativelanguage.googleapis.com',
+      };
+
+      // ===== Tab switching =====
+      document.querySelectorAll('.ts-tab-btn').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          state.tab = btn.getAttribute('data-tab');
+          document.querySelectorAll('.ts-tab-btn').forEach(function(b){ b.classList.toggle('active', b === btn); });
+          document.getElementById('btn-add-label').textContent = state.tab === 'providers' ? '添加供应商' : state.tab === 'models' ? '添加模型' : '添加角色';
+          document.getElementById('filter-row').style.display = state.tab === 'models' ? '' : 'none';
+          renderAll();
+        });
+      });
+
+      // ===== Stats rendering =====
+      function renderStats() {
+        const row = document.getElementById('stats-row');
+        let cards = [];
+        if (state.tab === 'providers') {
+          const enabled = state.providers.filter(function(p){ return p.enabled; }).length;
+          cards = [
+            { icon: 'server', color: '#8B7DA8', label: '供应商总数', value: state.providers.length, valColor: '#3D3835' },
+            { icon: 'check-circle', color: '#7BAE98', label: '已启用', value: enabled, valColor: '#7BAE98' },
+            { icon: 'boxes', color: '#D4A76A', label: '模型总数', value: state.models.length, valColor: '#D4A76A' },
+            { icon: 'users-cog', color: '#C4A6B0', label: '角色数', value: state.roles.length, valColor: '#C4A6B0' },
+          ];
+        } else if (state.tab === 'models') {
+          const filtered = filteredModels();
+          const enabled = filtered.filter(function(m){ return m.enabled; }).length;
+          cards = [
+            { icon: 'boxes', color: '#8B7DA8', label: '模型总数', value: state.models.length, valColor: '#3D3835' },
+            { icon: 'check-circle', color: '#7BAE98', label: '已启用', value: enabled, valColor: '#7BAE98' },
+            { icon: 'server', color: '#D4A76A', label: '所属供应商', value: new Set(state.models.map(function(m){return m.providerId;})).size, valColor: '#D4A76A' },
+            { icon: 'image', color: '#C4A6B0', label: '多模态模型', value: state.models.filter(function(m){return m.modalities && m.modalities.length>1;}).length, valColor: '#C4A6B0' },
+          ];
+        } else {
+          const builtin = state.roles.filter(function(r){return r.isBuiltin;}).length;
+          cards = [
+            { icon: 'users-cog', color: '#8B7DA8', label: '角色总数', value: state.roles.length, valColor: '#3D3835' },
+            { icon: 'lock', color: '#7BAE98', label: '内置角色', value: builtin, valColor: '#7BAE98' },
+            { icon: 'shuffle', color: '#D4A76A', label: '已绑定模型', value: state.roles.reduce(function(s,r){return s+r.modelCount;},0), valColor: '#D4A76A' },
+            { icon: 'zap', color: '#C4A6B0', label: '启用角色', value: state.roles.filter(function(r){return r.enabled;}).length, valColor: '#C4A6B0' },
+          ];
+        }
+        row.innerHTML = cards.map(function(c){
+          return '<div class="ts-grid-card backdrop-blur-xl bg-white/70 border border-white/40 shadow-lg rounded-2xl p-4 sm:p-5 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">' +
+            '<div class="flex items-center gap-3 mb-3">' +
+            '<div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:'+c.color+'1a;"><i data-lucide="'+c.icon+'" class="w-5 h-5" style="color:'+c.color+'"></i></div>' +
+            '<span class="text-xs text-[#A09890] font-medium">'+c.label+'</span></div>' +
+            '<p class="text-2xl font-bold" style="color:'+c.valColor+';">'+c.value+'</p></div>';
+        }).join('');
+        Helpers.refreshIcons();
+      }
+
+      function filteredModels() {
+        if (!state.filterProviderId) return state.models;
+        return state.models.filter(function(m){ return m.providerId === state.filterProviderId; });
+      }
+
+      // ===== Grid list rendering =====
+      function renderGrid() {
+        const grid = document.getElementById('grid-list');
+        if (state.tab === 'providers') renderProvidersGrid(grid);
+        else if (state.tab === 'models') renderModelsGrid(grid);
+        else renderRolesGrid(grid);
+        Helpers.refreshIcons();
+      }
+
+      function renderProvidersGrid(grid) {
+        if (state.providers.length === 0) {
+          grid.innerHTML = '<div class="col-span-full text-center text-[#A09890] text-sm py-12">暂无供应商，点击右上角「添加供应商」开始创建</div>';
+          return;
+        }
+        grid.innerHTML = state.providers.map(function(p){
+          const modelCount = state.models.filter(function(m){return m.providerId === p.id;}).length;
+          const fmtBadge = FORMAT_BADGE[p.format] || 'bg-[#E0D8D0]/30 text-[#A09890]';
+          return '<div class="ts-grid-card backdrop-blur-xl bg-white/70 border border-white/40 shadow-lg rounded-2xl p-5 hover:shadow-xl transition-all duration-300">' +
+            '<div class="flex items-start justify-between mb-3">' +
+              '<div class="min-w-0 flex-1">' +
+                '<div class="flex items-center gap-2 mb-1">' +
+                  '<h3 class="text-base font-bold text-[#3D3835] truncate">'+Helpers.escape(p.name)+'</h3>' +
+                  '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium '+fmtBadge+'">'+(FORMAT_LABELS[p.format]||p.format)+'</span>' +
+                '</div>' +
+                '<p class="text-xs text-[#A09890] font-mono truncate" title="'+Helpers.escape(p.baseUrl)+'">'+Helpers.escape(p.baseUrl)+'</p>' +
+              '</div>' +
+              '<div class="flex items-center gap-1 flex-shrink-0">' +
+                '<button data-action="edit" data-type="provider" data-id="'+Helpers.escape(p.id)+'" class="act-btn w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#8B7DA8]/10 text-[#8B7DA8] transition-all duration-200 hover:scale-110" title="编辑"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>' +
+                '<button data-action="delete" data-type="provider" data-id="'+Helpers.escape(p.id)+'" class="act-btn w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#D4908A]/10 text-[#D4908A] transition-all duration-200 hover:scale-110" title="删除"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>' +
+              '</div>' +
+            '</div>' +
+            '<div class="flex items-center justify-between text-xs">' +
+              '<span class="text-[#6B6560]">API Key: <span class="font-mono text-[#A09890]">'+(p.apiKey || '未配置')+'</span></span>' +
+              '<span class="text-[#6B6560]">'+modelCount+' 个模型</span>' +
+            '</div>' +
+            '<div class="mt-3 pt-3 border-t border-[#E0D8D0]/40 flex items-center justify-between">' +
+              '<span class="text-[11px] '+(p.enabled?'text-[#7BAE98]':'text-[#A09890]')+'">● '+(p.enabled?'已启用':'已停用')+'</span>' +
+              '<button data-action="toggle" data-type="provider" data-id="'+Helpers.escape(p.id)+'" class="text-[11px] text-[#8B7DA8] hover:underline">'+(p.enabled?'停用':'启用')+'</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }
+
+      function renderModelsGrid(grid) {
+        const items = filteredModels();
+        if (items.length === 0) {
+          grid.innerHTML = '<div class="col-span-full text-center text-[#A09890] text-sm py-12">暂无模型，点击右上角「添加模型」开始创建</div>';
+          return;
+        }
+        grid.innerHTML = items.map(function(m){
+          const fmtBadge = FORMAT_BADGE[m.providerFormat] || 'bg-[#E0D8D0]/30 text-[#A09890]';
+          const modalityBadges = (m.modalities||['text']).map(function(mod){
+            const cls = mod==='image' ? 'bg-[#C4A6B0]/20 text-[#a07585]' : mod==='audio' ? 'bg-[#D4A76A]/20 text-[#b8893a]' : mod==='tool' ? 'bg-[#7BAE98]/20 text-[#5a9a7e]' : 'bg-[#8B7DA8]/15 text-[#8B7DA8]';
+            return '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium '+cls+'">'+(MODALITY_LABELS[mod]||mod)+'</span>';
+          }).join(' ');
+          return '<div class="ts-grid-card backdrop-blur-xl bg-white/70 border border-white/40 shadow-lg rounded-2xl p-5 hover:shadow-xl transition-all duration-300">' +
+            '<div class="flex items-start justify-between mb-3">' +
+              '<div class="min-w-0 flex-1">' +
+                '<h3 class="text-base font-bold text-[#3D3835] truncate">'+Helpers.escape(m.name)+'</h3>' +
+                '<p class="text-xs text-[#8B7DA8] font-mono mt-0.5 truncate">'+Helpers.escape(m.modelId)+'</p>' +
+              '</div>' +
+              '<div class="flex items-center gap-1 flex-shrink-0">' +
+                '<button data-action="test" data-type="model" data-id="'+Helpers.escape(m.id)+'" class="act-btn w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#7BAE98]/10 text-[#7BAE98] transition-all duration-200 hover:scale-110" title="测试"><i data-lucide="play" class="w-3.5 h-3.5"></i></button>' +
+                '<button data-action="edit" data-type="model" data-id="'+Helpers.escape(m.id)+'" class="act-btn w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#8B7DA8]/10 text-[#8B7DA8] transition-all duration-200 hover:scale-110" title="编辑"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>' +
+                '<button data-action="delete" data-type="model" data-id="'+Helpers.escape(m.id)+'" class="act-btn w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#D4908A]/10 text-[#D4908A] transition-all duration-200 hover:scale-110" title="删除"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>' +
+              '</div>' +
+            '</div>' +
+            '<div class="flex items-center gap-2 mb-2">' +
+              '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium '+fmtBadge+'">'+(FORMAT_LABELS[m.providerFormat]||m.providerFormat)+'</span>' +
+              '<span class="text-xs text-[#6B6560]">'+Helpers.escape(m.providerName)+'</span>' +
+            '</div>' +
+            '<div class="flex flex-wrap gap-1 mb-2">'+modalityBadges+'</div>' +
+            '<div class="flex items-center justify-between text-xs text-[#6B6560]">' +
+              '<span>上下文: '+(m.contextWindow/1000)+'K</span>' +
+              '<span>最大输出: '+(m.maxOutput/1000)+'K</span>' +
+            '</div>' +
+            '<div class="mt-3 pt-3 border-t border-[#E0D8D0]/40 flex items-center justify-between">' +
+              '<span class="text-[11px] '+(m.enabled?'text-[#7BAE98]':'text-[#A09890]')+'">● '+(m.enabled?'已启用':'已停用')+'</span>' +
+              '<button data-action="toggle" data-type="model" data-id="'+Helpers.escape(m.id)+'" class="text-[11px] text-[#8B7DA8] hover:underline">'+(m.enabled?'停用':'启用')+'</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }
+
+      function renderRolesGrid(grid) {
+        if (state.roles.length === 0) {
+          grid.innerHTML = '<div class="col-span-full text-center text-[#A09890] text-sm py-12">暂无角色，点击右上角「添加角色」开始创建</div>';
+          return;
+        }
+        grid.innerHTML = state.roles.map(function(r){
+          const stratBadge = STRATEGY_BADGE[r.pollingStrategy] || 'bg-[#E0D8D0]/30 text-[#A09890]';
+          return '<div class="ts-grid-card backdrop-blur-xl bg-white/70 border border-white/40 shadow-lg rounded-2xl p-5 hover:shadow-xl transition-all duration-300">' +
+            '<div class="flex items-start justify-between mb-3">' +
+              '<div class="min-w-0 flex-1">' +
+                '<div class="flex items-center gap-2 mb-1">' +
+                  '<h3 class="text-base font-bold text-[#3D3835] truncate">'+Helpers.escape(r.name)+'</h3>' +
+                  (r.isBuiltin ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#8B7DA8]/15 text-[#8B7DA8]"><i data-lucide="lock" class="w-2.5 h-2.5 mr-1"></i>内置</span>' : '') +
+                '</div>' +
+                '<p class="text-xs text-[#8B7DA8] font-mono mt-0.5">'+Helpers.escape(r.roleKey)+'</p>' +
+              '</div>' +
+              '<div class="flex items-center gap-1 flex-shrink-0">' +
+                '<button data-action="edit" data-type="role" data-id="'+Helpers.escape(r.id)+'" class="act-btn w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#8B7DA8]/10 text-[#8B7DA8] transition-all duration-200 hover:scale-110" title="编辑"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>' +
+                (r.isBuiltin ? '' : '<button data-action="delete" data-type="role" data-id="'+Helpers.escape(r.id)+'" class="act-btn w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#D4908A]/10 text-[#D4908A] transition-all duration-200 hover:scale-110" title="删除"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>') +
+              '</div>' +
+            '</div>' +
+            '<p class="text-xs text-[#6B6560] mb-3 line-clamp-2">'+Helpers.escape(r.description || '无描述')+'</p>' +
+            '<div class="flex items-center justify-between text-xs">' +
+              '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium '+stratBadge+'">'+(STRATEGY_LABELS[r.pollingStrategy]||r.pollingStrategy)+'</span>' +
+              '<span class="text-[#6B6560]">'+r.modelCount+' 个模型</span>' +
+            '</div>' +
+            '<div class="mt-3 pt-3 border-t border-[#E0D8D0]/40 flex items-center justify-between">' +
+              '<span class="text-[11px] '+(r.enabled?'text-[#7BAE98]':'text-[#A09890]')+'">● '+(r.enabled?'已启用':'已停用')+'</span>' +
+              '<button data-action="toggle" data-type="role" data-id="'+Helpers.escape(r.id)+'" class="text-[11px] text-[#8B7DA8] hover:underline">'+(r.enabled?'停用':'启用')+'</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }
+
+      function renderAll() {
+        renderStats();
+        renderGrid();
+      }
+
+      // ===== Data loading =====
+      async function loadAll() {
+        try {
+          const [pRes, mRes, rRes] = await Promise.all([
+            Api.adminListProviders(),
+            Api.adminListModels(),
+            Api.adminListRoles(),
+          ]);
+          state.providers = pRes.items || [];
+          state.models = mRes.items || [];
+          state.roles = rRes.items || [];
+          // populate provider filter
+          const sel = document.getElementById('filter-provider');
+          sel.innerHTML = '<option value="">全部供应商</option>' + state.providers.map(function(p){
+            return '<option value="'+Helpers.escape(p.id)+'">'+Helpers.escape(p.name)+'</option>';
+          }).join('');
+          sel.value = state.filterProviderId;
+          renderAll();
+        } catch (err) {
+          console.error('[ai] 加载失败:', err);
+          Helpers.toast(err.message || '加载失败', 'error');
+        }
+      }
+
+      async function reloadProviders() {
+        const res = await Api.adminListProviders();
+        state.providers = res.items || [];
+        renderAll();
+      }
+      async function reloadModels() {
+        const res = await Api.adminListModels();
+        state.models = res.items || [];
+        renderAll();
+      }
+      async function reloadRoles() {
+        const res = await Api.adminListRoles();
+        state.roles = res.items || [];
+        renderAll();
+      }
+
+      // ===== Provider filter =====
+      document.getElementById('filter-provider').addEventListener('change', function(e){
+        state.filterProviderId = e.target.value;
+        renderGrid();
+      });
+
+      // ===== Grid action delegation =====
+      document.getElementById('grid-list').addEventListener('click', async function(e){
+        const btn = e.target.closest('.act-btn');
+        if (!btn) return;
+        const id = btn.getAttribute('data-id');
+        const action = btn.getAttribute('data-action');
+        const type = btn.getAttribute('data-type');
+        if (!id || !action) return;
+        if (action === 'edit') {
+          openEditPanel(type, id);
+        } else if (action === 'delete') {
+          await handleDelete(type, id);
+        } else if (action === 'toggle') {
+          await handleToggle(type, id);
+        } else if (action === 'test') {
+          openTestModal(id);
+        }
+      });
+
+      async function handleDelete(type, id) {
+        const label = type === 'provider' ? '供应商' : type === 'model' ? '模型' : '角色';
+        if (!confirm('确认删除此'+label+'？此操作不可撤销。')) return;
+        try {
+          if (type === 'provider') { await Api.adminDeleteProvider(id); await loadAll(); }
+          else if (type === 'model') { await Api.adminDeleteModel(id); await loadAll(); }
+          else { await Api.adminDeleteRole(id); await reloadRoles(); }
+          Helpers.toast(label+'已删除', 'success');
+        } catch (err) {
+          Helpers.toast(err.message || '删除失败', 'error');
+        }
+      }
+
+      async function handleToggle(type, id) {
+        const list = type === 'provider' ? state.providers : type === 'model' ? state.models : state.roles;
+        const item = list.find(function(x){return x.id === id;});
+        if (!item) return;
+        const newEnabled = !item.enabled;
+        try {
+          if (type === 'provider') { await Api.adminUpdateProvider(id, { enabled: newEnabled }); await reloadProviders(); }
+          else if (type === 'model') { await Api.adminUpdateModel(id, { enabled: newEnabled }); await reloadModels(); }
+          else { await Api.adminUpdateRole(id, { enabled: newEnabled }); await reloadRoles(); }
+          Helpers.toast(newEnabled ? '已启用' : '已停用', 'success');
+        } catch (err) {
+          Helpers.toast(err.message || '操作失败', 'error');
+        }
+      }
+
+      // ===== Edit panel =====
+      const editPanel = document.getElementById('edit-panel');
+      const editOverlay = document.getElementById('edit-overlay');
+      const editTitle = document.getElementById('edit-panel-title');
+      const editBody = document.getElementById('edit-panel-body');
+      const editFooter = document.getElementById('edit-panel-footer');
+
+      let editingCtx = null; // { type, id | null, data }
+
+      function openEditPanel(type, id) {
+        editingCtx = { type: type, id: id || null };
+        if (type === 'provider') openProviderPanel(id);
+        else if (type === 'model') openModelPanel(id);
+        else openRolePanel(id);
+        editPanel.classList.add('is-open-panel');
+        editOverlay.style.opacity = '1';
+        editOverlay.style.pointerEvents = 'auto';
+      }
+
+      function closeEditPanel() {
+        editPanel.classList.remove('is-open-panel');
+        editOverlay.style.opacity = '0';
+        editOverlay.style.pointerEvents = 'none';
+        editingCtx = null;
+      }
+
+      document.getElementById('btn-add').addEventListener('click', function(){
+        openEditPanel(state.tab, null);
+      });
+      document.getElementById('btn-close-panel').addEventListener('click', closeEditPanel);
+      document.getElementById('btn-cancel').addEventListener('click', closeEditPanel);
+      editOverlay.addEventListener('click', closeEditPanel);
+
+      function fieldLabel(text) {
+        return '<label class="block text-xs font-semibold text-[#6B6560] mb-2 tracking-wide uppercase">'+text+'</label>';
+      }
+      function inputHTML(id, placeholder, type) {
+        return '<input id="'+id+'" type="'+(type||'text')+'" placeholder="'+placeholder+'" class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] placeholder-[#A09890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200">';
+      }
+      function textareaHTML(id, placeholder, rows) {
+        return '<textarea id="'+id+'" rows="'+(rows||3)+'" placeholder="'+placeholder+'" class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] placeholder-[#A09890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200 resize-none"></textarea>';
+      }
+
+      // ---- Provider panel ----
+      let currentFormat = 'openai';
+      function openProviderPanel(id) {
+        const p = id ? state.providers.find(function(x){return x.id === id;}) : null;
+        editTitle.textContent = p ? '编辑供应商' : '添加供应商';
+        currentFormat = p ? p.format : 'openai';
+        editBody.innerHTML =
+          '<div>'+fieldLabel('显示名称')+inputHTML('f-name','如：OpenAI 官方')+'</div>' +
+          '<div>'+fieldLabel('协议格式')+
+            '<div id="format-group" class="flex gap-2">'+
+              ['openai','anthropic','gemini'].map(function(f){
+                return '<button data-format="'+f+'" class="ts-format-btn flex-1 px-3 py-2 text-sm font-medium rounded-xl border-2 border-[#E0D8D0]/60 bg-white/50 text-[#6B6560] transition-all duration-200">'+FORMAT_LABELS[f]+'</button>';
+              }).join('') +
+            '</div>'+
+          '</div>' +
+          '<div>'+fieldLabel('Base URL（自定义端点）')+inputHTML('f-baseurl','留空使用默认端点')+'</div>' +
+          '<div>'+fieldLabel('API Key')+'<input id="f-apikey" type="password" placeholder="'+(p && p.apiKey ? p.apiKey : '输入 API Key')+'" class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] placeholder-[#A09890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200"><p class="text-[11px] text-[#A09890] mt-1.5">'+(p && p.apiKey ? '当前：'+p.apiKey+'，留空表示不修改' : '保存后将掩码显示')+'</p></div>' +
+          '<div>'+fieldLabel('排序（数字越小越靠前')+'<input id="f-sortorder" type="number" value="0" class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200"></div>';
+        if (p) {
+          document.getElementById('f-name').value = p.name;
+          document.getElementById('f-baseurl').value = p.baseUrl;
+          document.getElementById('f-sortorder').value = p.sortOrder || 0;
+        }
+        syncFormatButtons();
+        document.getElementById('format-group').addEventListener('click', function(e){
+          const b = e.target.closest('.ts-format-btn');
+          if (!b) return;
+          currentFormat = b.getAttribute('data-format');
+          syncFormatButtons();
+          const bu = document.getElementById('f-baseurl');
+          if (!bu.value) bu.placeholder = '留空使用默认：' + FORMAT_DEFAULTS[currentFormat];
+        });
+        function syncFormatButtons() {
+          document.querySelectorAll('.ts-format-btn').forEach(function(b){
+            b.classList.toggle('active', b.getAttribute('data-format') === currentFormat);
+          });
+          const bu = document.getElementById('f-baseurl');
+          if (bu && !bu.value) bu.placeholder = '留空使用默认：' + FORMAT_DEFAULTS[currentFormat];
+        }
+      }
+
+      // ---- Model panel ----
+      let currentModalities = ['text'];
+      function openModelPanel(id) {
+        const m = id ? state.models.find(function(x){return x.id === id;}) : null;
+        editTitle.textContent = m ? '编辑模型' : '添加模型';
+        currentModalities = m ? (m.modalities || ['text']).slice() : ['text'];
+        const providerOpts = state.providers.map(function(p){
+          return '<option value="'+Helpers.escape(p.id)+'"'+(m && m.providerId===p.id?' selected':'')+'>'+Helpers.escape(p.name)+' · '+(FORMAT_LABELS[p.format]||p.format)+'</option>';
+        }).join('');
+        editBody.innerHTML =
+          '<div>'+fieldLabel('所属供应商')+'<select id="m-provider" class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200 appearance-none">'+(state.providers.length?'<option value="">请选择供应商</option>'+providerOpts:'<option value="">请先创建供应商</option>')+'</select></div>' +
+          '<div>'+fieldLabel('显示名称')+inputHTML('m-name','如：GPT-4o')+'</div>' +
+          '<div>'+fieldLabel('模型 ID（自定义）')+'<input id="m-modelid" type="text" placeholder="如：gpt-4o, claude-3-5-sonnet" class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] placeholder-[#A09890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200 font-mono"></div>' +
+          '<div class="grid grid-cols-2 gap-3">' +
+            '<div>'+fieldLabel('上下文窗口 (tokens)')+'<input id="m-ctx" type="number" value="128000" class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200"></div>' +
+            '<div>'+fieldLabel('最大输出长度 (tokens)')+'<input id="m-maxout" type="number" value="4096" class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200"></div>' +
+          '</div>' +
+          '<div>'+fieldLabel('支持的模态')+
+            '<div id="modality-group" class="flex flex-wrap gap-2">'+
+              ['text','image','audio','tool'].map(function(mod){
+                return '<button data-modality="'+mod+'" class="ts-modality-chip px-3 py-1.5 text-xs font-medium rounded-lg border-2 border-[#E0D8D0]/60 bg-white/50 text-[#6B6560] transition-all duration-200">'+MODALITY_LABELS[mod]+'</button>';
+              }).join('') +
+            '</div>'+
+          '</div>' +
+          '<div>'+fieldLabel('排序')+'<input id="m-sortorder" type="number" value="0" class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200"></div>';
+        if (m) {
+          document.getElementById('m-name').value = m.name;
+          document.getElementById('m-modelid').value = m.modelId;
+          document.getElementById('m-ctx').value = m.contextWindow;
+          document.getElementById('m-maxout').value = m.maxOutput;
+          document.getElementById('m-sortorder').value = m.sortOrder || 0;
+        }
+        syncModalityChips();
+        document.getElementById('modality-group').addEventListener('click', function(e){
+          const b = e.target.closest('.ts-modality-chip');
+          if (!b) return;
+          const mod = b.getAttribute('data-modality');
+          const idx = currentModalities.indexOf(mod);
+          if (idx >= 0) currentModalities.splice(idx, 1);
+          else currentModalities.push(mod);
+          syncModalityChips();
+        });
+        function syncModalityChips() {
+          document.querySelectorAll('.ts-modality-chip').forEach(function(b){
+            b.classList.toggle('active', currentModalities.indexOf(b.getAttribute('data-modality')) >= 0);
+          });
+        }
+      }
+
+      // ---- Role panel ----
+      let currentStrategy = 'round_robin';
+      let roleBindings = []; // [{modelId, priority, weight, enabled, sortOrder}]
+      let roleOriginalBindings = [];
+      let editingRoleId = null;
+      async function openRolePanel(id) {
+        editingRoleId = id || null;
+        const r = id ? state.roles.find(function(x){return x.id === id;}) : null;
+        editTitle.textContent = r ? '编辑角色' : '添加角色';
+        currentStrategy = r ? r.pollingStrategy : 'round_robin';
+        roleBindings = [];
+        roleOriginalBindings = [];
+        editBody.innerHTML =
+          '<div>'+fieldLabel('显示名称')+inputHTML('r-name','如：游戏判定')+'</div>' +
+          '<div>'+fieldLabel('Role Key（代码引用键）')+'<input id="r-rolekey" type="text" placeholder="如：my_custom_role" class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] placeholder-[#A09890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200 font-mono lowercase"><p class="text-[11px] text-[#A09890] mt-1.5">小写字母开头，仅含小写字母/数字/下划线</p></div>' +
+          '<div>'+fieldLabel('描述')+textareaHTML('r-desc','角色用途说明',2)+'</div>' +
+          '<div>'+fieldLabel('轮询策略')+
+            '<div id="strategy-group" class="grid grid-cols-2 gap-2">'+
+              Object.keys(STRATEGY_LABELS).map(function(s){
+                return '<button data-strategy="'+s+'" class="ts-strategy-btn px-3 py-2 text-xs font-medium rounded-xl border-2 border-[#E0D8D0]/60 bg-white/50 text-[#6B6560] transition-all duration-200">'+STRATEGY_LABELS[s]+'</button>';
+              }).join('') +
+            '</div>'+
+            '<p id="strategy-hint" class="text-[11px] text-[#A09890] mt-1.5"></p>'+
+          '</div>' +
+          '<div id="bindings-section">'+
+            '<div class="flex items-center justify-between mb-2">'+
+              '<label class="text-xs font-semibold text-[#6B6560] tracking-wide uppercase">绑定模型</label>'+
+              '<span id="bindings-count" class="text-[11px] text-[#A09890]">0 个</span>'+
+            '</div>'+
+            '<div id="bindings-list" class="space-y-2"></div>'+
+          '</div>';
+        if (r) {
+          document.getElementById('r-name').value = r.name;
+          document.getElementById('r-rolekey').value = r.roleKey;
+          document.getElementById('r-rolekey').disabled = r.isBuiltin;
+          document.getElementById('r-desc').value = r.description || '';
+        }
+        syncStrategyButtons();
+        document.getElementById('strategy-group').addEventListener('click', function(e){
+          const b = e.target.closest('.ts-strategy-btn');
+          if (!b) return;
+          currentStrategy = b.getAttribute('data-strategy');
+          syncStrategyButtons();
+          renderBindingsList();
+        });
+        function syncStrategyButtons() {
+          document.querySelectorAll('.ts-strategy-btn').forEach(function(b){
+            b.classList.toggle('active', b.getAttribute('data-strategy') === currentStrategy);
+          });
+          const hints = {
+            round_robin: '按绑定顺序依次循环调用每个模型，均匀分摊请求量',
+            failover: '按优先级主模型优先，失败/超时自动切换到下一个备选模型',
+            weighted_random: '按权重比例随机挑选模型，可灵活控制流量分配',
+            load_balance: '取在途请求数最少的模型，自动均衡负载',
+          };
+          const h = document.getElementById('strategy-hint');
+          if (h) h.textContent = hints[currentStrategy] || '';
+        }
+        // load existing bindings
+        if (id) {
+          try {
+            const res = await Api.adminGetRoleModels(id);
+            roleOriginalBindings = res.items || [];
+            roleBindings = roleOriginalBindings.map(function(b){
+              return { modelId: b.modelId, priority: b.priority, weight: b.weight, enabled: b.enabled, sortOrder: b.sortOrder };
+            });
+          } catch (err) { console.warn('加载绑定失败', err); }
+        }
+        renderBindingsList();
+      }
+
+      function renderBindingsList() {
+        const list = document.getElementById('bindings-list');
+        const countEl = document.getElementById('bindings-count');
+        if (!list) return;
+        if (state.models.length === 0) {
+          list.innerHTML = '<p class="text-xs text-[#A09890] py-2">请先在「模型」Tab 创建模型</p>';
+          if (countEl) countEl.textContent = '0 个';
+          return;
+        }
+        list.innerHTML = state.models.map(function(m){
+          const binding = roleBindings.find(function(b){return b.modelId === m.id;});
+          const bound = !!binding;
+          const showPriority = currentStrategy === 'failover';
+          const showWeight = currentStrategy === 'weighted_random';
+          let controls = '';
+          if (bound) {
+            controls = '<div class="flex items-center gap-2 mt-2 pl-7">' +
+              (showPriority ? '<label class="text-[10px] text-[#6B6560]">优先级</label><input type="number" data-bind-priority="'+m.id+'" value="'+(binding.priority||0)+'" class="w-16 px-2 py-1 bg-white/70 border border-[#E0D8D0]/60 rounded-lg text-xs text-[#3D3835]">' : '') +
+              (showWeight ? '<label class="text-[10px] text-[#6B6560] ml-2">权重</label><input type="number" data-bind-weight="'+m.id+'" value="'+(binding.weight||1)+'" class="w-16 px-2 py-1 bg-white/70 border border-[#E0D8D0]/60 rounded-lg text-xs text-[#3D3835]">' : '') +
+            '</div>';
+          }
+          return '<div class="rounded-xl border border-[#E0D8D0]/60 bg-white/50 p-2.5">'+
+            '<label class="flex items-center gap-2 cursor-pointer">'+
+              '<input type="checkbox" data-bind-toggle="'+m.id+'" '+(bound?'checked':'')+' class="w-4 h-4 rounded text-[#8B7DA8] focus:ring-[#8B7DA8]/30">'+
+              '<div class="flex-1 min-w-0">'+
+                '<p class="text-sm font-medium text-[#3D3835] truncate">'+Helpers.escape(m.name)+'</p>'+
+                '<p class="text-[10px] text-[#8B7DA8] font-mono truncate">'+Helpers.escape(m.modelId)+'</p>'+
+              '</div>'+
+              '<span class="text-[10px] text-[#A09890]">'+Helpers.escape(m.providerName)+'</span>'+
+            '</label>'+
+            controls+
+          '</div>';
+        }).join('');
+        if (countEl) countEl.textContent = roleBindings.length + ' 个';
+        // bind events
+        list.querySelectorAll('[data-bind-toggle]').forEach(function(cb){
+          cb.addEventListener('change', function(){
+            const mid = cb.getAttribute('data-bind-toggle');
+            if (cb.checked) {
+              roleBindings.push({ modelId: mid, priority: 0, weight: 1, enabled: true, sortOrder: roleBindings.length });
+            } else {
+              roleBindings = roleBindings.filter(function(b){return b.modelId !== mid;});
+            }
+            renderBindingsList();
+          });
+        });
+        list.querySelectorAll('[data-bind-priority]').forEach(function(inp){
+          inp.addEventListener('change', function(){
+            const mid = inp.getAttribute('data-bind-priority');
+            const b = roleBindings.find(function(x){return x.modelId === mid;});
+            if (b) b.priority = parseInt(inp.value, 10) || 0;
+          });
+        });
+        list.querySelectorAll('[data-bind-weight]').forEach(function(inp){
+          inp.addEventListener('change', function(){
+            const mid = inp.getAttribute('data-bind-weight');
+            const b = roleBindings.find(function(x){return x.modelId === mid;});
+            if (b) b.weight = parseInt(inp.value, 10) || 1;
+          });
+        });
+      }
+
+      // ===== Save =====
+      document.getElementById('btn-save').addEventListener('click', async function(){
+        const saveBtn = document.getElementById('btn-save');
+        const originalText = saveBtn.textContent;
+        saveBtn.disabled = true;
+        saveBtn.textContent = '保存中…';
+        try {
+          if (editingCtx.type === 'provider') await saveProvider();
+          else if (editingCtx.type === 'model') await saveModel();
+          else await saveRole();
+          closeEditPanel();
+          await loadAll();
+        } catch (err) {
+          console.error('[ai] 保存失败:', err);
+          Helpers.toast(err.message || '保存失败', 'error');
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.textContent = originalText;
+        }
+      });
+
+      async function saveProvider() {
+        const name = document.getElementById('f-name').value.trim();
+        if (!name) { Helpers.toast('请输入显示名称', 'warn'); throw new Error('validation'); }
+        const baseUrl = document.getElementById('f-baseurl').value.trim() || FORMAT_DEFAULTS[currentFormat];
+        const apiKey = document.getElementById('f-apikey').value;
+        const sortOrder = parseInt(document.getElementById('f-sortorder').value, 10) || 0;
+        const payload = { name: name, format: currentFormat, baseUrl: baseUrl, sortOrder: sortOrder };
+        if (apiKey) payload.apiKey = apiKey;
+        if (editingCtx.id) {
+          await Api.adminUpdateProvider(editingCtx.id, payload);
+          Helpers.toast('供应商已更新', 'success');
+        } else {
+          payload.apiKey = apiKey || '';
+          await Api.adminCreateProvider(payload);
+          Helpers.toast('供应商已创建', 'success');
+        }
+      }
+
+      async function saveModel() {
+        const providerId = document.getElementById('m-provider').value;
+        const name = document.getElementById('m-name').value.trim();
+        const modelId = document.getElementById('m-modelid').value.trim();
+        if (!providerId) { Helpers.toast('请选择所属供应商', 'warn'); throw new Error('validation'); }
+        if (!name) { Helpers.toast('请输入显示名称', 'warn'); throw new Error('validation'); }
+        if (!modelId) { Helpers.toast('请输入模型 ID', 'warn'); throw new Error('validation'); }
+        const payload = {
+          providerId: providerId, name: name, modelId: modelId,
+          contextWindow: parseInt(document.getElementById('m-ctx').value, 10) || 128000,
+          maxOutput: parseInt(document.getElementById('m-maxout').value, 10) || 4096,
+          modalities: currentModalities.length > 0 ? currentModalities : ['text'],
+          sortOrder: parseInt(document.getElementById('m-sortorder').value, 10) || 0,
+        };
+        if (editingCtx.id) {
+          await Api.adminUpdateModel(editingCtx.id, payload);
+          Helpers.toast('模型已更新', 'success');
+        } else {
+          await Api.adminCreateModel(payload);
+          Helpers.toast('模型已创建', 'success');
+        }
+      }
+
+      async function saveRole() {
+        const name = document.getElementById('r-name').value.trim();
+        const roleKey = document.getElementById('r-rolekey').value.trim();
+        const desc = document.getElementById('r-desc').value.trim();
+        if (!name) { Helpers.toast('请输入显示名称', 'warn'); throw new Error('validation'); }
+        if (!editingCtx.id && !roleKey) { Helpers.toast('请输入 Role Key', 'warn'); throw new Error('validation'); }
+        const payload = { name: name, description: desc, pollingStrategy: currentStrategy };
+        if (roleKey) payload.roleKey = roleKey;
+        if (editingCtx.id) {
+          await Api.adminUpdateRole(editingCtx.id, payload);
+          // save bindings
+          await Api.adminUpdateRoleModels(editingCtx.id, roleBindings);
+          Helpers.toast('角色已更新', 'success');
+        } else {
+          const res = await Api.adminCreateRole(payload);
+          await Api.adminUpdateRoleModels(res.role.id, roleBindings);
+          Helpers.toast('角色已创建', 'success');
+        }
+      }
+
+      // ===== Test modal =====
+      const testModal = document.getElementById('test-modal');
+      const testBody = document.getElementById('test-modal-body');
+      function openTestModal(modelId) {
+        const m = state.models.find(function(x){return x.id === modelId;});
+        if (!m) return;
+        testBody.innerHTML =
+          '<div class="mb-3"><label class="block text-xs font-semibold text-[#6B6560] mb-2 tracking-wide uppercase">测试模型</label><div class="text-sm text-[#3D3835] font-medium">'+Helpers.escape(m.name)+'</div><div class="text-xs text-[#8B7DA8] font-mono">'+Helpers.escape(m.modelId)+'</div></div>' +
+          '<div class="mb-3"><label class="block text-xs font-semibold text-[#6B6560] mb-2 tracking-wide uppercase">测试 Prompt</label><textarea id="test-prompt" rows="3" class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200 resize-none">请用一句话介绍你自己。</textarea></div>' +
+          '<button id="btn-run-test" class="w-full px-5 py-2.5 bg-[#8B7DA8] hover:bg-[#7B6D98] text-white text-sm font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-300">运行测试</button>' +
+          '<div id="test-result" class="mt-3"></div>';
+        testModal.style.opacity = '1';
+        testModal.style.pointerEvents = 'auto';
+        document.getElementById('btn-run-test').addEventListener('click', async function(){
+          const prompt = document.getElementById('test-prompt').value.trim();
+          if (!prompt) { Helpers.toast('请输入测试 Prompt', 'warn'); return; }
+          const resultEl = document.getElementById('test-result');
+          resultEl.innerHTML = '<div class="flex items-center gap-2 text-sm text-[#6B6560] py-3"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>调用中…</div>';
+          Helpers.refreshIcons();
+          try {
+            const res = await Api.adminTestAI(modelId, prompt);
+            if (res.ok) {
+              resultEl.innerHTML = '<div class="rounded-xl bg-[#7BAE98]/10 border border-[#7BAE98]/30 p-3"><div class="flex items-center gap-2 text-xs text-[#5a9a7e] font-medium mb-2"><i data-lucide="check-circle" class="w-4 h-4"></i>调用成功</div><pre class="text-xs text-[#3D3835] whitespace-pre-wrap break-words font-sans">'+Helpers.escape(res.content)+'</pre></div>';
+            } else {
+              resultEl.innerHTML = '<div class="rounded-xl bg-[#D4908A]/10 border border-[#D4908A]/30 p-3"><div class="flex items-center gap-2 text-xs text-[#c07068] font-medium mb-2"><i data-lucide="x-circle" class="w-4 h-4"></i>调用失败</div><pre class="text-xs text-[#3D3835] whitespace-pre-wrap break-words font-sans">'+Helpers.escape(res.error)+'</pre></div>';
+            }
+          } catch (err) {
+            resultEl.innerHTML = '<div class="rounded-xl bg-[#D4908A]/10 border border-[#D4908A]/30 p-3"><div class="flex items-center gap-2 text-xs text-[#c07068] font-medium mb-2"><i data-lucide="x-circle" class="w-4 h-4"></i>请求失败</div><pre class="text-xs text-[#3D3835] whitespace-pre-wrap break-words font-sans">'+Helpers.escape(err.message)+'</pre></div>';
+          }
+          Helpers.refreshIcons();
+        });
+        Helpers.refreshIcons();
+      }
+      document.getElementById('btn-close-test').addEventListener('click', function(){
+        testModal.style.opacity = '0';
+        testModal.style.pointerEvents = 'none';
+      });
+      testModal.addEventListener('click', function(e){
+        if (e.target === testModal) {
+          testModal.style.opacity = '0';
+          testModal.style.pointerEvents = 'none';
+        }
+      });
+
+      // ===== Initial load =====
+      loadAll();
+    </script>
+</body>
+</html>
