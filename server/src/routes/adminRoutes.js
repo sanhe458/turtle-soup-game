@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const rateLimit = require('express-rate-limit');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
+const redis = require('../redis');
 const { signAdmin } = require('../utils/jwt');
 const { adminAuth } = require('../middleware/adminAuth');
 
@@ -76,6 +77,8 @@ router.post('/admin/login', loginLimiter, async (req, res) => {
 // POST /api/admin/logout - 退出登录（通过递增 token_version 吊销当前 token）
 router.post('/admin/logout', adminAuth, async (req, res) => {
   await db.run('UPDATE admins SET token_version = token_version + 1 WHERE id = ?', [req.admin.id]);
+  // 主动失效缓存，确保旧 token 立即不可用（不必等 TTL 兜底）
+  await redis.del(`auth:a:${req.admin.id}`);
   res.json({ ok: true });
 });
 

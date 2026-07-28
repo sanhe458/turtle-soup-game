@@ -29,6 +29,11 @@ if (!dbUser || !dbPassword) {
   process.exit(1);
 }
 
+// Redis 为可选依赖：未配置时仅告警，不退出（自动降级直查 DB）
+if (!process.env.REDIS_URL && !process.env.REDIS_HOST) {
+  console.warn('REDIS_URL / REDIS_HOST 均未设置，Redis 缓存已禁用（直查 DB）');
+}
+
 module.exports = {
   port: parseInt(process.env.PORT || '3000', 10),
   jwtSecret,
@@ -56,5 +61,14 @@ module.exports = {
     password: dbPassword,
     database: process.env.DB_DATABASE || 'turtle_soup',
     connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || '10', 10),
+  },
+
+  redis: {
+    url: process.env.REDIS_URL || '',
+    host: process.env.REDIS_HOST || '127.0.0.1',
+    port: parseInt(process.env.REDIS_PORT || '6379', 10),
+    password: process.env.REDIS_PASSWORD || '',
+    db: parseInt(process.env.REDIS_DB || '0', 10),
+    keyPrefix: process.env.REDIS_KEY_PREFIX || 'ts:',
   },
 };

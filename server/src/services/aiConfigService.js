@@ -3,11 +3,18 @@
 // 建议运行迁移脚本 encrypt 历史数据，或通过管理后台重新保存每个供应商以触发加密。
 
 // AI 配置读取服务：从数据库查询 providers / models / roles / 绑定关系
+// 读路径全部走 Redis 读穿透缓存（TTL 120s 兜底）；写路径在 aiRoutes.js 中调用
+// invalidateAiConfigCache() 主动失效（delByPrefix 'ai:*'）。
 const db = require('../db');
+const redis = require('../redis');
 const { encrypt, decrypt } = require('../utils/crypto');
 
 const VALID_FORMATS = ['openai', 'anthropic', 'gemini'];
 const VALID_STRATEGIES = ['round_robin', 'failover', 'weighted_random', 'load_balance'];
+
+// AI 配置缓存 TTL（秒）
+const TTL_AI = 120;
+const TTL_HAS_ENABLED = 60;
 
 /** API Key 掩码：sk-****后4位 */
 function maskKey(key) {
@@ -29,35 +36,39 @@ function parseModalities(raw) {
 // ===== 供应商 =====
 
 async function listProviders(includeDisabled = true) {
-  const where = includeDisabled ? '' : 'WHERE enabled = 1';
-  const rows = await db.query(`SELECT * FROM ai_providers ${where} ORDER BY sort_order, created_at`);
-  return rows.map((r) => ({
-    id: r.id,
-    name: r.name,
-    format: r.format,
-    baseUrl: r.base_url,
-    apiKey: maskKey(decrypt(r.api_key)),
-    enabled: !!r.enabled,
-    sortOrder: r.sort_order,
-    createdAt: r.created_at,
-    updatedAt: r.updated_at,
-  }));
+  return redis.getOrSet(`ai:providers:${includeDisabled ? 1 : 0}`, TTL_AI, async () => {
+    const where = includeDisabled ? '' : 'WHERE enabled = 1';
+    const rows = await db.query(`SELECT * FROM ai_providers ${where} ORDER BY sort_order, created_at`);
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      format: r.format,
+      baseUrl: r.base_url,
+      apiKey: maskKey(decrypt(r.api_key)),
+      enabled: !!r.enabled,
+      sortOrder: r.sort_order,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    }));
+  });
 }
 
 async function getProvider(id) {
-  const r = await db.getOne(`SELECT * FROM ai_providers WHERE id = ?`, [id]);
-  if (!r) return null;
-  return {
-    id: r.id,
-    name: r.name,
-    format: r.format,
-    baseUrl: r.base_url,
-    apiKey: decrypt(r.api_key), // 解密后明文，仅内部用
-    enabled: !!r.enabled,
-    sortOrder: r.sort_order,
-    createdAt: r.created_at,
-    updatedAt: r.updated_at,
-  };
+  return redis.getOrSet(`ai:provider:${id}`, TTL_AI, async () => {
+    const r = await db.getOne(`SELECT * FROM ai_providers WHERE id = ?`, [id]);
+    if (!r) return null;
+    return {
+      id: r.id,
+      name: r.name,
+      format: r.format,
+      baseUrl: r.base_url,
+      apiKey: decrypt(r.api_key), // 解密后明文，仅内部用
+      enabled: !!r.enabled,
+      sortOrder: r.sort_order,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    };
+  });
 }
 
 async function providerModelCount(providerId) {
@@ -68,117 +79,127 @@ async function providerModelCount(providerId) {
 // ===== 模型 =====
 
 async function listModels(providerId) {
-  const params = [];
-  let where = '';
-  if (providerId) {
-    where = 'WHERE m.provider_id = ?';
-    params.push(providerId);
-  }
-  const rows = await db.query(`
-    SELECT m.*, p.name as provider_name, p.format as provider_format
-    FROM ai_models m
-    JOIN ai_providers p ON p.id = m.provider_id
-    ${where}
-    ORDER BY m.sort_order, m.created_at
-  `, params);
-  return rows.map((r) => ({
-    id: r.id,
-    providerId: r.provider_id,
-    providerName: r.provider_name,
-    providerFormat: r.provider_format,
-    name: r.name,
-    modelId: r.model_id,
-    contextWindow: r.context_window,
-    maxOutput: r.max_output,
-    modalities: parseModalities(r.modalities),
-    enabled: !!r.enabled,
-    sortOrder: r.sort_order,
-    createdAt: r.created_at,
-    updatedAt: r.updated_at,
-  }));
+  return redis.getOrSet(`ai:models:${providerId || 'all'}`, TTL_AI, async () => {
+    const params = [];
+    let where = '';
+    if (providerId) {
+      where = 'WHERE m.provider_id = ?';
+      params.push(providerId);
+    }
+    const rows = await db.query(`
+      SELECT m.*, p.name as provider_name, p.format as provider_format
+      FROM ai_models m
+      JOIN ai_providers p ON p.id = m.provider_id
+      ${where}
+      ORDER BY m.sort_order, m.created_at
+    `, params);
+    return rows.map((r) => ({
+      id: r.id,
+      providerId: r.provider_id,
+      providerName: r.provider_name,
+      providerFormat: r.provider_format,
+      name: r.name,
+      modelId: r.model_id,
+      contextWindow: r.context_window,
+      maxOutput: r.max_output,
+      modalities: parseModalities(r.modalities),
+      enabled: !!r.enabled,
+      sortOrder: r.sort_order,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    }));
+  });
 }
 
 async function getModel(id) {
-  const r = await db.getOne(`
-    SELECT m.*, p.name as provider_name, p.format as provider_format, p.base_url as provider_base_url, p.api_key as provider_api_key, p.enabled as provider_enabled
-    FROM ai_models m
-    JOIN ai_providers p ON p.id = m.provider_id
-    WHERE m.id = ?
-  `, [id]);
-  if (!r) return null;
-  return {
-    id: r.id,
-    providerId: r.provider_id,
-    name: r.name,
-    modelId: r.model_id,
-    contextWindow: r.context_window,
-    maxOutput: r.max_output,
-    modalities: parseModalities(r.modalities),
-    enabled: !!r.enabled,
-    sortOrder: r.sort_order,
-    provider: {
-      id: r.provider_id,
-      name: r.provider_name,
-      format: r.provider_format,
-      baseUrl: r.provider_base_url,
-      apiKey: decrypt(r.provider_api_key),
-      enabled: !!r.provider_enabled,
-    },
-  };
+  return redis.getOrSet(`ai:model:${id}`, TTL_AI, async () => {
+    const r = await db.getOne(`
+      SELECT m.*, p.name as provider_name, p.format as provider_format, p.base_url as provider_base_url, p.api_key as provider_api_key, p.enabled as provider_enabled
+      FROM ai_models m
+      JOIN ai_providers p ON p.id = m.provider_id
+      WHERE m.id = ?
+    `, [id]);
+    if (!r) return null;
+    return {
+      id: r.id,
+      providerId: r.provider_id,
+      name: r.name,
+      modelId: r.model_id,
+      contextWindow: r.context_window,
+      maxOutput: r.max_output,
+      modalities: parseModalities(r.modalities),
+      enabled: !!r.enabled,
+      sortOrder: r.sort_order,
+      provider: {
+        id: r.provider_id,
+        name: r.provider_name,
+        format: r.provider_format,
+        baseUrl: r.provider_base_url,
+        apiKey: decrypt(r.provider_api_key),
+        enabled: !!r.provider_enabled,
+      },
+    };
+  });
 }
 
 // ===== 角色 =====
 
 // 修复 N+1：单条 SQL 用相关子查询统计每个角色的模型数
 async function listRoles() {
-  const rows = await db.query(`
-    SELECT r.*, (SELECT COUNT(*) FROM ai_role_models rm WHERE rm.role_id = r.id) AS model_count
-    FROM ai_roles r
-    ORDER BY is_builtin DESC, created_at
-  `);
-  return rows.map((r) => ({
-    id: r.id,
-    roleKey: r.role_key,
-    name: r.name,
-    description: r.description,
-    isBuiltin: !!r.is_builtin,
-    pollingStrategy: r.polling_strategy,
-    enabled: !!r.enabled,
-    createdAt: r.created_at,
-    updatedAt: r.updated_at,
-    modelCount: r.model_count || 0,
-  }));
+  return redis.getOrSet('ai:roles', TTL_AI, async () => {
+    const rows = await db.query(`
+      SELECT r.*, (SELECT COUNT(*) FROM ai_role_models rm WHERE rm.role_id = r.id) AS model_count
+      FROM ai_roles r
+      ORDER BY is_builtin DESC, created_at
+    `);
+    return rows.map((r) => ({
+      id: r.id,
+      roleKey: r.role_key,
+      name: r.name,
+      description: r.description,
+      isBuiltin: !!r.is_builtin,
+      pollingStrategy: r.polling_strategy,
+      enabled: !!r.enabled,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+      modelCount: r.model_count || 0,
+    }));
+  });
 }
 
 async function getRoleById(id) {
-  const r = await db.getOne(`SELECT * FROM ai_roles WHERE id = ?`, [id]);
-  if (!r) return null;
-  return {
-    id: r.id,
-    roleKey: r.role_key,
-    name: r.name,
-    description: r.description,
-    isBuiltin: !!r.is_builtin,
-    pollingStrategy: r.polling_strategy,
-    enabled: !!r.enabled,
-    createdAt: r.created_at,
-    updatedAt: r.updated_at,
-  };
+  return redis.getOrSet(`ai:role_by_id:${id}`, TTL_AI, async () => {
+    const r = await db.getOne(`SELECT * FROM ai_roles WHERE id = ?`, [id]);
+    if (!r) return null;
+    return {
+      id: r.id,
+      roleKey: r.role_key,
+      name: r.name,
+      description: r.description,
+      isBuiltin: !!r.is_builtin,
+      pollingStrategy: r.polling_strategy,
+      enabled: !!r.enabled,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    };
+  });
 }
 
 async function getRoleByKey(roleKey) {
-  const r = await db.getOne(`SELECT * FROM ai_roles WHERE role_key = ?`, [roleKey]);
-  if (!r) return null;
-  const role = {
-    id: r.id,
-    roleKey: r.role_key,
-    name: r.name,
-    pollingStrategy: r.polling_strategy,
-    enabled: !!r.enabled,
-  };
-  if (!role.enabled) return { ...role, models: [] };
-  role.models = await getRoleBindings(r.id);
-  return role;
+  return redis.getOrSet(`ai:role_key:${roleKey}`, TTL_AI, async () => {
+    const r = await db.getOne(`SELECT * FROM ai_roles WHERE role_key = ?`, [roleKey]);
+    if (!r) return null;
+    const role = {
+      id: r.id,
+      roleKey: r.role_key,
+      name: r.name,
+      pollingStrategy: r.polling_strategy,
+      enabled: !!r.enabled,
+    };
+    if (!role.enabled) return { ...role, models: [] };
+    role.models = await getRoleBindings(r.id);
+    return role;
+  });
 }
 
 /**
@@ -186,6 +207,8 @@ async function getRoleByKey(roleKey) {
  * - round_robin / load_balance: 按 sort_order
  * - failover: 按 priority 升序
  * - weighted_random: 任意顺序（按 sort_order 保持稳定）
+ *
+ * 注意：本函数不单独缓存，由调用方 getRoleByKey 整体缓存含 models 的对象。
  */
 async function getRoleBindings(roleId) {
   const rows = await db.query(`
@@ -220,36 +243,48 @@ async function getRoleBindings(roleId) {
 
 /** 角色绑定的模型列表（管理后台展示用，含未启用项与模型详情） */
 async function getRoleBindingsAdmin(roleId) {
-  const rows = await db.query(`
-    SELECT rm.id as binding_id, rm.priority, rm.weight, rm.enabled as rm_enabled, rm.sort_order,
-      m.id as model_id, m.model_id, m.name, m.context_window, m.max_output, m.modalities,
-      p.name as provider_name, p.format as provider_format
-    FROM ai_role_models rm
-    JOIN ai_models m ON m.id = rm.model_id
-    JOIN ai_providers p ON p.id = m.provider_id
-    WHERE rm.role_id = ?
-    ORDER BY rm.sort_order
-  `, [roleId]);
-  return rows.map((r) => ({
-    bindingId: r.binding_id,
-    modelId: r.model_id,
-    modelIdStr: r.model_id,
-    name: r.name,
-    contextWindow: r.context_window,
-    maxOutput: r.max_output,
-    modalities: parseModalities(r.modalities),
-    priority: r.priority,
-    weight: r.weight,
-    enabled: !!r.rm_enabled,
-    sortOrder: r.sort_order,
-    providerName: r.provider_name,
-    providerFormat: r.provider_format,
-  }));
+  return redis.getOrSet(`ai:bindings_admin:${roleId}`, TTL_AI, async () => {
+    const rows = await db.query(`
+      SELECT rm.id as binding_id, rm.priority, rm.weight, rm.enabled as rm_enabled, rm.sort_order,
+        m.id as model_id, m.model_id, m.name, m.context_window, m.max_output, m.modalities,
+        p.name as provider_name, p.format as provider_format
+      FROM ai_role_models rm
+      JOIN ai_models m ON m.id = rm.model_id
+      JOIN ai_providers p ON p.id = m.provider_id
+      WHERE rm.role_id = ?
+      ORDER BY rm.sort_order
+    `, [roleId]);
+    return rows.map((r) => ({
+      bindingId: r.binding_id,
+      modelId: r.model_id,
+      modelIdStr: r.model_id,
+      name: r.name,
+      contextWindow: r.context_window,
+      maxOutput: r.max_output,
+      modalities: parseModalities(r.modalities),
+      priority: r.priority,
+      weight: r.weight,
+      enabled: !!r.rm_enabled,
+      sortOrder: r.sort_order,
+      providerName: r.provider_name,
+      providerFormat: r.provider_format,
+    }));
+  });
 }
 
 async function hasEnabledProvider() {
-  const row = await db.getOne(`SELECT COUNT(*) as c FROM ai_providers WHERE enabled = 1 AND api_key != ''`);
-  return row ? row.c > 0 : false;
+  return redis.getOrSet('ai:has_enabled', TTL_HAS_ENABLED, async () => {
+    const row = await db.getOne(`SELECT COUNT(*) as c FROM ai_providers WHERE enabled = 1 AND api_key != ''`);
+    return row ? row.c > 0 : false;
+  });
+}
+
+/**
+ * 失效全部 AI 配置缓存（delByPrefix 'ai:*'）。
+ * 由 aiRoutes.js 在任何 AI 配置写操作（provider/model/role/binding 增删改）成功后调用。
+ */
+async function invalidateAiConfigCache() {
+  return redis.delByPrefix('ai:*');
 }
 
 module.exports = {
@@ -272,4 +307,5 @@ module.exports = {
   getRoleBindingsAdmin,
   // misc
   hasEnabledProvider,
+  invalidateAiConfigCache,
 };
