@@ -26,7 +26,7 @@ with sync_playwright() as p:
     page.on("pageerror", lambda err: logs.append(f"[pageerror] {err}"))
 
     # 2. 先打开页面以设置 localStorage
-    page.goto("http://localhost:8080/pages/admin-puzzles.html")
+    page.goto("http://localhost:8080/admin-puzzles")
     page.wait_for_load_state("networkidle")
 
     # 注入 admin token

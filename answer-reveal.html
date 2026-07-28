@@ -73,8 +73,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js" crossorigin="anonymous"></script>
     <!-- TODO: compute and add integrity="sha384-..." for this resource -->
     <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
-    <script src="../js/api.js"></script>
-    <script src="../js/helpers.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/helpers.js"></script>
     <style type="text/tailwindcss">
   @theme inline {
     --color-background: var(--ts-background);
@@ -542,10 +542,10 @@
         const btnReplay = document.getElementById('btn-replay');
         const btnBack = document.getElementById('btn-back-hall');
         if (btnReplay) btnReplay.addEventListener('click', function() {
-          location.href = 'match-hall.html';
+          location.href = '/';
         });
         if (btnBack) btnBack.addEventListener('click', function() {
-          location.href = 'match-hall.html';
+          location.href = '/';
         });
 
         loadReveal();

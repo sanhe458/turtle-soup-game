@@ -477,9 +477,9 @@
 
 <!-- TODO: compute and add integrity="sha384-..." for this resource -->
 <script src="https://cdn.socket.io/4.8.0/socket.io.min.js" crossorigin="anonymous"></script>
-<script src="../js/api.js"></script>
-<script src="../js/socket.js"></script>
-<script src="../js/helpers.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/socket.js"></script>
+<script src="/js/helpers.js"></script>
 <script>
   // Initialize Lucide icons
   lucide.createIcons();
@@ -647,7 +647,7 @@
       cleanupMatch();
       Helpers.toast('匹配成功，进入对局', 'success');
       setTimeout(() => {
-        location.href = 'game-play-v2.html?gameId=' + encodeURIComponent(data.gameId);
+        location.href = '/game-play?gameId=' + encodeURIComponent(data.gameId);
       }, 500);
     });
     socket.on('match:cancelled', (data) => {

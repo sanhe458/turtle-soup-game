@@ -73,8 +73,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js" crossorigin="anonymous"></script>
     <!-- TODO: compute and add integrity="sha384-..." for this resource -->
     <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
-    <script src="../js/api.js"></script>
-    <script src="../js/helpers.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/helpers.js"></script>
     <style type="text/tailwindcss">
   @theme inline {
     --color-background: var(--ts-background);
@@ -191,11 +191,11 @@
 
             <!-- Nav -->
             <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-                <a href="admin-dashboard.html" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
+                <a href="/admin-dashboard" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
                     <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
                     <span>总览</span>
                 </a>
-                <a href="admin-puzzles.html" class="ts-nav-item active flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium bg-white/15 text-white transition-all duration-200">
+                <a href="/admin-puzzles" class="ts-nav-item active flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium bg-white/15 text-white transition-all duration-200">
                     <i data-lucide="book-open" class="w-[18px] h-[18px] text-[#B8AFCA]"></i>
                     <span>题库管理</span>
                 </a>
@@ -207,7 +207,7 @@
                     <i data-lucide="swords" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
                     <span>对局记录</span>
                 </a>
-                <a href="admin-ai.html" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
+                <a href="/admin-ai" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
                     <i data-lucide="brain" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
                     <span>AI 配置</span>
                 </a>
@@ -532,7 +532,7 @@
 
       // 鉴权：未登录跳转
       if (!window.Api || !Api.getAdminToken()) {
-        location.href = 'admin-login.html';
+        location.href = '/admin-login';
       }
 
       // 生产环境静默 console 输出，避免泄露
@@ -578,7 +578,7 @@
       if (btnLogout) {
         btnLogout.addEventListener('click', function() {
           Api.clearAdmin();
-          location.href = 'admin-login.html';
+          location.href = '/admin-login';
         });
       }
 

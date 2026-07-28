@@ -73,8 +73,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js" crossorigin="anonymous"></script>
     <!-- TODO: compute and add integrity="sha384-..." for this resource -->
     <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
-    <script src="../js/api.js"></script>
-    <script src="../js/helpers.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/helpers.js"></script>
     <style type="text/tailwindcss">
   @theme inline {
     --color-background: var(--ts-background);
@@ -179,7 +179,7 @@
 
       <!-- Subtle background illustration -->
       <div class="fixed inset-0 z-0">
-        <img src="../assets/hero-illustration.jpg" alt="" class="w-full h-full object-cover opacity-[0.04] blur-sm" aria-hidden="true">
+        <img src="/assets/hero-illustration.jpg" alt="" class="w-full h-full object-cover opacity-[0.04] blur-sm" aria-hidden="true">
       </div>
 
       <!-- Large purple/pink radial gradient blob — top right -->
@@ -272,7 +272,7 @@
       <!-- ==================== FOOTER ==================== -->
       <div class="relative z-10 mt-6 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105">
         <i data-lucide="arrow-left" class="w-3.5 h-3.5 text-[#8B7DA8]"></i>
-        <a href="match-hall.html" class="text-xs font-medium text-[#8B7DA8] transition-colors duration-200 hover:text-[#6B5B8A]">返回用户端</a>
+        <a href="/" class="text-xs font-medium text-[#8B7DA8] transition-colors duration-200 hover:text-[#6B5B8A]">返回用户端</a>
       </div>
 
     </main>
@@ -338,7 +338,7 @@
       (function() {
         // 已登录则直接跳转
         if (window.Api && Api.getAdminToken()) {
-          location.href = 'admin-dashboard.html';
+          location.href = '/admin-dashboard';
           return;
         }
 
@@ -405,7 +405,7 @@
               Api.setAdminToken(data.token, data.admin, !!inputRemember.checked);
               Helpers.toast('登录成功', 'success');
               setTimeout(function() {
-                location.href = 'admin-dashboard.html';
+                location.href = '/admin-dashboard';
               }, 300);
             } catch (err) {
               console.error('[admin login] 失败:', err);

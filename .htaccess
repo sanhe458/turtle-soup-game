@@ -1,0 +1,11 @@
+Options -MultiViews
+RewriteEngine On
+
+# 已存在的文件/目录直接放行
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# 无扩展名：/foo -> /foo.html（当 /foo.html 存在时）
+RewriteCond %{REQUEST_FILENAME}.html -f
+RewriteRule ^(.*)$ /$1.html [L]

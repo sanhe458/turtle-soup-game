@@ -73,8 +73,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js" crossorigin="anonymous"></script>
     <!-- TODO: compute and add integrity="sha384-..." for this resource -->
     <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
-    <script src="../js/api.js"></script>
-    <script src="../js/helpers.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/helpers.js"></script>
     <style type="text/tailwindcss">
   @theme inline {
     --color-background: var(--ts-background);
@@ -191,13 +191,13 @@
           <p class="px-2 py-1.5 text-[10px] uppercase tracking-widest text-white/30 font-semibold">主菜单</p>
 
           <!-- Active item -->
-          <a href="admin-dashboard.html" class="flex items-center gap-3 rounded-xl px-3 py-2.5 bg-[#8B7DA8]/20 text-white font-medium text-sm transition-all duration-300 hover:scale-[1.02]">
+          <a href="/admin-dashboard" class="flex items-center gap-3 rounded-xl px-3 py-2.5 bg-[#8B7DA8]/20 text-white font-medium text-sm transition-all duration-300 hover:scale-[1.02]">
             <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] text-[#B8AFCA]"></i>
             <span>总览</span>
             <span class="ml-auto w-1 h-5 rounded-full bg-[#8B7DA8]"></span>
           </a>
 
-          <a href="admin-puzzles.html" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-white/60 hover:bg-white/5 hover:text-white/90 text-sm transition-all duration-300 hover:scale-[1.02]">
+          <a href="/admin-puzzles" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-white/60 hover:bg-white/5 hover:text-white/90 text-sm transition-all duration-300 hover:scale-[1.02]">
             <i data-lucide="book-open" class="w-[18px] h-[18px]"></i>
             <span>题库管理</span>
           </a>
@@ -212,7 +212,7 @@
             <span>对局记录</span>
           </a>
 
-          <a href="admin-ai.html" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-white/60 hover:bg-white/5 hover:text-white/90 text-sm transition-all duration-300 hover:scale-[1.02]">
+          <a href="/admin-ai" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-white/60 hover:bg-white/5 hover:text-white/90 text-sm transition-all duration-300 hover:scale-[1.02]">
             <i data-lucide="brain" class="w-[18px] h-[18px]"></i>
             <span>AI 配置</span>
           </a>
@@ -465,7 +465,7 @@
                 </div>
                 <div class="mt-4 pt-3 border-t border-[#E0D8D0]/40 flex items-center justify-between">
                   <span id="dist-total" class="text-[11px] text-[#A09890]">共 — 道题目</span>
-                  <a href="admin-puzzles.html" class="text-[11px] font-medium text-[#8B7DA8] hover:text-[#6B5B8A] transition-colors duration-300">管理题库</a>
+                  <a href="/admin-puzzles" class="text-[11px] font-medium text-[#8B7DA8] hover:text-[#6B5B8A] transition-colors duration-300">管理题库</a>
                 </div>
               </div>
 
@@ -583,7 +583,7 @@
 
       // 鉴权：未登录跳转
       if (!window.Api || !Api.getAdminToken()) {
-        location.href = 'admin-login.html';
+        location.href = '/admin-login';
       }
 
       // 生产环境静默 console 输出，避免泄露
@@ -629,7 +629,7 @@
       if (btnLogout) {
         btnLogout.addEventListener('click', function() {
           Api.clearAdmin();
-          location.href = 'admin-login.html';
+          location.href = '/admin-login';
         });
       }
 

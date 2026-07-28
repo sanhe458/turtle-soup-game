@@ -12,7 +12,7 @@
         "group": 0
       },
       "devMetadata": {
-        "htmlSrc": "pages/match-hall.html",
+        "htmlSrc": "index.html",
         "interactions": []
       }
     },
@@ -28,7 +28,7 @@
         "group": 0
       },
       "devMetadata": {
-        "htmlSrc": "pages/game-play-v2.html",
+        "htmlSrc": "game-play.html",
         "interactions": []
       }
     },
@@ -44,7 +44,7 @@
         "group": 0
       },
       "devMetadata": {
-        "htmlSrc": "pages/answer-reveal-v2.html",
+        "htmlSrc": "answer-reveal.html",
         "interactions": []
       }
     },
@@ -60,7 +60,7 @@
         "group": 0
       },
       "devMetadata": {
-        "htmlSrc": "pages/admin-dashboard.html",
+        "htmlSrc": "admin-dashboard.html",
         "interactions": []
       }
     },
@@ -76,7 +76,7 @@
         "group": 0
       },
       "devMetadata": {
-        "htmlSrc": "pages/admin-puzzles.html",
+        "htmlSrc": "admin-puzzles.html",
         "interactions": []
       }
     },
@@ -92,7 +92,7 @@
         "group": 0
       },
       "devMetadata": {
-        "htmlSrc": "pages/admin-login.html",
+        "htmlSrc": "admin-login.html",
         "interactions": []
       }
     },

@@ -88,7 +88,7 @@
           if (opts.admin) {
             Api.clearAdmin();
             if (location.pathname.indexOf('admin-login') === -1) {
-              location.href = 'admin-login.html';
+              location.href = '/admin-login';
             }
           } else if (opts.user !== false) {
             // 用户 401 不强制跳转，由调用方处理
