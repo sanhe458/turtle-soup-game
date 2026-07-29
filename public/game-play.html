@@ -30,12 +30,13 @@
   <div id="game" class="hidden">
     <!-- 汤面 -->
     <div class="card mb-4">
-      <div class="flex items-center gap-2 mb-2">
-        <h2 id="puzzleTitle" class="text-lg font-bold"></h2>
-        <span id="puzzleDifficulty" class="text-xs px-2 py-0.5 rounded-full"></span>
+      <div class="flex items-start gap-3">
+        <div class="flex-1">
+          <p id="puzzleScenario" class="text-sm leading-relaxed" style="color:#6B6560;"></p>
+        </div>
+        <span id="puzzleDifficulty" class="shrink-0 text-xs px-2 py-0.5 rounded-full"></span>
       </div>
-      <p id="puzzleScenario" class="text-sm text-gray-600 mb-2"></p>
-      <span id="puzzlePlayCount" class="text-xs text-gray-400"></span>
+      <span id="puzzlePlayCount" class="text-xs text-gray-400 mt-2 block"></span>
     </div>
 
     <!-- 回合信息 -->
@@ -165,7 +166,6 @@ function showError(msg) {
 }
 
 function renderPuzzle(p) {
-  document.getElementById('puzzleTitle').textContent = p.title;
   document.getElementById('puzzleScenario').textContent = p.scenario;
   document.getElementById('puzzlePlayCount').textContent = (p.playCount||0) + ' 人玩过';
   var diff = document.getElementById('puzzleDifficulty');
