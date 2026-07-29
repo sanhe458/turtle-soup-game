@@ -70,6 +70,7 @@ const SCHEMA_STATEMENTS = [
     difficulty VARCHAR(16) NOT NULL,
     status VARCHAR(16) NOT NULL DEFAULT 'online',
     tags TEXT,
+    judge_note TEXT,
     play_count INT DEFAULT 0,
     rating INT DEFAULT 90,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP

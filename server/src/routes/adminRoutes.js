@@ -19,7 +19,7 @@ const loginLimiter = rateLimit({
 });
 
 // 题目字段校验（仅校验已提供字段），返回错误描述或 null
-function validatePuzzleFields({ title, scenario, truth, tags }) {
+function validatePuzzleFields({ title, scenario, truth, tags, judgeNote }) {
   if (title !== undefined) {
     if (typeof title !== 'string' || title.length < 1 || title.length > 64) {
       return '标题长度需为 1-64 个字符';
@@ -35,6 +35,7 @@ function validatePuzzleFields({ title, scenario, truth, tags }) {
       return '汤底长度需为 1-2000 个字符';
     }
   }
+  if (judgeNote !== undefined && (typeof judgeNote !== 'string' || judgeNote.length > 2000)) return 'LLM 备注最长 2000 个字符';
   if (Array.isArray(tags)) {
     if (tags.length > 10) {
       return '标签最多 10 个';
@@ -256,14 +257,14 @@ router.post('/admin/puzzles', adminAuth, async (req, res) => {
   if (!['easy', 'medium', 'hard'].includes(difficulty)) {
     return res.status(400).json({ error: '难度必须为 easy / medium / hard' });
   }
-  const fieldErr = validatePuzzleFields({ title, scenario, truth, tags });
+  const fieldErr = validatePuzzleFields({ title, scenario, truth, tags, judgeNote });
   if (fieldErr) return res.status(400).json({ error: fieldErr });
   const id = uuidv4();
   const tagsJson = Array.isArray(tags) ? JSON.stringify(tags) : '[]';
   await db.run(`
-    INSERT INTO puzzles (id, title, scenario, truth, difficulty, status, tags)
-    VALUES (?, ?, ?, ?, ?, 'pending', ?)
-  `, [id, title, scenario, truth, difficulty, tagsJson]);
+    INSERT INTO puzzles (id, title, scenario, truth, difficulty, status, tags, judge_note)
+    VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)
+  `, [id, title, scenario, truth, difficulty, tagsJson, judgeNote || null]);
   const row = await db.getOne(`SELECT * FROM puzzles WHERE id = ?`, [id]);
   res.json({
     puzzle: {
@@ -280,7 +281,7 @@ router.put('/admin/puzzles/:id', adminAuth, async (req, res) => {
   const { title, scenario, truth, difficulty, tags } = req.body || {};
   const existing = await db.getOne(`SELECT * FROM puzzles WHERE id = ?`, [req.params.id]);
   if (!existing) return res.status(404).json({ error: '题目不存在' });
-  const fieldErr = validatePuzzleFields({ title, scenario, truth, tags });
+  const fieldErr = validatePuzzleFields({ title, scenario, truth, tags, judgeNote });
   if (fieldErr) return res.status(400).json({ error: fieldErr });
   const newData = {
     title: title ?? existing.title,
@@ -293,7 +294,7 @@ router.put('/admin/puzzles/:id', adminAuth, async (req, res) => {
     return res.status(400).json({ error: '难度必须为 easy / medium / hard' });
   }
   await db.run(`
-    UPDATE puzzles SET title = ?, scenario = ?, truth = ?, difficulty = ?, tags = ?
+    UPDATE puzzles SET title = ?, scenario = ?, truth = ?, difficulty = ?, tags = ?, judge_note = ?
     WHERE id = ?
   `, [newData.title, newData.scenario, newData.truth, newData.difficulty, newData.tags, req.params.id]);
   const row = await db.getOne(`SELECT * FROM puzzles WHERE id = ?`, [req.params.id]);

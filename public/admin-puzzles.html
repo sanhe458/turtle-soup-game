@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh" class="light">
 <head>
+    <base href="./">
     <meta charset="UTF-8">
     <meta http-equiv="X-Frame-Options" content="DENY">
     <meta name="referrer" content="no-referrer">
@@ -73,8 +74,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js" crossorigin="anonymous"></script>
     <!-- TODO: compute and add integrity="sha384-..." for this resource -->
     <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
-    <script src="/js/api.js"></script>
-    <script src="/js/helpers.js"></script>
+    <script>window.API_BASE = "/soup/api"; window.SOCKET_BASE = "/soup";</script>
+    <script src="js/api.js?v=3"></script>
+    <script src="js/helpers.js?v=3"></script>
     <style type="text/tailwindcss">
   @theme inline {
     --color-background: var(--ts-background);
@@ -171,6 +173,58 @@
         background-color: currentColor;
       }
     </style>
+    <style>
+      /* 侧边栏强制深色背景 + 导航文字可见 */
+      .ts-sidebar, aside.ts-sidebar, aside.admin-sidebar {
+        background-color: #3D3835 !important;
+      }
+      .ts-sidebar a, aside.ts-sidebar a, .ts-nav-item {
+        color: rgba(255,255,255,0.7) !important;
+      }
+      .ts-sidebar a:hover, aside.ts-sidebar a:hover, .ts-nav-item:hover {
+        color: rgba(255,255,255,0.9) !important;
+      }
+      .ts-nav-item.active {
+        background-color: rgba(255,255,255,0.12) !important;
+        color: #fff !important;
+      }
+      .ts-sidebar .text-white/50, .ts-sidebar .text-white/40 {
+        color: rgba(255,255,255,0.5) !important;
+      }
+      .ts-sidebar .text-white/80 {
+        color: rgba(255,255,255,0.8) !important;
+      }
+      .ts-sidebar i, .ts-sidebar [data-lucide] {
+        color: rgba(255,255,255,0.5) !important;
+      }
+      .ts-sidebar a:hover i, .ts-sidebar a:hover [data-lucide],
+      .ts-nav-item.active i, .ts-nav-item.active [data-lucide] {
+        color: rgba(255,255,255,0.85) !important;
+      }
+      .ts-sidebar .text-xs, .ts-sidebar .text-sm {
+        color: rgba(255,255,255,0.7) !important;
+      }
+      /* 整个后台页面的主内容区 */
+      .ts-main, main.ts-main, .admin-main {
+        background: #F5F0EB !important;
+        color: #3D3835 !important;
+      }
+      /* 卡片 */
+      .ts-card, .admin-card, [class*="glass"] {
+        background: rgba(255,255,255,0.72) !important;
+        color: #3D3835 !important;
+      }
+      /* 输入框 */
+      input[type="text"], input[type="password"], input[type="email"],
+      textarea, select {
+        color: #3D3835 !important;
+        background: #EDE8E3 !important;
+      }
+      /* 标签、标题 */
+      label, h1, h2, h3, h4, h5, h6, p, span:not(.ts-sidebar *):not(.text-white/80):not(.text-white/50):not(.text-white/40) {
+        color: inherit;
+      }
+    </style>
 </head>
 <body class="min-h-screen font-sans antialiased">
     <main>
@@ -191,11 +245,11 @@
 
             <!-- Nav -->
             <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-                <a href="/admin-dashboard" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
+                <a href="./admin-dashboard" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
                     <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
                     <span>总览</span>
                 </a>
-                <a href="/admin-puzzles" class="ts-nav-item active flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium bg-white/15 text-white transition-all duration-200">
+                <a href="./admin-puzzles" class="ts-nav-item active flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium bg-white/15 text-white transition-all duration-200">
                     <i data-lucide="book-open" class="w-[18px] h-[18px] text-[#B8AFCA]"></i>
                     <span>题库管理</span>
                 </a>
@@ -207,7 +261,7 @@
                     <i data-lucide="swords" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
                     <span>对局记录</span>
                 </a>
-                <a href="/admin-ai" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
+                <a href="./admin-ai" class="ts-nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-all duration-200 group">
                     <i data-lucide="brain" class="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"></i>
                     <span>AI 配置</span>
                 </a>
@@ -414,6 +468,12 @@
                         <input id="input-tag" type="text" placeholder="输入标签后回车..." class="bg-transparent border-none outline-none text-sm text-[#3D3835] placeholder-[#A09890] flex-1 min-w-[80px] py-1">
                     </div>
                 </div>
+
+                <!-- LLM 备注 -->
+                <div>
+                    <label class="block text-xs font-semibold text-[#6B6560] mb-2 tracking-wide uppercase">LLM 备注 <span class="text-[#A09890] font-normal normal-case">（仅 LLM 可见，向 AI 解释梗/背景信息）</span></label>
+                    <textarea id="input-judgenote" rows="2" placeholder="例如：雷霆猪是一个梗，指吃得多的人，不是真的猪..." class="w-full px-4 py-2.5 bg-white/70 backdrop-blur-xl border border-[#E0D8D0]/60 rounded-xl text-sm text-[#3D3835] placeholder-[#A09890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8B7DA8]/30 transition-all duration-200 resize-none"></textarea>
+                </div>
             </div>
 
             <!-- Panel footer -->
@@ -532,7 +592,7 @@
 
       // 鉴权：未登录跳转
       if (!window.Api || !Api.getAdminToken()) {
-        location.href = '/admin-login';
+        location.href = './admin-login';
       }
 
       // 生产环境静默 console 输出，避免泄露
@@ -578,7 +638,7 @@
       if (btnLogout) {
         btnLogout.addEventListener('click', function() {
           Api.clearAdmin();
-          location.href = '/admin-login';
+          location.href = './admin-login';
         });
       }
 
@@ -870,6 +930,7 @@
           inputTitle.value = puzzle.title || '';
           inputScenario.value = puzzle.scenario || '';
           inputTruth.value = puzzle.truth || '';
+          document.getElementById('input-judgenote').value = puzzle.judgeNote || '';
           setDifficulty(puzzle.difficulty || 'easy');
           currentTags = Array.isArray(puzzle.tags) ? puzzle.tags.slice() : [];
         } else {
@@ -877,6 +938,7 @@
           inputTitle.value = '';
           inputScenario.value = '';
           inputTruth.value = '';
+          document.getElementById('input-judgenote').value = '';
           setDifficulty('easy');
           currentTags = [];
         }
@@ -903,6 +965,7 @@
         const title = inputTitle.value.trim();
         const scenario = inputScenario.value.trim();
         const truth = inputTruth.value.trim();
+        const judgeNote = document.getElementById('input-judgenote').value.trim();
         if (!title) { Helpers.toast('请输入汤面标题', 'warn'); inputTitle.focus(); return; }
         if (!scenario) { Helpers.toast('请输入汤面内容', 'warn'); inputScenario.focus(); return; }
         if (!truth) { Helpers.toast('请输入汤底真相', 'warn'); inputTruth.focus(); return; }
@@ -910,6 +973,7 @@
           title: title,
           scenario: scenario,
           truth: truth,
+          judgeNote: judgeNote,
           difficulty: currentDifficulty,
           tags: currentTags,
         };

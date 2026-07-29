@@ -58,8 +58,8 @@ function applyCloseCircuitBreaker(userId, result) {
  * @param {string} userId - 提问玩家 ID，用于熔断计数
  * @returns {Promise<{judgment: 'yes'|'no'|'irrelevant'|'perhaps_yes'|'perhaps_no', judgmentLabel: string, closeToTruth: boolean}>
  */
-async function judgeQuestion(scenario, truth, history, question, userId) {
-  const { systemPrompt, userMessage } = buildJudgePrompt(scenario, truth, history, question);
+async function judgeQuestion(scenario, truth, history, question, userId, judgeNote) {
+  const { systemPrompt, userMessage } = buildJudgePrompt(scenario, truth, history, question, judgeNote);
   try {
     const content = await aiRouter.callRole(
       'judge',

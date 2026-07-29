@@ -53,6 +53,7 @@ async function createGame(puzzle, players) {
       truth: puzzle.truth,
       difficulty: puzzle.difficulty,
       tags: puzzleTags,
+      judgeNote: puzzle.judge_note || '',
       playCount: (puzzle.play_count || 0) + 1,
     },
     players: players.map((p, idx) => ({
@@ -246,7 +247,8 @@ async function receiveQuestion(gameId, seat, question, io, isBot = false) {
     state.puzzle.truth,
     history,
     question,
-    player.userId
+    player.userId,
+    state.puzzle.judgeNote
   );
 
   console.log('[receiveQ] afterLLM judgment=' + judgment.judgment + ' label=' + judgment.judgmentLabel);
