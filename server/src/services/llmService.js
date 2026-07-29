@@ -1,7 +1,13 @@
 const aiRouter = require('./aiRouter');
 const { buildJudgePrompt, buildBotQuestionPrompt } = require('../utils/prompts');
 
-const JUDGMENT_LABELS = { yes: '是', no: '不是', irrelevant: '无关' };
+const JUDGMENT_LABELS = {
+  yes: '是',
+  no: '不是',
+  irrelevant: '无关',
+  perhaps_yes: '或许是',
+  perhaps_no: '或许不是',
+};
 
 // 熔断器：按用户记录连续 close_to_truth=true 次数，防止作弊刷「接近真相」
 const userCloseStreak = new Map();
@@ -50,7 +56,7 @@ function applyCloseCircuitBreaker(userId, result) {
 /**
  * 判定玩家提问（角色：judge）
  * @param {string} userId - 提问玩家 ID，用于熔断计数
- * @returns {Promise<{judgment: 'yes'|'no'|'irrelevant', judgmentLabel: string, closeToTruth: boolean}>}
+ * @returns {Promise<{judgment: 'yes'|'no'|'irrelevant'|'perhaps_yes'|'perhaps_no', judgmentLabel: string, closeToTruth: boolean}>
  */
 async function judgeQuestion(scenario, truth, history, question, userId) {
   const { systemPrompt, userMessage } = buildJudgePrompt(scenario, truth, history, question);
@@ -64,7 +70,7 @@ async function judgeQuestion(scenario, truth, history, question, userId) {
       { temperature: 0.3, jsonMode: true }
     );
     const parsed = extractJson(content);
-    if (parsed && ['yes', 'no', 'irrelevant'].includes(parsed.judgment)) {
+    if (parsed && ['yes', 'no', 'irrelevant', 'perhaps_yes', 'perhaps_no'].includes(parsed.judgment)) {
       const result = {
         judgment: parsed.judgment,
         judgmentLabel: JUDGMENT_LABELS[parsed.judgment],
