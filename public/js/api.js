@@ -41,7 +41,8 @@
       return localStorage.getItem(ADMIN_TOKEN_KEY) || sessionStorage.getItem(ADMIN_TOKEN_KEY) || '';
     },
     setAdminToken(token, info, remember) {
-      const store = remember ? localStorage : sessionStorage;
+      // 始终写入 localStorage 避免 sessionStorage 在页面跳转时丢失
+      const store = localStorage;
       store.setItem(ADMIN_TOKEN_KEY, token);
       if (info) localStorage.setItem(ADMIN_INFO_KEY, JSON.stringify(info));
     },
@@ -88,7 +89,7 @@
           if (opts.admin) {
             Api.clearAdmin();
             if (location.pathname.indexOf('admin-login') === -1) {
-              location.href = '/admin-login';
+              location.href = './admin-login';
             }
           } else if (opts.user !== false) {
             // 用户 401 不强制跳转，由调用方处理

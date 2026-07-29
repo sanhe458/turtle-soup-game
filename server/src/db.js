@@ -2,6 +2,8 @@ const mysql = require('mysql2/promise');
 const { v4: uuidv4 } = require('uuid');
 const config = require('./config');
 
+// 连接池配置：超时 + 心跳检测，避免僵尸连接
+
 const pool = mysql.createPool({
   host: config.db.host,
   port: config.db.port,
@@ -10,6 +12,9 @@ const pool = mysql.createPool({
   database: config.db.database,
   waitForConnections: true,
   connectionLimit: config.db.connectionLimit,
+    connectTimeout: 5000,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 10000,
   charset: 'utf8mb4',
   timezone: '+00:00',
   dateStrings: false,

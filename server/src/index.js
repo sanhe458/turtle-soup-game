@@ -2,6 +2,7 @@ const http = require('http');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const cookieParser = require("cookie-parser");
 const rateLimit = require('express-rate-limit');
 const { Server } = require('socket.io');
 const { createAdapter } = require('@socket.io/redis-adapter');
@@ -42,6 +43,7 @@ app.use(helmet({
 
 app.use(cors({ origin: config.clientOrigin }));
 app.use(express.json({ limit: '100kb' }));
+app.use(cookieParser());
 
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -57,8 +59,24 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true, time: new Date().toISOString(), redis: redis.isAvailable() });
 });
 
+
+// 静态文件服务（前端页面）
+const path = require('path');
+app.use(express.static(path.join(__dirname, '..', '..', 'public')));
+// SPA 回退：非 /api 请求返回 index.html
+app.get(/^(?!\/api\/).*/, (req, res, next) => {
+  if (req.path.startsWith('/api/')) return next();
+  const ext = req.path.split('.').pop();
+  if (['html','css','js','jpg','jpeg','png','gif','svg','ico','woff','woff2','ttf','eot'].includes(ext) || req.path.includes('.')) {
+    return next();
+  }
+  res.sendFile(path.join(__dirname, '..', '..', 'public', 'index.html'));
+});
+
 // 路由
 app.use('/api', require('./routes/userRoutes'));
+app.use("/api", require("./routes/matchRoutes"));
+app.use("/api", require("./routes/gamePollRoutes"));
 app.use('/api', require('./routes/puzzleRoutes'));
 app.use('/api', require('./routes/adminRoutes'));
 app.use('/api', require('./routes/aiRoutes'));

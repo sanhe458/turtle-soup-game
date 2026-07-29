@@ -32,6 +32,7 @@ function setupMatchSockets(io) {
   // 注入匹配服务钩子
   matchService.setHooks({
     onMatchSuccess: async (players, isHybrid) => {
+      console.log("[onMatchSuccess] players=" + players.length + " isHybrid=" + isHybrid);
       const puzzle = await gameService.pickRandomPuzzle();
       if (!puzzle) {
         console.error('[matchSocket] 无可用题目');
@@ -49,16 +50,13 @@ function setupMatchSockets(io) {
         });
         return;
       }
-      // 把所有真人 socket 加入对局房间
-      players.forEach((p) => {
+      // 把所有真人加入房间 + 通知匹配成功（用数组下标作为 seat）
+      for (let i = 0; i < players.length; i++) {
+        const p = players[i];
         if (p.socketId) {
           io.sockets.sockets.get(p.socketId)?.join(`game:${gameId}`);
-        }
-      });
-      // 通知匹配成功
-      players.forEach((p) => {
-        if (p.socketId) {
-          io.to(p.socketId).emit('match:success', {
+          io.to(p.socketId).emit("match:success", {
+            yourSeat: i,
             gameId,
             isHybrid,
             players: players.map((pl) => ({
@@ -68,7 +66,7 @@ function setupMatchSockets(io) {
             puzzle: { title: puzzle.title, difficulty: puzzle.difficulty },
           });
         }
-      });
+      }
       // 启动对局
       gameService.startGame(gameId, io);
     },
@@ -119,6 +117,7 @@ function setupMatchSockets(io) {
         return;
       }
       matchService.enqueue(socket.id, user.userId, user.nickname, socket);
+      console.log("[match:join] enqueued user=" + user.nickname + " socket=" + socket.id + " queueLen=" + matchService.getQueueLength());
     });
 
     socket.on('match:cancel', () => {
@@ -143,6 +142,7 @@ function setupMatchSockets(io) {
         return;
       }
       matchService.acceptBots(socket.id);
+      console.log("[match:accept_bots] socket=" + socket.id + " queueLen=" + matchService.getQueueLength());
     });
 
     socket.on('match:decline_bots', () => {

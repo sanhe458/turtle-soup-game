@@ -22,7 +22,7 @@ function randomThinkMs() {
 function makeBotPlayer(seat) {
   const name = BOT_NAME_POOL[seat % BOT_NAME_POOL.length];
   return {
-    userId: 'bot_' + uuidv4(),
+    userId: ('b' + uuidv4()).slice(0, 36),
     nickname: name,
     isBot: true,
     seat,

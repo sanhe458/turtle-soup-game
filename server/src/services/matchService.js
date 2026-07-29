@@ -31,6 +31,7 @@ function stop() {
 }
 
 function tick() {
+  if (queue.length > 0) { const q = queue; const now = Date.now(); q.forEach(function(item, i) { console.log("[tick] pos=" + (i+1) + "/" + q.length + " nick=" + item.nickname + " waited=" + Math.floor((now-item.joinedAt)/1000) + "s botPrompted=" + item.botPrompted); }); }
   const now = Date.now();
   // 1) 尝试凑齐 3 个真人
   while (queue.length >= config.game.playersPerGame) {
@@ -51,6 +52,7 @@ function tick() {
     if (waitedSec >= config.game.matchTimeoutSec && !item.botPrompted) {
       item.botPrompted = true;
       if (hooks.onBotPrompt) hooks.onBotPrompt(item.socketId);
+          console.log("[tick] BOT_PROMPT triggered for " + item.socketId + " nick=" + item.nickname + " waited=" + waitedSec + "s");
     }
   }
 }
@@ -72,6 +74,7 @@ function dequeue(socketId) {
 }
 
 function acceptBots(socketId) {
+  console.log("[acceptBots] called for socketId=" + socketId + " queueLen=" + queue.length);
   // 必须先经过 bot 补位提示，避免误调用将其他真人拉入 bot 局
   const me = queue.find((q) => q.socketId === socketId);
   if (!me) return null;

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh" class="light">
 <head>
+    <base href="./">
     <meta charset="UTF-8">
     <meta http-equiv="X-Frame-Options" content="DENY">
     <meta name="referrer" content="no-referrer">
@@ -269,13 +270,6 @@
         transform: scale(1.01);
       }
 
-      /* Recent game row */
-      .game-row {
-        transition: background 0.2s ease-out;
-      }
-      .game-row:hover {
-        background: rgba(139, 125, 168, 0.06);
-      }
     </style>
 </head>
 <body class="min-h-screen font-sans antialiased">
@@ -378,6 +372,7 @@
         </p>
 
         <!-- CTA Button -->
+        <div id="connection-status" class="text-xs text-center mt-2" style="color: var(--ts-muted);"></div>
         <button id="startMatchBtn" class="relative mt-8 cta-pulse px-10 py-3.5 rounded-2xl text-white font-semibold text-base tracking-tight
                        transition-all duration-300 ease-out hover:scale-[1.03] hover:brightness-105 active:scale-[0.98]"
                 style="background: linear-gradient(135deg, var(--ts-purple), #A090BF); border: none; cursor: pointer;">
@@ -404,25 +399,6 @@
         <div class="glass-card p-4 flex flex-col items-center text-center">
           <p class="text-xs tracking-wide mb-1" style="color: var(--ts-muted);">连胜</p>
           <p id="statStreak" class="text-2xl font-bold tracking-tight" style="color: var(--ts-amber);">—</p>
-        </div>
-      </section>
-
-      <!-- ===== RECENT GAMES ===== -->
-      <section class="mt-8 max-w-lg mx-auto w-full fade-in fade-in-d3">
-        <div class="glass-card p-5 md:p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-base font-semibold tracking-tight" style="color: var(--ts-charcoal);">最近对局</h3>
-            <a href="#" class="text-xs tracking-wide transition-colors duration-200 hover:brightness-110" style="color: var(--ts-purple);">
-              查看全部
-            </a>
-          </div>
-
-          <div id="recentGamesList" class="flex flex-col gap-0.5">
-            <!-- 由 JS 动态渲染 -->
-            <div class="px-3 py-6 text-center text-sm" style="color: var(--ts-muted);">
-              暂无最近对局记录
-            </div>
-          </div>
         </div>
       </section>
 
@@ -476,10 +452,9 @@
 </main>
 
 <!-- TODO: compute and add integrity="sha384-..." for this resource -->
-<script src="https://cdn.socket.io/4.8.0/socket.io.min.js" crossorigin="anonymous"></script>
-<script src="/js/api.js"></script>
-<script src="/js/socket.js"></script>
-<script src="/js/helpers.js"></script>
+<script>window.API_BASE = "/soup/api"; window.SOCKET_BASE = "/soup";</script>
+    <script src="js/api.js?v=3"></script>
+<script src="js/helpers.js?v=3"></script>
 <script>
   // Initialize Lucide icons
   lucide.createIcons();
@@ -538,46 +513,6 @@
     }
   }
 
-  // 加载最近对局
-  async function loadRecentGames() {
-    if (!Api.getUserToken()) return;
-    const list = document.getElementById('recentGamesList');
-    try {
-      const games = await Api.getRecentGames();
-      if (!games || games.length === 0) {
-        list.innerHTML = '<div class="px-3 py-6 text-center text-sm" style="color: var(--ts-muted);">暂无最近对局记录</div>';
-        return;
-      }
-      list.innerHTML = games.slice(0, 5).map(g => {
-        const isWin = g.result === '胜利';
-        const opponents = (g.opponents || []).join('、') || 'AI 玩家';
-        const colors = [
-          'linear-gradient(135deg, #A0C4B8, #7BAE98)',
-          'linear-gradient(135deg, #C4A6B0, #B8909A)',
-          'linear-gradient(135deg, #D4A76A, #C49560)',
-          'linear-gradient(135deg, #B8AFCA, #8B7DA8)',
-        ];
-        return `
-          <div class="game-row flex items-center gap-3 px-3 py-3 rounded-xl">
-            <div class="flex -space-x-2 shrink-0">
-              <div class="w-7 h-7 rounded-full ring-2 ring-white/80" style="background: ${colors[0]};"></div>
-              <div class="w-7 h-7 rounded-full ring-2 ring-white/80" style="background: ${colors[1]};"></div>
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium truncate" style="color: var(--ts-charcoal);">与 ${Helpers.escape(opponents)} 对局</p>
-              <p class="text-xs" style="color: var(--ts-muted);">${Helpers.formatTimeAgo(g.timeAgo)}</p>
-            </div>
-            <span class="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full"
-                  style="background: ${isWin ? 'rgba(123,174,152,0.15)' : 'rgba(212,144,138,0.15)'}; color: ${isWin ? 'var(--ts-green)' : 'var(--ts-red-soft)'};">
-              ${Helpers.escape(g.result)}
-            </span>
-          </div>
-        `;
-      }).join('');
-    } catch (err) {
-      console.warn('加载最近对局失败:', err.message);
-    }
-  }
 
   // 确认昵称
   async function confirmNickname() {
@@ -594,7 +529,6 @@
       Api.setUserToken(res.token, { userId: res.userId, nickname: res.nickname });
       Helpers.toast('昵称已保存', 'success');
       loadProfile();
-      loadRecentGames();
     } catch (err) {
       Helpers.toast('保存失败：' + err.message, 'error');
     } finally {
@@ -602,9 +536,10 @@
       nicknameBtn.textContent = '确认';
     }
   }
+// 轮询版匹配流程
+  let pollInterval = null;
 
-  // 开始匹配
-  function startMatch() {
+  async function startMatch() {
     if (!Api.getUserToken()) {
       Helpers.toast('请先输入昵称并确认', 'warn');
       nicknameInput.focus();
@@ -623,50 +558,54 @@
     matchingDesc.textContent = '正在为你寻找对手';
     matchingProgress.style.width = '10%';
 
-    // 进度条动画
     matchingTimer = setInterval(() => {
       progressValue = Math.min(90, progressValue + Math.random() * 8);
       matchingProgress.style.width = progressValue + '%';
     }, 800);
 
-    const socket = SocketClient.reconnect();
-    socket.off('match:status');
-    socket.off('match:bot_prompt');
-    socket.off('match:success');
-    socket.off('match:cancelled');
-    socket.off('error');
-
-    socket.on('match:status', (data) => {
-      matchingDesc.textContent = `队列位置 #${data.position} · 已等待 ${data.waitedSec}s`;
-    });
-    socket.on('match:bot_prompt', () => {
-      botPromptModal.classList.remove('hidden');
-      botPromptModal.classList.add('flex');
-    });
-    socket.on('match:success', (data) => {
+    // 加入匹配队列
+    try {
+      await Api.request('POST', '/match/join', null, { user: true });
+    } catch (err) {
+      Helpers.toast('加入匹配失败: ' + err.message, 'error');
       cleanupMatch();
-      Helpers.toast('匹配成功，进入对局', 'success');
-      setTimeout(() => {
-        location.href = '/game-play?gameId=' + encodeURIComponent(data.gameId);
-      }, 500);
-    });
-    socket.on('match:cancelled', (data) => {
-      cleanupMatch();
-      Helpers.toast('匹配已取消' + (data.reason ? '：' + data.reason : ''), 'info');
-    });
-    socket.on('error', (data) => {
-      Helpers.toast(data.message || '发生错误', 'error');
-    });
+      return;
+    }
 
-    socket.emit('match:join', { token: Api.getUserToken() });
+    // 开始轮询
+    pollInterval = setInterval(pollMatchStatus, 1000);
+  }
+
+  async function pollMatchStatus() {
+    if (!isMatching) return;
+    try {
+      const data = await Api.request('GET', '/match/status', null, { user: true });
+      if (data.status === 'waiting' || data.status === 'prompted') {
+        matchingDesc.textContent = '已等待 ' + (data.waitedSec || 0) + ' 秒';
+      }
+      if (data.status === 'prompted' && !botPromptModal.classList.contains('flex')) {
+        botPromptModal.classList.remove('hidden');
+        botPromptModal.classList.add('flex');
+      }
+      if (data.status === 'matched') {
+        cleanupMatch();
+        Helpers.toast('匹配成功，进入对局', 'success');
+        setTimeout(() => {
+          location.href = './game-play?gameId=' + encodeURIComponent(data.gameId) + '&seat=' + (data.yourSeat || 0);
+        }, 500);
+      }
+    } catch (err) {
+      if (err.status === 401) {
+        cleanupMatch();
+        Helpers.toast('身份过期，请重新输入昵称', 'error');
+      }
+    }
   }
 
   function cleanupMatch() {
     isMatching = false;
-    if (matchingTimer) {
-      clearInterval(matchingTimer);
-      matchingTimer = null;
-    }
+    if (matchingTimer) { clearInterval(matchingTimer); matchingTimer = null; }
+    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
     matchingOverlay.classList.add('hidden');
     matchingOverlay.classList.remove('flex');
     botPromptModal.classList.add('hidden');
@@ -676,9 +615,8 @@
     Helpers.refreshIcons();
   }
 
-  function cancelMatch() {
-    const socket = SocketClient.getSocket();
-    if (socket) socket.emit('match:cancel');
+  async function cancelMatch() {
+    try { await Api.request('POST', '/match/cancel', null, { user: true }); } catch (_) {}
     cleanupMatch();
   }
 
@@ -689,22 +627,31 @@
   });
   startMatchBtn.addEventListener('click', startMatch);
   cancelMatchBtn.addEventListener('click', cancelMatch);
-  acceptBotsBtn.addEventListener('click', () => {
+
+  acceptBotsBtn.addEventListener('click', async () => {
     botPromptModal.classList.add('hidden');
     botPromptModal.classList.remove('flex');
-    const socket = SocketClient.getSocket();
-    if (socket) socket.emit('match:accept_bots');
-  });
-  declineBotsBtn.addEventListener('click', () => {
-    botPromptModal.classList.add('hidden');
-    botPromptModal.classList.remove('flex');
-    const socket = SocketClient.getSocket();
-    if (socket) socket.emit('match:decline_bots');
+    try {
+      const data = await Api.request('POST', '/match/accept-bots', null, { user: true });
+      if (data.status === 'matched') {
+        cleanupMatch();
+        Helpers.toast('匹配成功，进入对局', 'success');
+        setTimeout(() => {
+          location.href = './game-play?gameId=' + encodeURIComponent(data.gameId) + '&seat=' + (data.yourSeat || 0);
+        }, 500);
+      }
+    } catch (err) {
+      Helpers.toast('接受补位失败: ' + err.message, 'error');
+    }
   });
 
+  declineBotsBtn.addEventListener('click', async () => {
+    botPromptModal.classList.add('hidden');
+    botPromptModal.classList.remove('flex');
+    try { await Api.request('POST', '/match/decline-bots', null, { user: true }); } catch (_) {}
+  });
   // 初始加载
   loadProfile();
-  loadRecentGames();
 </script>
 </body>
 </html>

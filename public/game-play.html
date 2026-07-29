@@ -1,1025 +1,271 @@
 <!DOCTYPE html>
-<html lang="zh" class="light">
+<html lang="zh">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-Frame-Options" content="DENY">
-    <meta name="referrer" content="no-referrer">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>对局中 — 海龟汤</title>
-    <style id="theme-vars">
-/* ==========================================
-   Turtle Soup Puzzle Game — Brand Design Tokens
-   Glassmorphism · Warm Minimal · Calm
-   ========================================== */
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>对局中 — 海龟汤</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+<script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+<script>window.API_BASE = "/soup/api";</script>
+<script src="js/api.js?v=3"></script>
+<style>
+  body { background: #F5F0EB; color: #3D3835; font-family: system-ui; }
+  .card { background: rgba(255,255,255,0.7); border-radius: 16px; padding: 20px; }
+  /* 聊天框 */
+  .chat-box { max-height: 360px; min-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+  .chat-bubble-me { background: rgba(139,125,168,0.12); color: #3D3835; max-width: 85%; padding: 12px 16px; border-radius: 16px 16px 4px 16px; font-size: 14px; line-height: 1.5; }
+  .chat-bubble-other { background: rgba(255,255,255,0.85); color: #3D3835; max-width: 85%; padding: 12px 16px; border-radius: 16px 16px 16px 4px; font-size: 14px; line-height: 1.5; border: 1px solid rgba(224,216,208,0.5); }
+  .chat-name { font-size: 11px; color: #A09890; }
+  .chat-pill { font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 9999px; display: inline-flex; align-items: center; gap: 4px; }
+  @keyframes slide-up { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  .chat-msg { animation: slide-up 0.35s ease-out forwards; }
+</style>
+</head>
+<body class="p-4 max-w-2xl mx-auto">
+  <div id="loading" class="text-center py-20">
+    <div class="text-lg font-semibold">正在加载对局…</div>
+    <div class="text-sm text-gray-400 mt-2" id="loadingStatus">连接中…</div>
+  </div>
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+  <div id="game" class="hidden">
+    <!-- 汤面 -->
+    <div class="card mb-4">
+      <div class="flex items-center gap-2 mb-2">
+        <h2 id="puzzleTitle" class="text-lg font-bold"></h2>
+        <span id="puzzleDifficulty" class="text-xs px-2 py-0.5 rounded-full"></span>
+      </div>
+      <p id="puzzleScenario" class="text-sm text-gray-600 mb-2"></p>
+      <span id="puzzlePlayCount" class="text-xs text-gray-400"></span>
+    </div>
 
-:root {
-  /* — Brand Palette — */
-  --ts-bg:           #F5F0EB;   /* warm cream background       */
-  --ts-surface:      #FFFFFF;   /* card / panel surface         */
-  --ts-surface-alt:  #EDE8E3;   /* subtle secondary surface     */
-  --ts-charcoal:     #3D3835;   /* primary text — charcoal      */
-  --ts-charcoal-soft:#6B6560;   /* secondary text — soft char   */
-  --ts-muted:        #A09890;   /* placeholder / disabled       */
-  --ts-border:       #E0D8D0;   /* borders / dividers           */
-  --ts-purple:       #8B7DA8;   /* accent purple — calm         */
-  --ts-purple-soft:  #B8AFCA;   /* light purple tint            */
-  --ts-pink:         #C4A6B0;   /* accent pink — warm           */
-  --ts-pink-soft:    #E8D5DD;   /* light pink tint              */
-  --ts-green:        #7BAE98;   /* correct / success            */
-  --ts-amber:        #D4A76A;   /* warning / hint               */
-  --ts-red-soft:     #D4908A;   /* wrong / reset                */
+    <!-- 回合信息 -->
+    <div class="flex items-center justify-between mb-4 text-sm">
+      <span id="roundInfo">第 1 / 10 轮</span>
+      <span id="turnInfo" class="font-medium"></span>
+      <span id="timerInfo" class="text-gray-400"></span>
+    </div>
 
-  /* — Semantic Aliases — */
-  --ts-background:          #F5F0EB;
-  --ts-foreground:          #3D3835;
-  --ts-card:                rgba(255, 255, 255, 0.72);
-  --ts-card-foreground:    #3D3835;
-  --ts-popover:             rgba(255, 255, 255, 0.88);
-  --ts-popover-foreground:  #3D3835;
-  --ts-primary:            #8B7DA8;
-  --ts-primary-foreground: #FFFFFF;
-  --ts-muted:               #A09890;
-  --ts-muted-foreground:    #6B6560;
-  --ts-border:              #E0D8D0;
-  --ts-input:               #EDE8E3;
-  --ts-ring:                #8B7DA8;
+    <!-- 玩家面板 -->
+    <div id="playerPanels" class="flex gap-3 mb-4"></div>
 
-  /* — Radius — */
-  --ts-radius-sm:   8px;
-  --ts-radius-md:  16px;
-  --ts-radius-lg:  24px;
-  --ts-radius-xl:  32px;
+    <!-- 聊天 -->
+    <div class="card mb-4 overflow-hidden" style="padding:0;">
+      <!-- 聊天头部 -->
+      <div class="flex items-center gap-2 px-4 py-2.5" style="border-bottom:1px solid rgba(224,216,208,0.5);">
+        <i data-lucide="messages-square" class="w-4 h-4" style="color:#8B7DA8;"></i>
+        <span class="text-xs font-semibold" style="color:#6B6560;">问答区</span>
+        <span id="chatHint" class="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full" style="background:rgba(160,152,144,0.12);color:#A09890;">等待开始</span>
+      </div>
+      <div id="chatBox" class="chat-box"></div>
+    </div>
 
-  /* — Shadows — */
-  --ts-shadow-sm:  0 2px 8px rgba(61, 56, 53, 0.06);
-  --ts-shadow-md:  0 8px 32px rgba(61, 56, 53, 0.08);
-  --ts-shadow-lg:  0 16px 48px rgba(61, 56, 53, 0.12);
-  --ts-glow-purple: 0 0 40px rgba(139, 125, 168, 0.15);
-  --ts-glow-pink:   0 0 40px rgba(196, 166, 176, 0.12);
+    <!-- AI 洞察 -->
+    <div id="aiInsight" class="text-xs text-purple-600 mb-3 italic"></div>
 
-  /* — Typography — */
-  --ts-font-sans:  'Inter', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
-  --ts-font-mono:  'SF Mono', 'Fira Code', monospace;
+    <!-- 输入 -->
+    <div class="flex gap-2">
+      <input id="questionInput" type="text" placeholder="请输入你的问题…" maxlength="200" disabled
+             class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 bg-white/70 text-sm">
+      <button id="sendBtn" onclick="submitQuestion()" disabled
+              class="px-6 py-2.5 text-white rounded-xl text-sm font-medium disabled:opacity-50"
+              style="background:#8B7DA8;">
+        提问
+      </button>
+    </div>
+    <p class="text-xs text-gray-400 mt-2">只能提出「是」「不是」或「无关」可回答的问题</p>
+  </div>
 
-  /* — Transitions — */
-  --ts-ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
-  --ts-duration:    320ms;
+<script src="js/api.js?v=3"></script>
+<script>
+// ====== 判定映射 (icon + 颜色) ======
+var J = {
+  'yes':        { icon:'check-circle',      color:'#7BAE98', bg:'rgba(123,174,152,0.14)', label:'是' },
+  'no':         { icon:'x-circle',          color:'#D4908A', bg:'rgba(212,144,138,0.14)', label:'不是' },
+  'irrelevant': { icon:'minus-circle',      color:'#A09890', bg:'rgba(160,152,144,0.12)', label:'不相关' },
+  'perhaps_yes':{ icon:'help-circle',       color:'#D4A76A', bg:'rgba(212,167,106,0.14)', label:'或许是' },
+  'perhaps_no': { icon:'help-circle',       color:'#D4A76A', bg:'rgba(212,167,106,0.14)', label:'或许不是'}
+};
+
+// ====== 游戏状态 ======
+var game = { gameId:'', puzzle:null, players:[], yourSeat:null, isYourTurn:false,
+             currentRound:0, currentSeat:-1, maxRounds:0, revealed:false, sending:false };
+var expectedGameId = new URLSearchParams(location.search).get('gameId') || '';
+var pollTimer = null;
+var chatCount = 0;
+
+function init() {
+  if (!expectedGameId) { showError('缺少对局ID'); return; }
+  if (!window.Api || !Api.getUserToken()) { showError('请先在匹配大厅输入昵称'); return; }
+  pollGameState();
+  pollTimer = setInterval(pollGameState, 1500);
 }
 
-    </style>
-    <!-- TODO: compute and add integrity="sha384-..." for this resource -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js" crossorigin="anonymous"></script>
-    <!-- TODO: compute and add integrity="sha384-..." for this resource -->
-    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
-    <style type="text/tailwindcss">
-  @theme inline {
-    --color-background: var(--ts-background);
-    --color-foreground: var(--ts-foreground);
-    --color-card: var(--ts-card);
-    --color-card-foreground: var(--ts-card-foreground);
-    --color-popover: var(--ts-popover);
-    --color-popover-foreground: var(--ts-popover-foreground);
-    --color-primary: var(--ts-primary);
-    --color-primary-foreground: var(--ts-primary-foreground);
-    --color-muted: var(--ts-muted);
-    --color-muted-foreground: var(--ts-muted-foreground);
-    --color-border: var(--ts-border);
-    --color-input: var(--ts-input);
-    --color-ring: var(--ts-ring);
-    --radius-sm: var(--ts-radius-sm);
-    --radius-md: var(--ts-radius-md);
-    --radius-lg: var(--ts-radius-lg);
-    --radius-xl: var(--ts-radius-xl);
+async function pollGameState() {
+  if (game.revealed || game.sending) return;
+  setLoadingStatus('加载游戏数据…');
+  try {
+    var d = await Api.request('GET', '/game/' + expectedGameId + '/state', null, { user: true });
+    if (!d) return;
+    setLoadingStatus('');
+
+    // 首次加载
+    if (!game.puzzle) {
+      game.gameId = d.gameId; game.yourSeat = d.yourSeat;
+      game.maxRounds = d.maxRounds;
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('game').classList.remove('hidden');
+      renderPuzzle(d.puzzle);
+    }
+
+    // 每轮都刷新
+    game.currentRound = d.currentRound;
+    game.currentSeat = d.currentSeat;
+    game.isYourTurn = d.isYourTurn;
+    game.players = d.players || [];
+
+    document.getElementById('roundInfo').textContent = '第 ' + d.currentRound + ' / ' + game.maxRounds + ' 轮';
+    updateTurn(d);
+    renderPlayers();
+
+    // 聊天增量
+    var chat = d.chat || [];
+    while (chatCount < chat.length) {
+      try {
+        renderChat(chat[chatCount++]);
+      } catch(e) {
+      }
+    }
+
+    // 计时器
+    if (d.timerRemaining != null) {
+      var m = Math.floor(d.timerRemaining/60), s = d.timerRemaining%60;
+      document.getElementById('timerInfo').textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    }
+
+    // 结束
+    if (d.status === 'revealed') {
+      game.revealed = true;
+      clearInterval(pollTimer);
+      document.getElementById('turnInfo').textContent = '对局结束';
+      setTimeout(function() { location.href = './answer-reveal?gameId=' + d.gameId; }, 1500);
+    }
+  } catch (err) {
+    if (err.status === 404) { clearInterval(pollTimer); showError('对局已结束'); }
   }
-  @layer base {
-    body { background: var(--ts-background); color: var(--ts-foreground); }
-    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
-    th { @apply whitespace-nowrap; }
+}
+
+function setLoadingStatus(msg) {
+  var el = document.getElementById('loadingStatus');
+  if (el) el.textContent = msg;
+}
+
+function showError(msg) {
+  var el = document.getElementById('loadingStatus');
+  if (el) el.textContent = '⚠ ' + msg;
+}
+
+function renderPuzzle(p) {
+  document.getElementById('puzzleTitle').textContent = p.title;
+  document.getElementById('puzzleScenario').textContent = p.scenario;
+  document.getElementById('puzzlePlayCount').textContent = (p.playCount||0) + ' 人玩过';
+  var diff = document.getElementById('puzzleDifficulty');
+  diff.textContent = {easy:'简单',medium:'中等',hard:'困难'}[p.difficulty] || p.difficulty;
+  diff.style.background = {easy:'#7BAE9830',medium:'#D4A76A30',hard:'#D4908A30'}[p.difficulty]||'#eee';
+  diff.style.color = {easy:'#5A8A70',medium:'#B08A50',hard:'#B07070'}[p.difficulty]||'#666';
+}
+
+function renderPlayers() {
+  var html = '';
+  for (var i = 0; i < game.players.length; i++) {
+    var p = game.players[i];
+    var isMe = (i === game.yourSeat);
+    var isTurn = (game.currentSeat === i);
+    var bg = isTurn ? '#8B7DA820' : 'transparent';
+    var border = isTurn ? '2px solid #8B7DA8' : '1px solid #E0D8D0';
+    html += '<div class="flex-1 card text-center text-sm" style="background:'+bg+';border:'+border+'">'+
+      '<div class="font-medium">' + (isMe?'⭐':'') + p.nickname + (p.isBot?' 🤖':'') + '</div>'+
+      '<div class="text-xs text-gray-400">提问 ' + (p.questionsAsked||0) + ' 次</div>'+
+      '</div>';
   }
-    </style>
-    <style id="semantic-token-fallback">
-      .bg-background { background-color: var(--ts-background); }
-      .text-background { color: var(--ts-background); }
-      .border-background { border-color: var(--ts-background); }
-      .ring-background { --tw-ring-color: var(--ts-background); }
-      .bg-foreground { background-color: var(--ts-foreground); }
-      .text-foreground { color: var(--ts-foreground); }
-      .border-foreground { border-color: var(--ts-foreground); }
-      .ring-foreground { --tw-ring-color: var(--ts-foreground); }
-      .bg-card { background-color: var(--ts-card); }
-      .text-card { color: var(--ts-card); }
-      .border-card { border-color: var(--ts-card); }
-      .ring-card { --tw-ring-color: var(--ts-card); }
-      .bg-card-foreground { background-color: var(--ts-card-foreground); }
-      .text-card-foreground { color: var(--ts-card-foreground); }
-      .border-card-foreground { border-color: var(--ts-card-foreground); }
-      .ring-card-foreground { --tw-ring-color: var(--ts-card-foreground); }
-      .bg-popover { background-color: var(--ts-popover); }
-      .text-popover { color: var(--ts-popover); }
-      .border-popover { border-color: var(--ts-popover); }
-      .ring-popover { --tw-ring-color: var(--ts-popover); }
-      .bg-popover-foreground { background-color: var(--ts-popover-foreground); }
-      .text-popover-foreground { color: var(--ts-popover-foreground); }
-      .border-popover-foreground { border-color: var(--ts-popover-foreground); }
-      .ring-popover-foreground { --tw-ring-color: var(--ts-popover-foreground); }
-      .bg-primary { background-color: var(--ts-primary); }
-      .text-primary { color: var(--ts-primary); }
-      .border-primary { border-color: var(--ts-primary); }
-      .ring-primary { --tw-ring-color: var(--ts-primary); }
-      .bg-primary-foreground { background-color: var(--ts-primary-foreground); }
-      .text-primary-foreground { color: var(--ts-primary-foreground); }
-      .border-primary-foreground { border-color: var(--ts-primary-foreground); }
-      .ring-primary-foreground { --tw-ring-color: var(--ts-primary-foreground); }
-      .bg-muted { background-color: var(--ts-muted); }
-      .text-muted { color: var(--ts-muted); }
-      .border-muted { border-color: var(--ts-muted); }
-      .ring-muted { --tw-ring-color: var(--ts-muted); }
-      .bg-muted-foreground { background-color: var(--ts-muted-foreground); }
-      .text-muted-foreground { color: var(--ts-muted-foreground); }
-      .border-muted-foreground { border-color: var(--ts-muted-foreground); }
-      .ring-muted-foreground { --tw-ring-color: var(--ts-muted-foreground); }
-      .bg-border { background-color: var(--ts-border); }
-      .text-border { color: var(--ts-border); }
-      .border-border { border-color: var(--ts-border); }
-      .ring-border { --tw-ring-color: var(--ts-border); }
-      .bg-input { background-color: var(--ts-input); }
-      .text-input { color: var(--ts-input); }
-      .border-input { border-color: var(--ts-input); }
-      .ring-input { --tw-ring-color: var(--ts-input); }
-      .bg-ring { background-color: var(--ts-ring); }
-      .text-ring { color: var(--ts-ring); }
-      .border-ring { border-color: var(--ts-ring); }
-      .ring-ring { --tw-ring-color: var(--ts-ring); }
-    </style>
-    <style>
-      .no-scrollbar::-webkit-scrollbar { display: none; }
-      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      [data-icon] {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        -webkit-mask-size: contain;
-        mask-size: contain;
-        -webkit-mask-repeat: no-repeat;
-        mask-repeat: no-repeat;
-        -webkit-mask-position: center;
-        mask-position: center;
-        background-color: currentColor;
-      }
-
-      /* Custom component styles */
-      @keyframes pulse-glow {
-        0%, 100% { box-shadow: 0 0 20px rgba(139, 125, 168, 0.2), 0 0 40px rgba(139, 125, 168, 0.1); }
-        50% { box-shadow: 0 0 30px rgba(139, 125, 168, 0.35), 0 0 60px rgba(139, 125, 168, 0.15); }
-      }
-
-      @keyframes progress-fill {
-        0% { width: 0%; }
-        100% { width: 67%; }
-      }
-
-      @keyframes shimmer {
-        0% { opacity: 0.4; }
-        50% { opacity: 1; }
-        100% { opacity: 0.4; }
-      }
-
-      @keyframes slide-in-up {
-        from { opacity: 0; transform: translateY(12px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-
-      .animate-pulse-glow {
-        animation: pulse-glow 2.5s ease-in-out infinite;
-      }
-
-      .animate-progress {
-        animation: progress-fill 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      }
-
-      .animate-shimmer {
-        animation: shimmer 2.5s ease-in-out infinite;
-      }
-
-      .animate-slide-in {
-        animation: slide-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      }
-
-      .chat-msg:nth-child(1) { animation-delay: 0s; }
-      .chat-msg:nth-child(2) { animation-delay: 0.06s; }
-      .chat-msg:nth-child(3) { animation-delay: 0.12s; }
-      .chat-msg:nth-child(4) { animation-delay: 0.18s; }
-      .chat-msg:nth-child(5) { animation-delay: 0.24s; }
-
-      .sidebar-link {
-        transition: all 320ms cubic-bezier(0.16, 1, 0.3, 1);
-      }
-      .sidebar-link:hover {
-        transform: scale(1.08);
-      }
-
-      .glass-card {
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        background: rgba(255, 255, 255, 0.72);
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        box-shadow: 0 8px 32px rgba(61, 56, 53, 0.08);
-        border-radius: 20px;
-        transition: all 320ms cubic-bezier(0.16, 1, 0.3, 1);
-      }
-      .glass-card:hover {
-        box-shadow: 0 12px 40px rgba(61, 56, 53, 0.12);
-      }
-
-      .player-card-active {
-        animation: pulse-glow 2.5s ease-in-out infinite;
-        border-color: rgba(139, 125, 168, 0.5);
-      }
-
-      /* Mobile drawer */
-      .sidebar-drawer {
-        transform: translateX(-100%);
-        transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
-      }
-      .sidebar-drawer.open {
-        transform: translateX(0);
-      }
-      .drawer-overlay {
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 320ms cubic-bezier(0.16, 1, 0.3, 1);
-      }
-      .drawer-overlay.open {
-        opacity: 1;
-        pointer-events: auto;
-      }
-    </style>
-</head>
-<body class="min-h-screen font-sans antialiased" style="font-family: 'Inter', 'Noto Sans SC', system-ui, -apple-system, sans-serif;">
-
-    <!-- ========== MOBILE DRAWER OVERLAY ========== -->
-    <div id="drawer-overlay" class="drawer-overlay fixed inset-0 bg-black/30 z-40 lg:hidden"></div>
-
-    <!-- ========== SIDEBAR — Desktop fixed / Mobile drawer ========== -->
-    <aside id="sidebar" class="sidebar-drawer fixed top-0 left-0 h-full z-50 lg:translate-x-0 flex flex-col items-center py-6 px-2 w-[72px]"
-      style="background: #3D3835; box-shadow: 4px 0 24px rgba(61, 56, 53, 0.18);">
-
-      <!-- Logo -->
-      <div class="mb-8 flex flex-col items-center gap-1">
-        <div class="w-10 h-10 rounded-2xl flex items-center justify-content-center overflow-hidden" style="background: linear-gradient(135deg, #8B7DA8, #C4A6B0);">
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 14C12 10.6863 14.6863 8 18 8H22C25.3137 8 28 10.6863 28 14V18C28 18 28 26 24 28C22 29 18 29 16 28C12 26 12 18 12 18V14Z" fill="white" fill-opacity="0.9"/>
-            <circle cx="16" cy="15" r="1.5" fill="#3D3835"/>
-            <circle cx="24" cy="15" r="1.5" fill="#3D3835"/>
-            <path d="M16 20C17 21.5 19 22.5 20 22.5C21 22.5 23 21.5 24 20" stroke="#3D3835" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <span class="text-[10px] font-medium tracking-wide" style="color: rgba(255,255,255,0.5);">海龟汤</span>
-      </div>
-
-      <!-- Nav items -->
-      <nav class="flex flex-col items-center gap-2 flex-1">
-        <a href="#" class="sidebar-link group flex flex-col items-center gap-1 py-3 px-2 rounded-2xl relative" style="background: rgba(139, 125, 168, 0.18);">
-          <!-- Active indicator bar -->
-          <span class="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-6 rounded-full" style="background: #8B7DA8;"></span>
-          <i data-lucide="home" class="w-5 h-5" style="color: #B8AFCA;"></i>
-          <span class="text-[10px] font-medium" style="color: #B8AFCA;">大厅</span>
-        </a>
-
-        <a href="#" class="sidebar-link group flex flex-col items-center gap-1 py-3 px-2 rounded-2xl">
-          <i data-lucide="history" class="w-5 h-5" style="color: rgba(255,255,255,0.35);"></i>
-          <span class="text-[10px] font-medium" style="color: rgba(255,255,255,0.35);">历史</span>
-        </a>
-
-        <a href="#" class="sidebar-link group flex flex-col items-center gap-1 py-3 px-2 rounded-2xl">
-          <i data-lucide="trophy" class="w-5 h-5" style="color: rgba(255,255,255,0.35);"></i>
-          <span class="text-[10px] font-medium" style="color: rgba(255,255,255,0.35);">排行</span>
-        </a>
-
-        <a href="#" class="sidebar-link group flex flex-col items-center gap-1 py-3 px-2 rounded-2xl">
-          <i data-lucide="user" class="w-5 h-5" style="color: rgba(255,255,255,0.35);"></i>
-          <span class="text-[10px] font-medium" style="color: rgba(255,255,255,0.35);">我的</span>
-        </a>
-      </nav>
-
-      <!-- Bottom: Settings -->
-      <div class="mt-auto">
-        <a href="#" class="sidebar-link flex flex-col items-center gap-1 py-3 px-2 rounded-2xl">
-          <i data-lucide="settings" class="w-5 h-5" style="color: rgba(255,255,255,0.3);"></i>
-          <span class="text-[10px] font-medium" style="color: rgba(255,255,255,0.3);">设置</span>
-        </a>
-      </div>
-    </aside>
-
-    <!-- ========== MAIN CONTENT ========== -->
-    <main class="lg:ml-[72px] min-h-screen flex flex-col">
-
-      <!-- ===== TOP BAR ===== -->
-      <header class="sticky top-0 z-30 backdrop-blur-xl px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-3 sm:gap-4"
-        style="background: rgba(245, 240, 235, 0.82); border-bottom: 1px solid rgba(224, 216, 208, 0.6);">
-
-        <!-- Hamburger (mobile) -->
-        <button id="menuBtn" class="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl glass-card p-0" style="border-radius: 12px;">
-          <i data-lucide="menu" class="w-5 h-5" style="color: #3D3835;"></i>
-        </button>
-
-        <!-- Back arrow -->
-        <a href="#" class="hidden sm:flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-300 hover:scale-105"
-          style="background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.4);">
-          <i data-lucide="arrow-left" class="w-4 h-4" style="color: #6B6560;"></i>
-        </a>
-
-        <!-- Puzzle title -->
-        <div class="flex items-center gap-2 flex-1 min-w-0">
-          <h1 id="puzzleTitle" class="text-sm sm:text-base font-semibold truncate" style="color: #3D3835;">
-            加载中…
-          </h1>
-          <span id="puzzleDifficulty" class="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium flex-shrink-0"
-            style="background: rgba(212, 167, 106, 0.18); color: #D4A76A;">
-            —
-          </span>
-        </div>
-
-        <!-- Turn indicator + Timer -->
-        <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-          <div id="turnIndicator" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
-            style="background: rgba(160, 152, 144, 0.14); color: #6B6560;">
-            <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
-            <span id="turnLabel" class="hidden sm:inline">等待开始</span>
-            <span class="sm:hidden">等待中</span>
-          </div>
-
-          <div id="timerBadge" class="hidden items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-mono font-semibold"
-            style="background: rgba(139, 125, 168, 0.1); color: #8B7DA8;">
-            <i data-lucide="clock" class="w-3 h-3"></i>
-            <span id="timerText">00:00</span>
-          </div>
-
-          <!-- Player count badge -->
-          <div class="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium"
-            style="background: rgba(123, 174, 152, 0.14); color: #7BAE98;">
-            <i data-lucide="users" class="w-3 h-3"></i>
-            <span id="playerCount">—</span>
-          </div>
-        </div>
-      </header>
-
-      <!-- ===== BODY LAYOUT ===== -->
-      <div class="flex-1 flex flex-col lg:flex-row">
-
-        <!-- ===== CENTER COLUMN (Scenario + Players + Chat) ===== -->
-        <div class="flex-1 flex flex-col px-4 sm:px-6 lg:px-8 py-5 gap-5 max-w-3xl mx-auto w-full">
-
-          <!-- ===== PUZZLE SCENARIO CARD ===== -->
-          <section class="glass-card p-5 sm:p-6 relative overflow-hidden">
-            <div class="flex gap-4 sm:gap-5">
-              <!-- Decorative art accent -->
-              <div class="hidden sm:block flex-shrink-0 w-24 h-24 rounded-2xl overflow-hidden relative" style="box-shadow: var(--ts-shadow-md);">
-                <img src="/assets/game-question-art.jpg" alt="puzzle art" class="w-full h-full object-cover relative z-10"
-                  onerror="this.style.display='none'">
-                <!-- Fallback gradient if image missing -->
-                <div class="w-full h-full absolute top-0 left-0" style="background: linear-gradient(135deg, #B8AFCA, #E8D5DD);"></div>
-              </div>
-
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-3">
-                  <i data-lucide="scroll-text" class="w-4 h-4 flex-shrink-0" style="color: #8B7DA8;"></i>
-                  <h2 class="text-sm font-semibold" style="color: #6B6560;">汤面</h2>
-                  <span id="puzzleDifficultyMobile" class="sm:hidden inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
-                    style="background: rgba(212, 167, 106, 0.18); color: #D4A76A;">—</span>
-                </div>
-
-                <p id="puzzleScenario" class="text-[15px] sm:text-base leading-relaxed" style="color: #3D3835;">
-                  正在加载汤面…
-                </p>
-
-                <div class="flex items-center gap-3 mt-4">
-                  <div id="puzzleTags" class="flex items-center gap-1.5 text-[11px] font-medium" style="color: #A09890;">
-                    <i data-lucide="tag" class="w-3 h-3"></i>
-                    <span>—</span>
-                  </div>
-                  <div id="puzzlePlayCount" class="flex items-center gap-1.5 text-[11px] font-medium" style="color: #A09890;">
-                    <i data-lucide="eye" class="w-3 h-3"></i>
-                    <span>— 人玩过</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- ===== CHAT / Q&A AREA ===== -->
-          <section class="glass-card flex flex-col flex-1 min-h-0 overflow-hidden">
-
-            <!-- Chat header -->
-            <div class="px-5 py-3 flex items-center gap-2" style="border-bottom: 1px solid rgba(224, 216, 208, 0.5);">
-              <i data-lucide="messages-square" class="w-4 h-4" style="color: #8B7DA8;"></i>
-              <span class="text-xs font-semibold" style="color: #6B6560;">问答区</span>
-              <span id="chatHeaderHint" class="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full" style="background: rgba(160, 152, 144, 0.12); color: #A09890;">
-                等待开始
-              </span>
-            </div>
-
-            <!-- Chat messages -->
-            <div id="chatMessages" class="flex-1 px-4 sm:px-5 py-4 flex flex-col gap-3 overflow-y-auto no-scrollbar" style="max-height: 420px;">
-
-              <!-- System message -->
-              <div class="chat-msg animate-slide-in flex justify-center">
-                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium"
-                  style="background: rgba(160, 152, 144, 0.12); color: #A09890;">
-                  <i data-lucide="info" class="w-3 h-3"></i>
-                  请提出只能回答「是」「不是」或「无关」的问题
-                </div>
-              </div>
-
-            </div>
-
-            <!-- Input area -->
-            <div class="px-4 sm:px-5 py-3" style="border-top: 1px solid rgba(224, 216, 208, 0.5);">
-              <div class="flex items-center gap-2">
-                <div class="flex-1 flex items-center px-4 py-2.5 rounded-2xl transition-all duration-300"
-                  style="background: rgba(237, 232, 227, 0.6); border: 1px solid rgba(224, 216, 208, 0.6);">
-                  <input id="questionInput" type="text" placeholder="等待你的回合…" maxlength="200" disabled
-                    class="flex-1 bg-transparent outline-none text-sm placeholder:font-normal disabled:opacity-60"
-                    style="color: #3D3835; font-family: 'Inter', 'Noto Sans SC', system-ui, sans-serif;">
-                </div>
-                <button id="sendBtn" disabled class="flex items-center justify-center w-10 h-10 rounded-2xl text-white transition-all duration-300 hover:scale-105 hover:shadow-lg flex-shrink-0 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
-                  style="background: linear-gradient(135deg, #8B7DA8, #C4A6B0); box-shadow: 0 4px 16px rgba(139, 125, 168, 0.3);">
-                  <i data-lucide="send" class="w-4 h-4"></i>
-                </button>
-              </div>
-              <p class="text-[10px] text-center mt-2 font-medium" style="color: #A09890;">
-                只能提问「是」「不是」或「无关」可回答的问题
-              </p>
-            </div>
-          </section>
-
-          <!-- ===== PLAYER PANELS ===== -->
-          <section id="playerPanels" class="grid grid-cols-3 gap-2 sm:gap-3">
-            <!-- 由 JS 动态渲染 -->
-            <div class="glass-card p-3 sm:p-4 flex flex-col items-center text-center gap-1.5 relative opacity-60">
-              <span class="text-[10px] sm:text-[11px] font-medium" style="color: #A09890;">等待玩家加入…</span>
-            </div>
-          </section>
-
-        </div>
-
-        <!-- ===== RIGHT PANEL — Game Progress (Desktop) / Bottom (Mobile) ===== -->
-        <aside class="hidden lg:flex flex-col w-72 xl:w-80 p-5 gap-4 flex-shrink-0"
-          style="border-left: 1px solid rgba(224, 216, 208, 0.5);">
-
-          <!-- Progress Card -->
-          <div class="glass-card p-5">
-            <div class="flex items-center gap-2 mb-4">
-              <i data-lucide="target" class="w-4 h-4" style="color: #8B7DA8;"></i>
-              <h3 class="text-sm font-semibold" style="color: #3D3835;">推理进度</h3>
-            </div>
-
-            <!-- Progress bar -->
-            <div class="mb-2">
-              <div class="flex justify-between items-center mb-2">
-                <span class="text-xs font-medium" style="color: #6B6560;">当前进度</span>
-                <span id="progressPercent" class="text-xs font-bold" style="color: #8B7DA8;">0%</span>
-              </div>
-              <div class="h-2.5 rounded-full overflow-hidden" style="background: rgba(224, 216, 208, 0.6);">
-                <div id="progressBar" class="h-full rounded-full transition-all duration-500"
-                  style="width: 0%; background: linear-gradient(90deg, #8B7DA8, #C4A6B0);"></div>
-              </div>
-            </div>
-
-            <!-- Round counter -->
-            <div class="flex items-center justify-between mt-4 px-3 py-2.5 rounded-xl" style="background: rgba(237, 232, 227, 0.5);">
-              <div class="flex items-center gap-1.5 text-xs font-medium" style="color: #6B6560;">
-                <i data-lucide="repeat" class="w-3.5 h-3.5" style="color: #A09890;"></i>
-                当前轮次
-              </div>
-              <span id="roundCounter" class="text-sm font-bold" style="color: #3D3835;">第 0 / 0 轮</span>
-            </div>
-          </div>
-
-          <!-- AI Insight Card -->
-          <div class="glass-card p-5">
-            <div class="flex items-center gap-2 mb-3">
-              <i data-lucide="brain" class="w-4 h-4" style="color: #C4A6B0;"></i>
-              <h3 class="text-sm font-semibold" style="color: #3D3835;">AI 洞察</h3>
-            </div>
-            <div id="aiInsight" class="flex items-center gap-2 px-3 py-2.5 rounded-xl" style="background: rgba(237, 232, 227, 0.4);">
-              <div class="w-2 h-2 rounded-full" style="background: #A09890;"></div>
-              <p class="text-xs font-medium" style="color: #A09890;">
-                等待第一个问题…
-              </p>
-            </div>
-
-            <!-- Stats -->
-            <div class="grid grid-cols-2 gap-2 mt-4">
-              <div class="text-center px-3 py-2.5 rounded-xl" style="background: rgba(237, 232, 227, 0.5);">
-                <div id="statYes" class="text-lg font-bold" style="color: #7BAE98;">0</div>
-                <div class="text-[10px] font-medium mt-0.5" style="color: #A09890;">是</div>
-              </div>
-              <div class="text-center px-3 py-2.5 rounded-xl" style="background: rgba(237, 232, 227, 0.5);">
-                <div id="statNo" class="text-lg font-bold" style="color: #D4908A;">0</div>
-                <div class="text-[10px] font-medium mt-0.5" style="color: #A09890;">不是</div>
-              </div>
-              <div class="text-center px-3 py-2.5 rounded-xl" style="background: rgba(237, 232, 227, 0.5);">
-                <div id="statIrrelevant" class="text-lg font-bold" style="color: #D4A76A;">0</div>
-                <div class="text-[10px] font-medium mt-0.5" style="color: #A09890;">无关</div>
-              </div>
-              <div class="text-center px-3 py-2.5 rounded-xl" style="background: rgba(237, 232, 227, 0.5);">
-                <div id="statTotal" class="text-lg font-bold" style="color: #8B7DA8;">0</div>
-                <div class="text-[10px] font-medium mt-0.5" style="color: #A09890;">总提问</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Player ranking mini -->
-          <div class="glass-card p-5">
-            <div class="flex items-center gap-2 mb-3">
-              <i data-lucide="bar-chart-3" class="w-4 h-4" style="color: #D4A76A;"></i>
-              <h3 class="text-sm font-semibold" style="color: #3D3835;">贡献排名</h3>
-            </div>
-            <div id="rankingList" class="flex flex-col gap-2">
-              <div class="px-3 py-2 text-center text-[11px]" style="color: #A09890;">尚无排名</div>
-            </div>
-          </div>
-
-        </aside>
-
-      </div>
-
-      <!-- ===== MOBILE BOTTOM: Progress Panel (shown only on mobile) ===== -->
-      <div class="lg:hidden px-4 pb-5">
-        <div class="glass-card p-4">
-          <div class="flex items-center justify-between mb-2">
-            <div class="flex items-center gap-2">
-              <i data-lucide="target" class="w-4 h-4" style="color: #8B7DA8;"></i>
-              <span class="text-xs font-semibold" style="color: #3D3835;">推理进度</span>
-            </div>
-            <div class="flex items-center gap-3">
-              <span id="progressPercentMobile" class="text-xs font-bold" style="color: #8B7DA8;">0%</span>
-              <span id="roundCounterMobile" class="text-[10px] font-medium px-2 py-0.5 rounded-full" style="background: rgba(139, 125, 168, 0.1); color: #8B7DA8;">
-                第 0 / 0 轮
-              </span>
-            </div>
-          </div>
-          <div class="h-2 rounded-full overflow-hidden" style="background: rgba(224, 216, 208, 0.6);">
-            <div id="progressBarMobile" class="h-full rounded-full transition-all duration-500" style="width: 0%; background: linear-gradient(90deg, #8B7DA8, #C4A6B0);"></div>
-          </div>
-          <div id="aiInsightMobile" class="flex items-center gap-2 mt-3">
-            <div class="w-1.5 h-1.5 rounded-full" style="background: #A09890;"></div>
-            <span class="text-[11px] font-medium" style="color: #A09890;">等待第一个问题…</span>
-          </div>
-        </div>
-      </div>
-
-    </main>
-
-    <!-- TODO: compute and add integrity="sha384-..." for this resource -->
-    <script src="https://cdn.socket.io/4.8.0/socket.io.min.js" crossorigin="anonymous"></script>
-    <script src="/js/api.js"></script>
-    <script src="/js/socket.js"></script>
-    <script src="/js/helpers.js"></script>
-    <script>
-      lucide.createIcons();
-
-      // Mobile sidebar drawer toggle
-      (function() {
-        const menuBtn  = document.getElementById('menuBtn');
-        const sidebar  = document.getElementById('sidebar');
-        const overlay  = document.getElementById('drawer-overlay');
-
-        if (!menuBtn || !sidebar || !overlay) return;
-
-        function openDrawer()  {
-          sidebar.classList.add('open');
-          overlay.classList.add('open');
-          document.body.style.overflow = 'hidden';
-        }
-        function closeDrawer() {
-          sidebar.classList.remove('open');
-          overlay.classList.remove('open');
-          document.body.style.overflow = '';
-        }
-
-        menuBtn.addEventListener('click', openDrawer);
-        overlay.addEventListener('click', closeDrawer);
-
-        window.addEventListener('resize', function() {
-          if (window.innerWidth >= 1024) closeDrawer();
-        });
-      })();
-
-      // 生产环境静默 console 输出，避免泄露
-      if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-        ['log','warn','error','debug'].forEach(function(m){ console[m] = function(){}; });
-      }
-
-      // ===== 主逻辑：实时对局 =====
-      const params = new URLSearchParams(location.search);
-      const expectedGameId = params.get('gameId') || '';
-      const userInfo = Api.getUserInfo() || {};
-
-      // 游戏状态缓存
-      const game = {
-        gameId: expectedGameId,
-        puzzle: null,
-        players: [],          // [{ nickname, seat, isBot, questionsAsked }]
-        yourSeat: null,
-        currentSeat: null,
-        currentRound: 0,
-        maxRounds: 0,
-        isYourTurn: false,
-        revealed: false,
-      };
-
-      const difficultyMap = { easy: { label: '简单', color: '#7BAE98', bg: 'rgba(123,174,152,0.18)' },
-                              medium: { label: '中等', color: '#D4A76A', bg: 'rgba(212,167,106,0.18)' },
-                              hard: { label: '困难', color: '#D4908A', bg: 'rgba(212,144,138,0.18)' } };
-
-      function applyDifficulty(d) {
-        const conf = difficultyMap[d] || difficultyMap.medium;
-        const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
-        const setStyle = (id, style, val) => { const el = document.getElementById(id); if (el) el.style[style] = val; };
-        setText('puzzleDifficulty', conf.label);
-        setText('puzzleDifficultyMobile', conf.label);
-        setStyle('puzzleDifficulty', 'background', conf.bg);
-        setStyle('puzzleDifficulty', 'color', conf.color);
-        setStyle('puzzleDifficultyMobile', 'background', conf.bg);
-        setStyle('puzzleDifficultyMobile', 'color', conf.color);
-      }
-
-      // 渲染汤面
-      function renderPuzzle(puzzle) {
-        game.puzzle = puzzle;
-        document.getElementById('puzzleTitle').textContent = puzzle.title || '海龟汤';
-        document.getElementById('puzzleScenario').textContent = puzzle.scenario || '';
-        applyDifficulty(puzzle.difficulty);
-        const tags = puzzle.tags && puzzle.tags.length ? puzzle.tags : [];
-        const tagsEl = document.getElementById('puzzleTags');
-        tagsEl.innerHTML = '<i data-lucide="tag" class="w-3 h-3"></i><span>' + (tags.length ? Helpers.escape(tags.join(' / ')) : '—') + '</span>';
-        const pcEl = document.getElementById('puzzlePlayCount');
-        pcEl.innerHTML = '<i data-lucide="eye" class="w-3 h-3"></i><span>' + (puzzle.playCount || 0) + ' 人玩过</span>';
-        Helpers.refreshIcons();
-      }
-
-      // 渲染玩家面板
-      function renderPlayerPanels() {
-        const container = document.getElementById('playerPanels');
-        if (!game.players.length) {
-          container.innerHTML = '<div class="glass-card p-3 sm:p-4 flex flex-col items-center text-center gap-1.5 relative opacity-60"><span class="text-[10px] sm:text-[11px] font-medium" style="color: #A09890;">等待玩家加入…</span></div>';
-          return;
-        }
-        const colors = [
-          'linear-gradient(135deg, #8B7DA8, #C4A6B0)',
-          'linear-gradient(135deg, #7BAE98, #B8AFCA)',
-          'linear-gradient(135deg, #D4A76A, #C4A6B0)',
-        ];
-        container.innerHTML = game.players.map((p) => {
-          const isYou = p.seat === game.yourSeat;
-          const isCurrent = p.seat === game.currentSeat;
-          const displayName = isYou ? '你' : Helpers.escape(p.nickname || '玩家');
-          const initial = (p.nickname || '?').slice(0, 1);
-          const avatarBg = colors[p.seat % colors.length];
-          let badge = '';
-          if (isCurrent && !game.revealed) {
-            badge = '<div class="absolute top-1.5 right-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold" style="background: rgba(139, 125, 168, 0.2); color: #8B7DA8;"><i data-lucide="zap" class="w-2 h-2 sm:w-2.5 sm:h-2.5"></i>提问中</div>';
-          } else if (p.isBot) {
-            badge = '<div class="absolute top-1.5 right-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-medium" style="background: rgba(196, 166, 176, 0.18); color: #C4A6B0;">AI</div>';
-          } else {
-            badge = '<div class="absolute top-1.5 right-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-medium" style="background: rgba(160, 152, 144, 0.15); color: #A09890;">等待中</div>';
-          }
-          const activeBorder = isCurrent && !game.revealed
-            ? '<div class="absolute inset-0 rounded-[16px] sm:rounded-[20px] pointer-events-none" style="border: 2px solid rgba(139, 125, 168, 0.4);"></div>'
-            : '';
-          const opacity = isCurrent || isYou ? '' : 'style="opacity: 0.85;"';
-          return `
-            <div class="glass-card p-3 sm:p-4 flex flex-col items-center text-center gap-1.5 relative" ${opacity}>
-              ${badge}
-              <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white text-[10px] sm:text-xs font-bold" style="background: ${avatarBg};">${Helpers.escape(initial)}</div>
-              <span class="text-xs sm:text-sm font-semibold truncate max-w-full" style="color: #3D3835;">${displayName}</span>
-              <span class="text-[10px] sm:text-[11px] font-medium" style="color: ${isCurrent ? '#8B7DA8' : '#A09890'};">已问 ${p.questionsAsked || 0} 题</span>
-              ${activeBorder}
-            </div>
-          `;
-        }).join('');
-        Helpers.refreshIcons();
-      }
-
-      // 渲染聊天消息
-      function appendChatMessage(data) {
-        const container = document.getElementById('chatMessages');
-        const isYou = data.seat === game.yourSeat;
-        const conf = Helpers.judgmentConfig(data.judgment);
-        const side = isYou ? 'items-end' : 'items-start';
-        const bubbleRadius = isYou ? 'rounded-br-md' : 'rounded-bl-md';
-        const bubbleStyle = isYou
-          ? 'background: rgba(139, 125, 168, 0.15); color: #3D3835;'
-          : 'background: rgba(255, 255, 255, 0.8); color: #3D3835; border: 1px solid rgba(224, 216, 208, 0.5);';
-        const displayName = isYou ? '你' : Helpers.escape(data.nickname || '玩家');
-        const closeHint = data.closeHint
-          ? '<div class="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold animate-shimmer" style="background: rgba(139, 125, 168, 0.2); color: #8B7DA8;"><i data-lucide="sparkles" class="w-3 h-3"></i>接近了!</div>'
-          : '';
-        const node = Helpers.el(`
-          <div class="chat-msg animate-slide-in flex flex-col ${side} gap-1">
-            <div class="flex items-center gap-2 mb-0.5">
-              <span class="text-[10px] font-medium" style="color: #A09890;">${displayName} · 第${data.round}轮</span>
-            </div>
-            <div class="max-w-[80%] sm:max-w-[70%] px-4 py-2.5 rounded-2xl ${bubbleRadius} text-sm" style="${bubbleStyle}">
-              ${Helpers.escape(data.question)}
-            </div>
-            <div class="flex items-center gap-2 ${isYou ? '' : ''}">
-              <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold" style="background: ${conf.bg}; color: ${conf.color};">
-                <i data-lucide="${conf.icon}" class="w-3 h-3"></i>
-                AI 判定：${conf.label}
-              </div>
-              ${closeHint}
-            </div>
-          </div>
-        `);
-        container.appendChild(node);
-        Helpers.refreshIcons();
-        // 滚动到底部
-        container.scrollTop = container.scrollHeight;
-      }
-
-      // 系统提示消息
-      function appendSystemMessage(text) {
-        const container = document.getElementById('chatMessages');
-        const node = Helpers.el(`
-          <div class="chat-msg animate-slide-in flex justify-center">
-            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium" style="background: rgba(160, 152, 144, 0.12); color: #A09890;">
-              <i data-lucide="info" class="w-3 h-3"></i>
-              ${Helpers.escape(text)}
-            </div>
-          </div>
-        `);
-        container.appendChild(node);
-        Helpers.refreshIcons();
-        container.scrollTop = container.scrollHeight;
-      }
-
-      // 渲染进度/统计/排名
-      function renderProgress(data) {
-        const pct = data.progress || 0;
-        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-        const setWidth = (id, w) => { const el = document.getElementById(id); if (el) el.style.width = w + '%'; };
-        set('progressPercent', pct + '%');
-        set('progressPercentMobile', pct + '%');
-        setWidth('progressBar', pct);
-        setWidth('progressBarMobile', pct);
-        const roundText = '第 ' + (game.currentRound || 0) + ' / ' + (game.maxRounds || 0) + ' 轮';
-        set('roundCounter', roundText);
-        set('roundCounterMobile', roundText);
-        if (data.stats) {
-          set('statYes', data.stats.yes || 0);
-          set('statNo', data.stats.no || 0);
-          set('statIrrelevant', data.stats.irrelevant || 0);
-          set('statTotal', data.stats.total || 0);
-        }
-        if (data.ranking) {
-          renderRanking(data.ranking);
-        }
-      }
-
-      function renderRanking(ranking) {
-        const list = document.getElementById('rankingList');
-        if (!ranking || !ranking.length) {
-          list.innerHTML = '<div class="px-3 py-2 text-center text-[11px]" style="color: #A09890;">尚无排名</div>';
-          return;
-        }
-        const colors = ['#8B7DA8', '#A09890', '#A09890'];
-        const bgTints = ['rgba(139, 125, 168, 0.08)', 'rgba(237, 232, 227, 0.4)', 'rgba(237, 232, 227, 0.4)'];
-        list.innerHTML = ranking.map((p, idx) => {
-          const isYou = p.seat === game.yourSeat;
-          const displayName = isYou ? '你' : Helpers.escape(p.nickname || '玩家');
-          const initial = (p.nickname || '?').slice(0, 1);
-          const avatarBg = idx === 0 ? 'linear-gradient(135deg, #8B7DA8, #C4A6B0)' : 'linear-gradient(135deg, #B8AFCA, #E8D5DD)';
-          return `
-            <div class="flex items-center gap-2.5 px-3 py-2 rounded-xl" style="background: ${bgTints[idx]};">
-              <span class="text-xs font-bold w-4 text-center" style="color: ${colors[idx]};">${idx + 1}</span>
-              <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold" style="background: ${avatarBg};">${Helpers.escape(initial)}</div>
-              <span class="text-xs font-medium flex-1 truncate" style="color: #3D3835;">${displayName}${p.isBot ? ' · AI' : ''}</span>
-              <span class="text-[10px] font-bold" style="color: ${idx === 0 ? '#8B7DA8' : '#6B6560'};">+${p.score || 0}</span>
-            </div>
-          `;
-        }).join('');
-      }
-
-      // 更新回合指示器
-      function setTurnIndicator(isYourTurn, nickname) {
-        const ind = document.getElementById('turnIndicator');
-        const label = document.getElementById('turnLabel');
-        const badge = document.getElementById('timerBadge');
-        const input = document.getElementById('questionInput');
-        const sendBtn = document.getElementById('sendBtn');
-        const hint = document.getElementById('chatHeaderHint');
-        if (game.revealed) {
-          ind.style.background = 'rgba(212, 167, 106, 0.18)';
-          ind.style.color = '#D4A76A';
-          label.textContent = '已揭晓';
-          hint.textContent = '对局已结束';
-          hint.style.background = 'rgba(212, 167, 106, 0.18)';
-          hint.style.color = '#D4A76A';
-          badge.classList.add('hidden');
-          input.disabled = true;
-          input.placeholder = '对局已结束';
-          sendBtn.disabled = true;
-          return;
-        }
-        if (isYourTurn) {
-          ind.style.background = 'rgba(139, 125, 168, 0.14)';
-          ind.style.color = '#8B7DA8';
-          label.textContent = '轮到你提问';
-          hint.textContent = '你的回合';
-          hint.style.background = 'rgba(139, 125, 168, 0.14)';
-          hint.style.color = '#8B7DA8';
-          badge.classList.remove('hidden');
-          input.disabled = false;
-          input.placeholder = '输入你的问题…';
-          sendBtn.disabled = false;
-          input.focus();
-        } else {
-          ind.style.background = 'rgba(160, 152, 144, 0.14)';
-          ind.style.color = '#6B6560';
-          label.textContent = (nickname || '对方') + ' 思考中';
-          hint.textContent = (nickname || '对方') + ' 的回合';
-          hint.style.background = 'rgba(160, 152, 144, 0.12)';
-          hint.style.color = '#A09890';
-          badge.classList.add('hidden');
-          input.disabled = true;
-          input.placeholder = '等待你的回合…';
-          sendBtn.disabled = true;
-        }
-      }
-
-      function setTimer(remaining) {
-        const el = document.getElementById('timerText');
-        if (el) el.textContent = Helpers.formatDuration(Math.max(0, remaining));
-      }
-
-      function setInsight(message) {
-        const desktop = document.getElementById('aiInsight');
-        const mobile = document.getElementById('aiInsightMobile');
-        const html1 = `<div class="w-2 h-2 rounded-full animate-shimmer" style="background: #8B7DA8;"></div><p class="text-xs font-medium animate-shimmer" style="color: #8B7DA8;">${Helpers.escape(message)}</p>`;
-        const html2 = `<div class="w-1.5 h-1.5 rounded-full animate-shimmer" style="background: #8B7DA8;"></div><span class="text-[11px] font-medium animate-shimmer" style="color: #8B7DA8;">${Helpers.escape(message)}</span>`;
-        if (desktop) desktop.innerHTML = html1;
-        if (mobile) mobile.innerHTML = html2;
-      }
-
-      // ===== Socket 事件 =====
-      function bindSocket(socket) {
-        socket.off('game:start');
-        socket.off('game:turn');
-        socket.off('game:question_posted');
-        socket.off('game:judgment');
-        socket.off('game:timer');
-        socket.off('game:insight');
-        socket.off('game:reveal');
-        socket.off('error');
-
-        socket.on('game:start', (data) => {
-          // 校验 gameId
-          if (expectedGameId && data.gameId !== expectedGameId) {
-            return;
-          }
-          game.gameId = data.gameId;
-          game.yourSeat = data.yourSeat;
-          game.maxRounds = data.maxRounds;
-          game.players = data.players || [];
-          renderPuzzle(data.puzzle);
-          renderPlayerPanels();
-          document.getElementById('playerCount').textContent = game.players.length + '/' + game.players.length;
-        });
-
-        socket.on('game:turn', (data) => {
-          game.currentSeat = data.seat;
-          game.currentRound = data.round;
-          if (data.seat === game.yourSeat) {
-            game.isYourTurn = true;
-            setTurnIndicator(true);
-          } else {
-            game.isYourTurn = false;
-            setTurnIndicator(false, data.nickname);
-          }
-          renderPlayerPanels();
-          // 更新轮次显示
-          const roundText = '第 ' + data.round + ' / ' + (game.maxRounds || 0) + ' 轮';
-          document.getElementById('roundCounter').textContent = roundText;
-          document.getElementById('roundCounterMobile').textContent = roundText;
-          if (data.isBot) {
-            setInsight((data.nickname || 'AI') + ' 正在思考…');
-          }
-        });
-
-        socket.on('game:question_posted', (data) => {
-          // 仅显示提问气泡，判定会在 game:judgment 中追加
-          // 这里可以临时显示一个"判定中…"的状态，但为简化，直接等待 judgment
-        });
-
-        socket.on('game:judgment', (data) => {
-          appendChatMessage(data);
-          renderProgress(data);
-          // 接近真相提示
-          if (data.closeHint) {
-            setInsight((data.nickname || '有玩家') + ' 接近真相了…');
-          }
-        });
-
-        socket.on('game:timer', (data) => {
-          setTimer(data.remaining);
-        });
-
-        socket.on('game:insight', (data) => {
-          if (data.message) {
-            appendSystemMessage(data.message);
-            setInsight(data.message);
-          }
-        });
-
-        socket.on('game:reveal', (data) => {
-          game.revealed = true;
-          setTurnIndicator(false);
-          appendSystemMessage('真相揭晓中…');
-          Helpers.toast('对局结束，正在跳转揭晓页', 'success');
-          setTimeout(() => {
-            location.href = '/answer-reveal?gameId=' + encodeURIComponent(data.gameId || game.gameId);
-          }, 1200);
-        });
-
-        socket.on('error', (data) => {
-          Helpers.toast(data.message || '发生错误', 'error');
-        });
-      }
-
-      // 提交问题
-      function submitQuestion() {
-        const input = document.getElementById('questionInput');
-        const q = (input.value || '').trim();
-        if (!q) return;
-        if (!game.isYourTurn) {
-          Helpers.toast('当前不是你的回合', 'warn');
-          return;
-        }
-        const socket = SocketClient.getSocket();
-        if (!socket) {
-          Helpers.toast('连接已断开，请刷新重试', 'error');
-          return;
-        }
-        socket.emit('game:question', { question: q });
-        input.value = '';
-        // 立即禁用，等待下一回合
-        const sendBtn = document.getElementById('sendBtn');
-        input.disabled = true;
-        sendBtn.disabled = true;
-        input.placeholder = '等待 AI 判定…';
-      }
-
-      // 初始化
-      function init() {
-        const input = document.getElementById('questionInput');
-        const sendBtn = document.getElementById('sendBtn');
-        sendBtn.addEventListener('click', submitQuestion);
-        input.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            submitQuestion();
-          }
-        });
-
-        if (!Api.getUserToken()) {
-          Helpers.toast('请先在匹配大厅输入昵称', 'warn');
-          setTimeout(() => { location.href = '/'; }, 1200);
-          return;
-        }
-        if (!expectedGameId) {
-          Helpers.toast('缺少对局 ID，返回大厅', 'warn');
-          setTimeout(() => { location.href = '/'; }, 1200);
-          return;
-        }
-
-        const socket = SocketClient.reconnect();
-        bindSocket(socket);
-
-        // 若连接已建立，绑定后立即就绪；若未建立，等待 connect
-        if (socket.connected) {
-          // 已经连上，事件已绑定即可
-        } else {
-          socket.on('connect', () => {
-            // 重连后重绑，避免遗漏
-            bindSocket(socket);
-          });
-        }
-      }
-
-      // 离开页面时通知后端
-      window.addEventListener('beforeunload', () => {
-        const socket = SocketClient.getSocket();
-        if (socket && socket.connected) {
-          socket.emit('game:leave');
-        }
-      });
-
-      init();
-    </script>
+  document.getElementById('playerPanels').innerHTML = html;
+}
+
+function updateTurn(d) {
+  var el = document.getElementById('turnInfo');
+  var inp = document.getElementById('questionInput');
+  var btn = document.getElementById('sendBtn');
+  if (d.isYourTurn) {
+    el.textContent = '你的回合，请提问';
+    el.style.color = '#8B7DA8';
+    inp.disabled = false; btn.disabled = false;
+    inp.placeholder = '请输入你的问题…';
+  } else {
+    var cur = (game.players||[]).find(function(p){return p.seat===d.currentSeat;});
+    el.textContent = (cur?cur.nickname:'') + ' 的回合';
+    el.style.color = '#A09890';
+    inp.disabled = true; btn.disabled = true;
+    inp.placeholder = '等待中…';
+  }
+}
+
+function e(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function renderChat(c) {
+  var isMe = (c.seat === game.yourSeat);
+  var j = J[c.judgment] || { icon:'circle', color:'#A09890', bg:'rgba(160,152,144,0.12)', label:c.judgment||'判定中' };
+  var side = isMe ? 'items-end' : 'items-start';
+  var bubble = isMe ? 'chat-bubble-me' : 'chat-bubble-other';
+  var name = isMe ? '你' : e(c.nickname);
+
+  var html = '<div class="chat-msg flex flex-col '+side+' gap-1">'+
+    '<span class="chat-name">'+name+' · 第'+(c.round||'?')+'轮</span>'+
+    '<div class="'+bubble+'">'+e(c.question)+'</div>'+
+    '<div class="flex items-center gap-2">'+
+      '<span class="chat-pill" style="background:'+j.bg+';color:'+j.color+';">'+
+        '<i data-lucide="'+j.icon+'" class="w-3 h-3"></i>'+
+        '系统回答：'+j.label+
+      '</span>';
+
+  if (c.closeHint) {
+    html += '<span class="chat-pill" style="background:rgba(139,125,168,0.16);color:#8B7DA8;">'+
+            '<i data-lucide="sparkles" class="w-3 h-3"></i>接近了!</span>';
+  }
+
+  html += '</div></div>';
+
+  document.getElementById('chatBox').innerHTML += html;
+  lucide.createIcons();
+  document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
+  document.getElementById('chatHint').textContent = (c.nickname||'') + ' 提问';
+}
+
+async function submitQuestion() {
+  if (!game.isYourTurn || game.sending) return;
+  var q = document.getElementById('questionInput').value.trim();
+  if (!q) return;
+
+  game.sending = true;
+  document.getElementById('questionInput').value = '';
+  document.getElementById('questionInput').disabled = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  try {
+    var result = await Api.request('POST', '/game/' + expectedGameId + '/question', { question: q }, { user: true });
+    chatCount = 0;
+    document.getElementById('chatBox').innerHTML = '';
+    game.sending = false;
+    await pollGameState();
+  } catch (err) {
+    game.sending = false;
+    if (game.isYourTurn) {
+      document.getElementById('questionInput').disabled = false;
+      document.getElementById('sendBtn').disabled = false;
+    }
+    alert('发送失败: ' + (err.message || '网络错误'));
+  }
+}
+
+init();
+</script>
 </body>
 </html>

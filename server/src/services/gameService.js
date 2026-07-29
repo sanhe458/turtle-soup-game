@@ -15,6 +15,7 @@ const activeGames = new Map();
  * @returns {Promise<string|null>} gameId
  */
 async function createGame(puzzle, players) {
+  console.log("[createGame] puzzle=" + puzzle.title + " players=" + players.length);
   if (activeGames.size >= 200) return null;
   const gameId = uuidv4();
   const now = Date.now();
@@ -98,6 +99,7 @@ function getGameBySocketId(socketId) {
 }
 
 async function pickRandomPuzzle() {
+  console.log("[pickRandomPuzzle] querying...");
   return db.getOne(`SELECT * FROM puzzles WHERE status = 'online' ORDER BY RAND() LIMIT 1`);
 }
 
@@ -105,6 +107,7 @@ async function pickRandomPuzzle() {
  * 开始对局：下发 game:start，启动第一轮
  */
 function startGame(gameId, io) {
+  if (!io) { io = { to: () => ({ emit: () => {} }), sockets: { sockets: { get: () => null } } }; }
   const state = getGame(gameId);
   if (!state) return;
   // 给每个真人下发 game:start（包含自己的座位号）
@@ -145,20 +148,22 @@ function beginTurn(gameId, io) {
   const currentPlayer = state.players[state.currentSeat];
   state.currentTurnSubmitted = false;
 
-  io.to(room).emit('game:turn', {
-    round: state.currentRound,
-    seat: state.currentSeat,
-    nickname: currentPlayer.nickname,
-    isBot: currentPlayer.isBot,
-    timerSec: config.game.turnTimerSec,
-  });
+  if (io) {
+    io.to(room).emit('game:turn', {
+      round: state.currentRound,
+      seat: state.currentSeat,
+      nickname: currentPlayer.nickname,
+      isBot: currentPlayer.isBot,
+      timerSec: config.game.turnTimerSec,
+    });
+  }
 
   // 倒计时
   state.timerRemaining = config.game.turnTimerSec;
   if (state.timerInterval) clearInterval(state.timerInterval);
   state.timerInterval = setInterval(() => {
     state.timerRemaining -= 1;
-    io.to(room).emit('game:timer', { remaining: state.timerRemaining });
+    if (io) io.to(room).emit('game:timer', { remaining: state.timerRemaining });
     if (state.timerRemaining <= 0) {
       clearInterval(state.timerInterval);
       state.timerInterval = null;
@@ -206,6 +211,7 @@ async function receiveQuestion(gameId, seat, question, io, isBot = false) {
   if (seat !== state.currentSeat) return { ok: false, error: '当前不是你的回合' };
   if (state.timerInterval === null && !isBot) return { ok: false, error: '回合已结束' };
   if (state.currentTurnSubmitted) return { ok: false, error: '本回合已提交' };
+  console.log('[receiveQ] ENTER seat=' + seat + ' currentSeat=' + state.currentSeat + ' isBot=' + isBot + ' timerInt=' + !!state.timerInterval + ' submitted=' + state.currentTurnSubmitted + ' question=' + question);
   state.currentTurnSubmitted = true;
 
   const player = state.players[seat];
@@ -220,13 +226,15 @@ async function receiveQuestion(gameId, seat, question, io, isBot = false) {
   }
 
   const room = `game:${gameId}`;
-  // 1) 广播提问
-  io.to(room).emit('game:question_posted', {
-    round: state.currentRound,
-    seat,
-    nickname: player.nickname,
-    question,
-  });
+  // 1) 广播提问（仅 Socket.IO 模式下需要）
+  if (io) {
+    io.to(room).emit('game:question_posted', {
+      round: state.currentRound,
+      seat,
+      nickname: player.nickname,
+      question,
+    });
+  }
 
   // 2) 调用 LLM 判定
   const history = state.chat.map((c) => ({
@@ -241,6 +249,7 @@ async function receiveQuestion(gameId, seat, question, io, isBot = false) {
     player.userId
   );
 
+  console.log('[receiveQ] afterLLM judgment=' + judgment.judgment + ' label=' + judgment.judgmentLabel);
   // 3) 更新状态
   const chatEntry = {
     round: state.currentRound,
@@ -254,6 +263,7 @@ async function receiveQuestion(gameId, seat, question, io, isBot = false) {
   if (state.chat.length > 500) state.chat.shift();
   state.chat.push(chatEntry);
   player.questionsAsked += 1;
+  console.log('[receiveQ] chatEntry added, qAsked=' + player.questionsAsked + ' chatLen=' + state.chat.length);
   state.stats.total += 1;
   state.stats[judgment.judgment] += 1;
   player.score += 2;
@@ -282,22 +292,24 @@ async function receiveQuestion(gameId, seat, question, io, isBot = false) {
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `, [gameId, chatEntry.round, chatEntry.seat, chatEntry.nickname, chatEntry.question, chatEntry.judgment, chatEntry.closeHint ? 1 : 0]);
 
-  // 6) 广播判定
-  io.to(room).emit('game:judgment', {
-    round: state.currentRound,
-    seat,
-    nickname: player.nickname,
-    question,
-    judgment: judgment.judgment,
-    judgmentLabel: judgment.judgmentLabel,
-    closeHint: judgment.closeToTruth,
-    progress: state.progress,
-    stats: state.stats,
-    ranking: getRanking(state),
-  });
+  // 6) 广播判定（仅 Socket.IO 模式下需要）
+  if (io) {
+    io.to(room).emit('game:judgment', {
+      round: state.currentRound,
+      seat,
+      nickname: player.nickname,
+      question,
+      judgment: judgment.judgment,
+      judgmentLabel: judgment.judgmentLabel,
+      closeHint: judgment.closeToTruth,
+      progress: state.progress,
+      stats: state.stats,
+      ranking: getRanking(state),
+    });
+  }
 
   // 7) 接近真相提示
-  if (judgment.closeToTruth && state.progress >= 80) {
+  if (judgment.closeToTruth && state.progress >= 80 && io) {
     io.to(room).emit('game:insight', { message: '有人在接近真相…' });
   }
 
@@ -333,10 +345,11 @@ function handleTurnTimeout(gameId, io) {
   const state = getGame(gameId);
   if (!state || state.status !== 'playing') return;
   const player = state.players[state.currentSeat];
-  const room = `game:${gameId}`;
-  io.to(room).emit('game:insight', {
-    message: `${player.nickname} 未在规定时间内提问，跳过本轮`,
-  });
+  if (io) {
+    io.to(`game:${gameId}`).emit('game:insight', {
+      message: `${player.nickname} 未在规定时间内提问，跳过本轮`,
+    });
+  }
   // bot 不应超时，但兜底
   if (player.isBot) {
     handleBotTurn(gameId, io).catch((err) => {
@@ -414,11 +427,13 @@ async function revealGame(gameId, io) {
     `, [state.currentRound, state.progress, winnerUserId, durationSec, gameId]);
   });
 
-  // 广播揭晓
-  io.to(room).emit('game:reveal', {
-    gameId,
-    winner: winnerSeat !== null ? { seat: winnerSeat, nickname: state.players[winnerSeat].nickname } : null,
-  });
+  // 广播揭晓（仅 Socket.IO 模式下需要）
+  if (io) {
+    io.to(room).emit('game:reveal', {
+      gameId,
+      winner: winnerSeat !== null ? { seat: winnerSeat, nickname: state.players[winnerSeat].nickname } : null,
+    });
+  }
 
   // 清理内存（延迟，给前端时间跳转）
   setTimeout(() => {
