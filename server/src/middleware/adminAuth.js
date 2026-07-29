@@ -3,8 +3,11 @@ const db = require('../db');
 const redis = require('../redis');
 
 async function adminAuth(req, res, next) {
+  // 优先从 Authorization header 取，降级到 cookie
   const header = req.headers.authorization || '';
-  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  const cookieToken = (req.cookies && req.cookies.admin_token) || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : cookieToken;
+
   if (!token) {
     return res.status(401).json({ error: '未登录' });
   }

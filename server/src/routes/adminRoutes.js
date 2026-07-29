@@ -68,6 +68,7 @@ router.post('/admin/login', loginLimiter, async (req, res) => {
     return res.status(401).json({ error: '账号或密码错误' });
   }
   const token = signAdmin(admin.id, admin.account, admin.name, admin.role, admin.token_version);
+  res.cookie("admin_token", token, { httpOnly: true, sameSite: "lax", path: "/soup", maxAge: 15 * 60 * 1000 });
   res.json({
     token,
     admin: { name: admin.name, role: admin.role, email: admin.email },
