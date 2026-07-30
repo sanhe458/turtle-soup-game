@@ -329,4 +329,16 @@ router.patch('/admin/puzzles/:id/status', adminAuth, async (req, res) => {
   });
 });
 
+// DELETE /api/admin/puzzles/:id - 删除题目
+router.delete('/admin/puzzles/:id', adminAuth, async (req, res) => {
+  const existing = await db.getOne(`SELECT * FROM puzzles WHERE id = ?`, [req.params.id]);
+  if (!existing) return res.status(404).json({ error: '题目不存在' });
+  // 先删除引用该题目的对局和聊天记录，再删题目（外键约束）
+  await db.run(`DELETE FROM game_chat WHERE game_id IN (SELECT id FROM games WHERE puzzle_id = ?)`, [req.params.id]);
+  await db.run(`DELETE FROM game_players WHERE game_id IN (SELECT id FROM games WHERE puzzle_id = ?)`, [req.params.id]);
+  await db.run(`DELETE FROM games WHERE puzzle_id = ?`, [req.params.id]);
+  await db.run(`DELETE FROM puzzles WHERE id = ?`, [req.params.id]);
+  res.json({ ok: true, message: '题目已删除' });
+});
+
 module.exports = router;

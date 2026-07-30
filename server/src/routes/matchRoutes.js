@@ -27,9 +27,16 @@ router.post('/match/join', (req, res) => {
   if (pollingPlayers.has(player.userId)) {
     const existing = pollingPlayers.get(player.userId);
     if (existing.gameId) {
-      return res.json({ status: 'matched', gameId: existing.gameId, yourSeat: existing.seat });
+      // 检查游戏是否真的还在进行中，防止结束后的死循环
+      const game = gameService.getGame(existing.gameId);
+      if (game && game.status === 'playing') {
+        return res.json({ status: 'matched', gameId: existing.gameId, yourSeat: existing.seat });
+      }
+      // 游戏已结束，清除旧记录，重新匹配
+      pollingPlayers.delete(player.userId);
+    } else {
+      return res.json({ status: existing.matchStatus || 'waiting' });
     }
-    return res.json({ status: existing.matchStatus || 'waiting' });
   }
 
   pollingPlayers.set(player.userId, {
