@@ -224,6 +224,10 @@ router.get('/admin/puzzles', adminAuth, async (req, res) => {
   const whereSql = where.join(' AND ');
 
   const total = (await db.getOne(`SELECT COUNT(*) as c FROM puzzles WHERE ${whereSql}`, params)).c;
+  // 各状态统计（不分页，全局）
+  const statOnline  = (await db.getOne(`SELECT COUNT(*) as c FROM puzzles WHERE status = 'online'`)).c;
+  const statPending = (await db.getOne(`SELECT COUNT(*) as c FROM puzzles WHERE status = 'pending'`)).c;
+  const statOffline = (await db.getOne(`SELECT COUNT(*) as c FROM puzzles WHERE status = 'offline'`)).c;
   const items = await db.query(`
     SELECT * FROM puzzles WHERE ${whereSql}
     ORDER BY created_at DESC LIMIT ? OFFSET ?

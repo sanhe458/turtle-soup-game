@@ -246,7 +246,7 @@ async function getRoleBindingsAdmin(roleId) {
   return redis.getOrSet(`ai:bindings_admin:${roleId}`, TTL_AI, async () => {
     const rows = await db.query(`
       SELECT rm.id as binding_id, rm.priority, rm.weight, rm.enabled as rm_enabled, rm.sort_order,
-        m.id as model_id, m.model_id, m.name, m.context_window, m.max_output, m.modalities,
+        m.id as model_uuid, m.model_id, m.name, m.context_window, m.max_output, m.modalities,
         p.name as provider_name, p.format as provider_format
       FROM ai_role_models rm
       JOIN ai_models m ON m.id = rm.model_id
@@ -256,7 +256,7 @@ async function getRoleBindingsAdmin(roleId) {
     `, [roleId]);
     return rows.map((r) => ({
       bindingId: r.binding_id,
-      modelId: r.model_id,
+      modelId: r.model_uuid,
       modelIdStr: r.model_id,
       name: r.name,
       contextWindow: r.context_window,
