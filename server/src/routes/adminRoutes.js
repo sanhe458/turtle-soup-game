@@ -250,7 +250,7 @@ router.get('/admin/puzzles', adminAuth, async (req, res) => {
 
 // POST /api/admin/puzzles - 新建题目
 router.post('/admin/puzzles', adminAuth, async (req, res) => {
-  const { title, scenario, truth, difficulty, tags } = req.body || {};
+  const { title, scenario, truth, difficulty, tags, judgeNote } = req.body || {};
   if (!title || !scenario || !truth || !difficulty) {
     return res.status(400).json({ error: '标题、汤面、汤底、难度均为必填' });
   }
@@ -278,7 +278,7 @@ router.post('/admin/puzzles', adminAuth, async (req, res) => {
 
 // PUT /api/admin/puzzles/:id - 编辑题目
 router.put('/admin/puzzles/:id', adminAuth, async (req, res) => {
-  const { title, scenario, truth, difficulty, tags } = req.body || {};
+  const { title, scenario, truth, difficulty, tags, judgeNote } = req.body || {};
   const existing = await db.getOne(`SELECT * FROM puzzles WHERE id = ?`, [req.params.id]);
   if (!existing) return res.status(404).json({ error: '题目不存在' });
   const fieldErr = validatePuzzleFields({ title, scenario, truth, tags, judgeNote });
@@ -289,6 +289,7 @@ router.put('/admin/puzzles/:id', adminAuth, async (req, res) => {
     truth: truth ?? existing.truth,
     difficulty: difficulty ?? existing.difficulty,
     tags: Array.isArray(tags) ? JSON.stringify(tags) : existing.tags,
+    judge_note: judgeNote !== undefined ? judgeNote : existing.judge_note,
   };
   if (newData.difficulty && !['easy', 'medium', 'hard'].includes(newData.difficulty)) {
     return res.status(400).json({ error: '难度必须为 easy / medium / hard' });
@@ -296,7 +297,7 @@ router.put('/admin/puzzles/:id', adminAuth, async (req, res) => {
   await db.run(`
     UPDATE puzzles SET title = ?, scenario = ?, truth = ?, difficulty = ?, tags = ?, judge_note = ?
     WHERE id = ?
-  `, [newData.title, newData.scenario, newData.truth, newData.difficulty, newData.tags, req.params.id]);
+  `, [newData.title, newData.scenario, newData.truth, newData.difficulty, newData.tags, newData.judge_note, req.params.id]);
   const row = await db.getOne(`SELECT * FROM puzzles WHERE id = ?`, [req.params.id]);
   res.json({
     puzzle: {

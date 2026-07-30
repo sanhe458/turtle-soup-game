@@ -1,5 +1,5 @@
 const aiRouter = require('./aiRouter');
-const { buildJudgePrompt, buildBotQuestionPrompt } = require('../utils/prompts');
+const { buildJudgePrompt, buildAssessPrompt, buildBotQuestionPrompt } = require('../utils/prompts');
 
 const JUDGMENT_LABELS = {
   yes: '是',
@@ -120,4 +120,30 @@ async function generateBotQuestion(scenario, history) {
   return fallbacks[Math.floor(Math.random() * fallbacks.length)];
 }
 
-module.exports = { judgeQuestion, generateBotQuestion, JUDGMENT_LABELS };
+/**
+ * 评估当前游戏进度（角色：assessor）
+ * @returns {Promise<{assessment: 'nowhere_near'|'getting_closer'|'spotted_the_truth'}>}
+ */
+async function assessProgress(scenario, truth, history, judgeNote) {
+  const { systemPrompt, userMessage } = buildAssessPrompt(scenario, truth, history, judgeNote);
+  try {
+    const content = await aiRouter.callRole(
+      'assessor',
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage },
+      ],
+      { temperature: 0.3, jsonMode: true }
+    );
+    const parsed = extractJson(content);
+    if (parsed && ['nowhere_near', 'getting_closer', 'spotted_the_truth'].includes(parsed.assessment)) {
+      return { assessment: parsed.assessment };
+    }
+    console.warn('[llmService] 无法解析评估结果，已降级');
+  } catch (err) {
+    console.warn('[llmService] LLM 评估调用失败，已降级');
+  }
+  return { assessment: 'getting_closer' };
+}
+
+module.exports = { judgeQuestion, generateBotQuestion, assessProgress, JUDGMENT_LABELS };

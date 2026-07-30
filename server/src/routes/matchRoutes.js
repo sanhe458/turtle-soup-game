@@ -129,6 +129,16 @@ router.post('/match/decline-bots', (req, res) => {
   res.json({ status: 'waiting' });
 });
 
+// GET /api/match/queue-size - 当前匹配队列人数（公开，无需登录）
+router.get('/match/queue-size', (req, res) => {
+  // 只统计状态为 waiting/prompted 的玩家
+  let count = 0;
+  for (const [_, entry] of pollingPlayers) {
+    if (!entry.gameId && entry.matchStatus !== 'matched') count++;
+  }
+  res.json({ queueSize: count });
+});
+
 // POST /api/match/cancel - 取消匹配
 router.post('/match/cancel', (req, res) => {
   const token = (req.headers.authorization || '').replace('Bearer ', '');
