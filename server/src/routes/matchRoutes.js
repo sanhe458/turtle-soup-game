@@ -18,6 +18,27 @@ function getPlayer(token) {
   } catch { return null; }
 }
 
+// GET /api/match/resume - 查询是否有可重回的进行中对局（意外退出后回首页用）
+router.get('/match/resume', (req, res) => {
+  const token = (req.headers.authorization || '').replace('Bearer ', '');
+  const player = getPlayer(token);
+  if (!player) return res.status(401).json({ error: '请先输入昵称' });
+
+  const entry = pollingPlayers.get(player.userId);
+  if (!entry || !entry.gameId) {
+    return res.json({ hasActiveGame: false });
+  }
+
+  const game = gameService.getGame(entry.gameId);
+  if (game && game.status === 'playing') {
+    return res.json({ hasActiveGame: true, gameId: entry.gameId, yourSeat: entry.seat });
+  }
+
+  // 游戏已结束，清理旧记录，避免残留
+  pollingPlayers.delete(player.userId);
+  return res.json({ hasActiveGame: false });
+});
+
 // POST /api/match/join - 加入匹配队列
 router.post('/match/join', (req, res) => {
   const token = (req.headers.authorization || '').replace('Bearer ', '');
