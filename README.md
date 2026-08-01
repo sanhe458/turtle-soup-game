@@ -420,3 +420,50 @@ Redis 是可选的，缺失时自动降级直查 DB，日志显示 `degraded`。
 - 揭晓数据仅参与者可读（防 IDOR）
 - 全局限流 + Socket.IO 连接数/事件限流
 - 管理后台仅授权管理员访问（登录限流 + token_version 吊销机制）
+
+---
+
+## 🤖 Agent 一键部署提示词
+
+以下提示词可直接复制发给你的 AI Agent（OpenClaw / Claude / 其他），它会按本 README 自动完成海龟汤项目的部署。
+
+> 用法：把下面的内容原样发给 agent，它就能干活。部署完会自己验证并汇报结果。
+
+```text
+请帮我部署海龟汤在线推理游戏项目。项目代码在当前目录（git 仓库，根目录有 README.md 可查）。
+
+## 部署要求
+
+1. 检查环境：Node.js >= 18、MySQL 5.7+、Redis（可选，没有也行）、Nginx（可选，用于对外提供服务）
+2. 进入 server/ 目录：npm install
+3. 复制 server/.env.example 为 server/.env，并填入：
+   - JWT_SECRET：随机强密钥（长度>=32，用 openssl rand -base64 48 生成）
+   - ADMIN_DEFAULT_PASSWORD：随机强口令（不能用 admin123/123456 等弱口令，后端会拒绝启动）
+   - DB_USER / DB_PASSWORD / DB_DATABASE：MySQL 凭据（库名默认 turtle_soup）
+   - CLIENT_ORIGIN：前端访问地址（如 https://域名 或 http://IP:端口）
+   - 可选：API_KEY_ENCRYPTION_KEY（>=16字符，用于加密 AI 供应商 Key）
+4. 创建 MySQL 数据库和用户（utf8mb4），表结构由后端启动时自动创建，不用手动建表
+5. 执行 NODE_ENV=development node seed.js 初始化管理员账号（admin）和示例题目
+   （注意：生产环境禁止执行 seed，会直接拒绝）
+6. 启动后端：node src/index.js（或配置 systemd 服务），确认日志显示端口监听成功
+7. 前端部署（public/ 目录）：
+   - 方案 A（推荐，带 Nginx）：把 public/ 复制到站点目录，配置 Nginx 静态托管 + /api/ 反代到 127.0.0.1:3002（或 /soup/api/ 子路径），并对应修改 HTML 里的 window.API_BASE
+   - 方案 B（简单）：后端已内置静态托管，直接访问 http://服务器IP:3002/ 即可，无需 Nginx
+8. AI 配置（可选但推荐）：部署完成后登录管理后台 admin-login → 「AI 配置」添加供应商（OpenAI/Anthropic/Gemini 兼容协议）、模型、角色绑定。不配也能跑，但 AI 判定会降级为「无关」、机器人用兜底问题
+
+## 验证要求
+
+部署完必须自己验证并汇报：
+1. curl 健康检查：/api/health 返回 {"ok":true}
+2. 注册一个测试用户，确认拿到 token
+3. 调用 /api/match/join 加入匹配，/api/match/status 返回 waiting
+4. 用 QQ 浏览器或无头浏览器打开前端页面，确认首页渲染正常（昵称输入、开始匹配按钮）
+5. 汇报：访问地址、管理员账号（不泄露密码）、验证结果
+
+## 注意事项
+
+- 端口 3002 被占用时换 PORT 环境变量，并同步改 Nginx 反代
+- 改前端 js/api.js 后要 bump HTML 里的版本号（?v=3 → ?v=4）否则浏览器缓存旧文件
+- 所有操作先检查现状再动手，不要覆盖已有配置；有疑问先问用户
+- 部署完成后告诉用户访问地址和管理员登录方式
+```
