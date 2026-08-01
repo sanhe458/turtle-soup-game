@@ -3,6 +3,12 @@ const gameService = require('../services/gameService');
 function attachGameHandlers(io, socket, socketUserMap) {
   socket.on('game:join', ({ gameId, seat } = {}) => {
     if (!gameId) return;
+    // 鉴权：必须先通过 match:join 认证（socketUserMap 有记录）才能加入对局
+    const auth = socketUserMap.get(socket.id);
+    if (!auth || !auth.userId) {
+      socket.emit('error', { message: '未认证，无法加入对局' });
+      return;
+    }
     const state = gameService.getGame(gameId);
     if (!state) {
       socket.emit('error', { message: '对局不存在或已结束' });
@@ -11,6 +17,11 @@ function attachGameHandlers(io, socket, socketUserMap) {
     // 用 seat（座位号）定位玩家
     const player = state.players.find((p) => p.seat === seat);
     if (!player) {
+      socket.emit('error', { message: '你不在这场对局中' });
+      return;
+    }
+    // 防冒名：座位号对应的玩家必须是自己（token 认证的身份）
+    if (player.userId !== auth.userId) {
       socket.emit('error', { message: '你不在这场对局中' });
       return;
     }

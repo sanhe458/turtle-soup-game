@@ -249,6 +249,9 @@ router.get('/admin/puzzles', adminAuth, async (req, res) => {
     total,
     page,
     limit,
+    statOnline,
+    statPending,
+    statOffline,
   });
 });
 

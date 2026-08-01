@@ -60,7 +60,13 @@ router.get('/match/status', (req, res) => {
 
   // 已匹配成功
   if (entry.gameId) {
-    return res.json({ status: 'matched', gameId: entry.gameId, yourSeat: entry.seat });
+    // 游戏可能已结束（activeGames 已清理），此时应清除旧记录返回 idle，避免死循环
+    const game = gameService.getGame(entry.gameId);
+    if (game && game.status === 'playing') {
+      return res.json({ status: 'matched', gameId: entry.gameId, yourSeat: entry.seat });
+    }
+    pollingPlayers.delete(player.userId);
+    return res.json({ status: 'idle' });
   }
 
   const waitedSec = Math.floor((Date.now() - entry.joinedAt) / 1000);

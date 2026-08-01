@@ -15,6 +15,14 @@ const { setupMatchSockets } = require('./sockets/matchSocket');
 const app = express();
 app.set('trust proxy', 1);
 
+// 全局兜底：未捕获的 Promise 拒绝与异常只记录日志，不杀死进程（服务可用性优先）
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason instanceof Error ? reason.stack || reason.message : reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err.stack || err.message);
+});
+
 // CORS 来源校验：禁止使用通配符或空值
 if (!config.clientOrigin || config.clientOrigin === '*') {
   console.warn('[turtle-soup] WARNING: CLIENT_ORIGIN 未配置或为 "*"，请显式指定允许的前端来源');

@@ -61,7 +61,8 @@ router.post('/game/:id/question', async (req, res) => {
   if (question.trim().length > 200) return res.status(400).json({ error: '提问过长（最多200字）' });
 
   // 使用 gameService 的判定逻辑（需要 io，但轮询不需要实时推送，传 null）
-  const result = await gameService.receiveQuestion(req.params.id, player.seat, question.trim(), null, true);
+  // 注意：isBot 必须传 false —— 真人玩家不能绕过「回合已结束」检查
+  const result = await gameService.receiveQuestion(req.params.id, player.seat, question.trim(), null, false);
   if (!result || !result.ok) return res.status(400).json({ error: result?.error || '提交失败' });
   res.json({ ok: true });
 });
@@ -92,12 +93,20 @@ router.post('/game/:id/assess', async (req, res) => {
     judgmentLabel: c.judgmentLabel,
   }));
 
-  const result = await llmService.assessProgress(
-    state.puzzle.scenario,
-    state.puzzle.truth,
-    history,
-    state.puzzle.judgeNote
-  );
+  let result;
+  try {
+    result = await llmService.assessProgress(
+      state.puzzle.scenario,
+      state.puzzle.truth,
+      history,
+      state.puzzle.judgeNote
+    );
+  } catch (err) {
+    // LLM 评估异常：回收本轮额度，返回友好错误而不是 500 崩溃
+    state.assessUsed.delete(key);
+    console.error('[gamePollRoutes] assess 调用失败:', err.message);
+    return res.status(502).json({ error: '评估服务暂不可用，请稍后再试' });
+  }
 
   const assessment = result.assessment;
 

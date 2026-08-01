@@ -27,9 +27,13 @@ function validateBaseUrl(url) {
     return { ok: false, error: 'baseUrl 协议必须是 http 或 https' };
   }
   const host = parsed.hostname;
-  // Block private/loopback/link-local addresses
-  const blocked = /^(127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2[0-9]|3[01])\.|0\.|localhost|::1$|fc|fd)/i;
-  if (blocked.test(host)) {
+  // Block private/loopback/link-local IPv4 + localhost；IPv6 回环/ULA/链路本地单独处理
+  const blockedIPv4 = /^(127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2[0-9]|3[01])\.|0\.)/i;
+  if (host === 'localhost' || blockedIPv4.test(host)) {
+    return { ok: false, error: '不允许的地址：禁止内网/回环/链路本地地址' };
+  }
+  // IPv6 回环 ::1、链路本地 fe80::、ULA fc00::/7 与 fd00::/7（仅当 host 是纯 IPv6 字面量时）
+  if (host.includes(':') && /^(::1|fe80:|fc|fd)/i.test(host)) {
     return { ok: false, error: '不允许的地址：禁止内网/回环/链路本地地址' };
   }
   return { ok: true };

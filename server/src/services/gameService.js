@@ -79,6 +79,7 @@ async function createGame(puzzle, players) {
     timerInterval: null,
     turnTimer: null,
     timerRemaining: config.game.turnTimerSec,
+    turnExpired: false,
     createdAt: now,
     botScheduleTimeout: null,
     currentTurnSubmitted: false,
@@ -146,8 +147,23 @@ function beginTurn(gameId, io) {
   const state = getGame(gameId);
   if (!state || state.status !== 'playing') return;
   const room = `game:${gameId}`;
+  // 防御：players 为空或 currentSeat 越界时直接结束对局，避免除零/崩溃
+  if (!state.players || state.players.length === 0) {
+    console.error('[beginTurn] players 为空，对局异常终止:', gameId);
+    state.status = 'revealed';
+    setTimeout(() => activeGames.delete(gameId), 5000);
+    return;
+  }
+  state.currentSeat = ((state.currentSeat % state.players.length) + state.players.length) % state.players.length;
   const currentPlayer = state.players[state.currentSeat];
+  if (!currentPlayer) {
+    console.error('[beginTurn] currentPlayer 不存在，对局异常终止:', gameId);
+    state.status = 'revealed';
+    setTimeout(() => activeGames.delete(gameId), 5000);
+    return;
+  }
   state.currentTurnSubmitted = false;
+  state.turnExpired = false;
 
   if (io) {
     io.to(room).emit('game:turn', {
@@ -196,9 +212,22 @@ async function handleBotTurn(gameId, io) {
     judgmentLabel: c.judgmentLabel,
   }));
 
-  const question = await botService.generateQuestion(state.puzzle.scenario, history);
-  if (!question) return;
-  receiveQuestion(gameId, state.currentSeat, question, io, true).catch((err) => {
+  let question = null;
+  try {
+    question = await botService.generateQuestion(state.puzzle.scenario, history);
+  } catch (err) {
+    console.error('[gameService] handleBotTurn generateQuestion error:', err.message);
+  }
+  // LLM 失败时用兜底问题，保证 bot 回合不卡死
+  if (!question || typeof question !== 'string' || !question.trim()) {
+    question = '这件事发生在白天吗？';
+  }
+  // await 期间 currentSeat 可能已推进（超时兜底会重复调度），重新校验当前回合仍是同一个 bot
+  const now = getGame(gameId);
+  if (!now || now.status !== 'playing') return;
+  const nowPlayer = now.players[now.currentSeat];
+  if (!nowPlayer || !nowPlayer.isBot || nowPlayer.userId !== player.userId) return;
+  receiveQuestion(gameId, now.currentSeat, question, io, true).catch((err) => {
     console.error('[gameService] handleBotTurn receiveQuestion error:', err.message);
   });
 }
@@ -210,12 +239,16 @@ async function receiveQuestion(gameId, seat, question, io, isBot = false) {
   const state = getGame(gameId);
   if (!state || state.status !== 'playing') return { ok: false, error: '对局不存在或已结束' };
   if (seat !== state.currentSeat) return { ok: false, error: '当前不是你的回合' };
-  if (state.timerInterval === null && !isBot) return { ok: false, error: '回合已结束' };
+  // 防御：seat 越界或玩家不存在时直接拒绝，避免后续崩溃
+  const player = state.players[seat];
+  if (!player) return { ok: false, error: '玩家信息无效' };
+  // 防御：isBot 调用必须对应真实 bot 座位，防止超时竞态下 bot 问题替真人提交
+  if (isBot && !player.isBot) return { ok: false, error: '回合状态异常' };
+  // 用显式标记判断超时：turnExpired=true 才是真超时，避免 nextTurn→beginTurn 窗口误拒
+  if (state.turnExpired && !isBot) return { ok: false, error: '回合已结束' };
   if (state.currentTurnSubmitted) return { ok: false, error: '本回合已提交' };
   console.log('[receiveQ] ENTER seat=' + seat + ' currentSeat=' + state.currentSeat + ' isBot=' + isBot + ' timerInt=' + !!state.timerInterval + ' submitted=' + state.currentTurnSubmitted + ' question=' + question);
   state.currentTurnSubmitted = true;
-
-  const player = state.players[seat];
   // 清除倒计时与 bot 调度
   if (state.timerInterval) {
     clearInterval(state.timerInterval);
@@ -334,6 +367,10 @@ async function receiveQuestion(gameId, seat, question, io, isBot = false) {
 async function nextTurn(gameId, io) {
   const state = getGame(gameId);
   if (!state || state.status !== 'playing') return;
+  if (!state.players || state.players.length === 0) {
+    console.error('[nextTurn] players 为空，无法推进回合:', gameId);
+    return;
+  }
   state.currentSeat = (state.currentSeat + 1) % state.players.length;
   if (state.currentSeat === 0) {
     state.currentRound += 1;
@@ -346,14 +383,18 @@ async function nextTurn(gameId, io) {
 function handleTurnTimeout(gameId, io) {
   const state = getGame(gameId);
   if (!state || state.status !== 'playing') return;
+  // 标记本轮已超时（显式标记，供 receiveQuestion 判断，避免与 nextTurn 窗口混淆）
+  state.turnExpired = true;
   const player = state.players[state.currentSeat];
   if (io) {
     io.to(`game:${gameId}`).emit('game:insight', {
       message: `${player.nickname} 未在规定时间内提问，跳过本轮`,
     });
   }
-  // bot 不应超时，但兜底
+  // bot 不应超时，但兜底：若已有 bot 调度在飞（botScheduleTimeout 未清），等待其完成即可，
+  // 避免重复调度 handleBotTurn 造成并发提交/替真人提交
   if (player.isBot) {
+    if (state.botScheduleTimeout) return;
     handleBotTurn(gameId, io).catch((err) => {
       console.error('[gameService] handleTurnTimeout handleBotTurn error:', err.message);
     });
@@ -459,9 +500,15 @@ function leaveGame(gameId, socketId, io) {
       clearInterval(state.timerInterval);
       state.timerInterval = null;
     }
-    io.to(`game:${gameId}`).emit('game:insight', {
-      message: `${player.nickname} 已离开，跳过其回合`,
-    });
+    if (state.botScheduleTimeout) {
+      clearTimeout(state.botScheduleTimeout);
+      state.botScheduleTimeout = null;
+    }
+    if (io) {
+      io.to(`game:${gameId}`).emit('game:insight', {
+        message: `${player.nickname} 已离开，跳过其回合`,
+      });
+    }
     nextTurn(gameId, io).catch((err) => {
       console.error('[gameService] leaveGame nextTurn error:', err.message);
     });

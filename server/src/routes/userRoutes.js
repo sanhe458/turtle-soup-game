@@ -31,9 +31,15 @@ router.post('/users/register', registerLimiter, async (req, res) => {
   }
   const userId = uuidv4();
   const avatarSeed = userId.slice(0, 8);
-  await db.run(`
-    INSERT INTO users (id, nickname, avatar_seed) VALUES (?, ?, ?)
-  `, [userId, trimmed, avatarSeed]);
+  try {
+    await db.run(`
+      INSERT INTO users (id, nickname, avatar_seed) VALUES (?, ?, ?)
+    `, [userId, trimmed, avatarSeed]);
+  } catch (err) {
+    // 并发重复注册等场景：同一昵称撞唯一约束时返回友好错误
+    console.error('[userRoutes] register 失败:', err.message);
+    return res.status(500).json({ error: '注册失败，请稍后再试' });
+  }
   // 新建用户 token_version 默认为 0
   const token = signUser(userId, trimmed, 0);
   res.json({ userId, nickname: trimmed, token });

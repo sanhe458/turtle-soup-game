@@ -12,6 +12,19 @@ const JUDGMENT_LABELS = {
 // 熔断器：按用户记录连续 close_to_truth=true 次数，防止作弊刷「接近真相」
 const userCloseStreak = new Map();
 const CLOSE_STREAK_THRESHOLD = 3;
+// 熔断状态上限，防止 Map 无限增长（内存泄漏）
+const CLOSE_STREAK_MAX_ENTRIES = 20000;
+
+function enforceCloseStreakCap() {
+  if (userCloseStreak.size > CLOSE_STREAK_MAX_ENTRIES) {
+    // 超过上限时清空一半旧记录（Map 按插入序迭代，先删最早的一半）
+    let toDelete = CLOSE_STREAK_MAX_ENTRIES / 2;
+    for (const key of userCloseStreak.keys()) {
+      if (toDelete-- <= 0) break;
+      userCloseStreak.delete(key);
+    }
+  }
+}
 
 function extractJson(text) {
   if (!text) return null;
@@ -50,6 +63,7 @@ function applyCloseCircuitBreaker(userId, result) {
   } else {
     userCloseStreak.set(userId, 0);
   }
+  enforceCloseStreakCap();
   return result;
 }
 
