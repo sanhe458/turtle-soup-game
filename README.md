@@ -238,7 +238,50 @@ server {
 <script>window.API_BASE = "/soup/api";</script>
 ```
 
-如果部署在根路径，改为 `window.API_BASE = "/api"`。
+**根路径部署**：不想要 `/soup/` 子路径、直接部署在域名根目录时，Nginx 配置改为：
+
+```nginx
+server {
+    listen 80;
+    server_name api.example.com;
+
+    # 静态文件（根路径）
+    root /var/www/turtle-soup;
+    index index.html;
+    location / {
+        try_files $uri $uri.html $uri/ =404;
+        location ~* \.html$ {
+            add_header Cache-Control "no-cache, must-revalidate";
+        }
+    }
+
+    # API 反代（根路径）
+    location /api/ {
+        proxy_pass http://127.0.0.1:3002/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # Socket.IO 反代
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:3002/socket.io/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
+    }
+}
+```
+
+同时把每个 HTML 里的 API 地址改为根路径：
+
+```html
+<script>window.API_BASE = "/api";</script>
+```
 
 **方式 B：后端直接托管（开发/内网）**
 
