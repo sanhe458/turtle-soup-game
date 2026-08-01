@@ -438,9 +438,7 @@ Redis 是可选的，缺失时自动降级直查 DB，日志显示 `degraded`。
 
 如果当前目录没有项目代码，请先 clone 并进入目录：
 
-```bash
 git clone https://github.com/sanhe458/turtle-soup-game.git && cd turtle-soup-game
-```
 
 项目根目录有 README.md 可查（含架构图、环境变量、API 概览、常见问题）。
 
