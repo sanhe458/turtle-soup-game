@@ -430,7 +430,19 @@ Redis 是可选的，缺失时自动降级直查 DB，日志显示 `degraded`。
 > 用法：把下面的内容原样发给 agent，它就能干活。部署完会自己验证并汇报结果。
 
 ```text
-请帮我部署海龟汤在线推理游戏项目。项目代码在当前目录（git 仓库，根目录有 README.md 可查）。
+请帮我部署海龟汤在线推理游戏项目。
+
+## 项目地址
+
+仓库：https://github.com/sanhe458/turtle-soup-game.git
+
+如果当前目录没有项目代码，请先 clone 并进入目录：
+
+```bash
+git clone https://github.com/sanhe458/turtle-soup-game.git && cd turtle-soup-game
+```
+
+项目根目录有 README.md 可查（含架构图、环境变量、API 概览、常见问题）。
 
 ## 部署要求
 
